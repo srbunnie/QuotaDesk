@@ -53,16 +53,17 @@ internal sealed class RenewalWatcher
 
     public static (string Title, string Text) Describe(IReadOnlyList<Renewal> renewals)
     {
-        static string Window(WindowKind kind) => kind == WindowKind.Weekly ? "semanal" : "de 5 horas";
+        static string Window(WindowKind kind) => kind == WindowKind.Weekly ? L.T("semanal", "weekly") : L.T("de 5 horas", "5-hour");
         if (renewals.Count == 1)
         {
             var r = renewals[0];
             var name = r.AgentName.Replace(" Code", "");
-            var when = r.AtExactTime && r.At is { } at ? $" às {at.LocalDateTime:HH:mm}" : "";
-            return ($"Cota renovada · {name}", $"A janela {Window(r.Kind)} do {name} renovou{when}. Cota disponível de novo.");
+            var when = r.AtExactTime && r.At is { } at ? L.T($" às {at.LocalDateTime:HH:mm}", $" at {at.LocalDateTime:HH:mm}") : "";
+            return (L.T($"Cota renovada · {name}", $"Limit reset · {name}"),
+                L.T($"A janela {Window(r.Kind)} do {name} renovou{when}. Cota disponível de novo.", $"{name}'s {Window(r.Kind)} window reset{when}. Limit available again."));
         }
-        var lines = renewals.Select(r => $"{r.AgentName.Replace(" Code", "")}: janela {Window(r.Kind)}");
-        return ("Cotas renovadas", string.Join("\n", lines));
+        var lines = renewals.Select(r => L.T($"{r.AgentName.Replace(" Code", "")}: janela {Window(r.Kind)}", $"{r.AgentName.Replace(" Code", "")}: {Window(r.Kind)} window"));
+        return (L.T("Cotas renovadas", "Limits reset"), string.Join("\n", lines));
     }
 }
 
@@ -105,6 +106,8 @@ internal sealed class AppSettings
     /// <summary>Sound when a session starts waiting for the user.</summary>
     public bool Sound { get; set; }
     public bool NotifyPending { get; set; } = true;
+    /// <summary>Interface language: "auto" (follows Windows), "pt" or "en". See <see cref="L"/>.</summary>
+    public string Language { get; set; } = "auto";
     /// <summary>Characters also say what their agent is really doing (task title and last action), between the stock lines.</summary>
     public bool AgentSpeech { get; set; } = true;
     /// <summary>Automatic refresh every N minutes; 0 = manual only (sources still follow their own events).</summary>
@@ -132,7 +135,7 @@ internal sealed class AppSettings
     /// <summary>Legacy preference. The panel now uses a permanent click menu instead of hover.</summary>
     public bool AutoHidePanelHeader { get; set; }
     /// <summary>Keep the panel's top action bar visible; toggled explicitly, never by hover.</summary>
-    public bool ShowPanelHeader { get; set; }
+    public bool ShowPanelHeader { get; set; } = true;
     /// <summary>Panel resolution: "desktop" (default) or "mini" (the 480x320 layout of the 3.5" USB screen).</summary>
     public string PanelLayout { get; set; } = "desktop";
     /// <summary>Quota template: "loft" (voxel Loft, stacked quota rows) or "classic" (original office, one big quota per card).</summary>

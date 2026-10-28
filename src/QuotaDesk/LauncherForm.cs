@@ -10,7 +10,7 @@ internal sealed class LauncherForm : Form
     {
         public override string ToString() => Screen is { } screen
             ? MiniScreenForm.Describe(screen)
-            : $"{MissingDevice} · desconectado (usando monitor principal)";
+            : L.T($"{MissingDevice} · desconectado (usando monitor principal)", $"{MissingDevice} · disconnected (using the main display)");
     }
 
     private readonly AppSettings _settings;
@@ -38,7 +38,7 @@ internal sealed class LauncherForm : Form
         _providers = providers.ToList();
         if (_providers.Count > 0 && _providers.All(p => _settings.HiddenProviders.Contains(p.Id, StringComparer.OrdinalIgnoreCase)))
             _settings.HiddenProviders.RemoveAll(id => string.Equals(id, _providers[0].Id, StringComparison.OrdinalIgnoreCase));
-        Text = "QuotaDesk · Inicializador";
+        Text = L.T("QuotaDesk · Inicializador", "QuotaDesk · Launcher");
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         ControlBox = false;
@@ -62,11 +62,11 @@ internal sealed class LauncherForm : Form
         };
         var subtitle = new Label
         {
-            Text = "Central de controle", AutoSize = true, Location = new Point(24, 58), ForeColor = Theme.TextDim
+            Text = L.T("Central de controle", "Control center"), AutoSize = true, Location = new Point(24, 58), ForeColor = Theme.TextDim
         };
         Controls.AddRange([title, titleAccent, subtitle]);
 
-        var minimize = Button("Minimizar", Color.FromArgb(34, 42, 64), () => WindowState = FormWindowState.Minimized);
+        var minimize = Button(L.T("Minimizar", "Minimize"), Color.FromArgb(34, 42, 64), () => WindowState = FormWindowState.Minimized);
         minimize.AutoSize = false;
         minimize.MinimumSize = Size.Empty;
         minimize.Size = new Size(92, 34);
@@ -81,9 +81,9 @@ internal sealed class LauncherForm : Form
         shutdown.Paint += (_, e) => LucideIcons.Draw(e.Graphics, "power",
             new RectangleF((shutdown.ClientSize.Width - 20) / 2f, (shutdown.ClientSize.Height - 20) / 2f, 20, 20), shutdown.ForeColor);
         shutdown.ForeColor = Color.FromArgb(255, 172, 188);
-        shutdown.AccessibleName = "Desligar o QuotaDesk";
-        shutdown.AccessibleDescription = "Encerra o programa e fecha a bandeja do sistema.";
-        _toolTips.SetToolTip(shutdown, "Desligar o QuotaDesk");
+        shutdown.AccessibleName = L.T("Desligar o QuotaDesk", "Quit QuotaDesk");
+        shutdown.AccessibleDescription = L.T("Encerra o programa e fecha a bandeja do sistema.", "Closes the program and removes it from the system tray.");
+        _toolTips.SetToolTip(shutdown, L.T("Desligar o QuotaDesk", "Quit QuotaDesk"));
         Controls.AddRange([minimize, shutdown]);
 
         var actions = new FlowLayoutPanel
@@ -91,14 +91,14 @@ internal sealed class LauncherForm : Form
             Location = new Point(22, 92), Size = new Size(576, 44), WrapContents = false,
             BackColor = Color.Transparent, FlowDirection = FlowDirection.LeftToRight
         };
-        actions.Controls.Add(Button("Abrir painel", Theme.Blue, () => OpenPanelRequested?.Invoke()));
+        actions.Controls.Add(Button(L.T("Abrir painel", "Open panel"), Theme.Blue, () => OpenPanelRequested?.Invoke()));
         // Short labels keep the startup checkbox on the row; the tooltip spells out the login.
         var connectOpenRouter = Button("+ OpenRouter", Color.FromArgb(47, 43, 76), () => ConnectOpenRouterRequested?.Invoke());
         var connectMagnific = Button("+ Magnific", Color.FromArgb(48, 18, 74), () => ConnectMagnificRequested?.Invoke());
-        _toolTips.SetToolTip(connectOpenRouter, "Conectar OpenRouter (abre o login no navegador)");
-        _toolTips.SetToolTip(connectMagnific, "Conectar Magnific (abre o login no navegador)");
+        _toolTips.SetToolTip(connectOpenRouter, L.T("Conectar OpenRouter (abre o login no navegador)", "Connect OpenRouter (opens the login in the browser)"));
+        _toolTips.SetToolTip(connectMagnific, L.T("Conectar Magnific (abre o login no navegador)", "Connect Magnific (opens the login in the browser)"));
         actions.Controls.AddRange([connectOpenRouter, connectMagnific]);
-        _startup.Text = "Iniciar com o Windows";
+        _startup.Text = L.T("Iniciar com o Windows", "Start with Windows");
         _startup.AutoSize = true;
         _startup.Margin = new Padding(12, 11, 0, 0);
         _startup.ForeColor = Theme.Text;
@@ -112,17 +112,18 @@ internal sealed class LauncherForm : Form
                 _loading = true;
                 _startup.Checked = Startup.IsEnabled;
                 _loading = false;
-                MessageBox.Show(this, "Não foi possível alterar a inicialização do Windows.", "QuotaDesk", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, L.T("Não foi possível alterar a inicialização do Windows.", "Could not change the Windows startup setting."), "QuotaDesk", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         };
         actions.Controls.Add(_startup);
         Controls.Add(actions);
 
-        var providerLabel = SectionLabel("Provedores", 22, 154);
+        var providerLabel = SectionLabel(L.T("Provedores", "Providers"), 22, 154);
         Controls.Add(providerLabel);
         var reorderHelp = new Label
         {
-            Text = "Arraste as linhas ou use ↑ / ↓ para mudar a ordem das listas. A sala mantém a ordem física das estações.",
+            Text = L.T("Arraste as linhas ou use ↑ / ↓ para mudar a ordem das listas. A sala mantém a ordem física das estações.",
+                "Drag the rows or use ↑ / ↓ to reorder the lists. The office keeps the physical order of the desks."),
             Location = new Point(22, 180), Size = new Size(576, 22), ForeColor = Theme.TextDim
         };
         Controls.Add(reorderHelp);
@@ -137,12 +138,12 @@ internal sealed class LauncherForm : Form
             Location = new Point(22, 464), Size = new Size(576, 40), WrapContents = false,
             FlowDirection = FlowDirection.LeftToRight
         };
-        reorder.Controls.Add(Button("Mover para cima", Color.FromArgb(34, 42, 64), () => MoveSelected(-1)));
-        reorder.Controls.Add(Button("Mover para baixo", Color.FromArgb(34, 42, 64), () => MoveSelected(1)));
+        reorder.Controls.Add(Button(L.T("Mover para cima", "Move up"), Color.FromArgb(34, 42, 64), () => MoveSelected(-1), "chevron-up"));
+        reorder.Controls.Add(Button(L.T("Mover para baixo", "Move down"), Color.FromArgb(34, 42, 64), () => MoveSelected(1), "chevron-down"));
         Controls.Add(reorder);
 
-        Controls.Add(SectionLabel("Barra na borda da tela", 22, 516));
-        var displayLabel = new Label { Text = "Monitor", Location = new Point(22, 548), Size = new Size(90, 28), ForeColor = Theme.TextDim };
+        Controls.Add(SectionLabel(L.T("Barra na borda da tela", "Edge bar"), 22, 516));
+        var displayLabel = new Label { Text = L.T("Monitor", "Display"), Location = new Point(22, 548), Size = new Size(90, 28), ForeColor = Theme.TextDim };
         _display.Location = new Point(112, 544);
         _display.Size = new Size(294, 30);
         StyleCombo(_display);
@@ -153,13 +154,13 @@ internal sealed class LauncherForm : Form
             _settings.WidgetDevice = choice.Screen.DeviceName;
             SettingsChanged?.Invoke();
         };
-        var edgeLabel = new Label { Text = "Borda", Location = new Point(422, 548), Size = new Size(58, 28), ForeColor = Theme.TextDim };
+        var edgeLabel = new Label { Text = L.T("Borda", "Edge"), Location = new Point(422, 548), Size = new Size(58, 28), ForeColor = Theme.TextDim };
         _edge.Location = new Point(480, 544);
         _edge.Size = new Size(118, 30);
         StyleCombo(_edge);
         _edge.Items.AddRange([
-            new EdgeChoice(WidgetEdge.Left, "Esquerda"), new EdgeChoice(WidgetEdge.Right, "Direita"),
-            new EdgeChoice(WidgetEdge.Top, "Em cima"), new EdgeChoice(WidgetEdge.Bottom, "Embaixo")
+            new EdgeChoice(WidgetEdge.Left, L.T("Esquerda", "Left")), new EdgeChoice(WidgetEdge.Right, L.T("Direita", "Right")),
+            new EdgeChoice(WidgetEdge.Top, L.T("Em cima", "Top")), new EdgeChoice(WidgetEdge.Bottom, L.T("Embaixo", "Bottom"))
         ]);
         _edge.SelectedIndexChanged += (_, _) =>
         {
@@ -167,7 +168,7 @@ internal sealed class LauncherForm : Form
             _settings.WidgetEdge = choice.Edge;
             SettingsChanged?.Invoke();
         };
-        _widgetPinned.Text = "Fixar barra lateral aberta (sempre exibir)";
+        _widgetPinned.Text = L.T("Fixar barra lateral aberta (sempre exibir)", "Keep the bar open (always show)");
         _widgetPinned.Location = new Point(22, 578);
         _widgetPinned.AutoSize = true;
         _widgetPinned.ForeColor = Theme.Text;
@@ -178,7 +179,7 @@ internal sealed class LauncherForm : Form
             _settings.WidgetPinned = _widgetPinned.Checked;
             SettingsChanged?.Invoke();
         };
-        _widgetNotch.Text = "Minimalista";
+        _widgetNotch.Text = L.T("Minimalista", "Minimal");
         _widgetNotch.Location = new Point(352, 578);
         _widgetNotch.AutoSize = true;
         _widgetNotch.ForeColor = Theme.Text;
@@ -197,10 +198,10 @@ internal sealed class LauncherForm : Form
             Location = new Point(22, 610), Size = new Size(576, 44), WrapContents = false,
             FlowDirection = FlowDirection.RightToLeft
         };
-        footer.Controls.Add(Button("Reiniciar com configuração", Color.FromArgb(47, 43, 76), () => RestartRequested?.Invoke()));
+        footer.Controls.Add(Button(L.T("Reiniciar com configuração", "Restart with settings"), Color.FromArgb(47, 43, 76), () => RestartRequested?.Invoke()));
         var restartHelp = new Label
         {
-            Text = "Reinicia o QuotaDesk e abre esta central, mantendo suas preferências.",
+            Text = L.T("Reinicia o QuotaDesk e abre esta central, mantendo suas preferências.", "Restarts QuotaDesk and opens this control center, keeping your preferences."),
             Location = new Point(22, 660), Size = new Size(576, 18), ForeColor = Theme.TextDim,
             Font = new Font("Segoe UI", 8.5f)
         };
@@ -269,10 +270,10 @@ internal sealed class LauncherForm : Form
         _list.DefaultCellStyle.ForeColor = Theme.Text;
         _list.DefaultCellStyle.SelectionBackColor = Color.FromArgb(24, 44, 66);
         _list.DefaultCellStyle.SelectionForeColor = Theme.Text;
-        _list.Columns.Add(new DataGridViewCheckBoxColumn { Name = "visible", HeaderText = "Visível", Width = 64 });
-        _list.Columns.Add(new DataGridViewTextBoxColumn { Name = "provider", HeaderText = "Ferramenta", Width = 258, ReadOnly = true });
-        var density = new DataGridViewComboBoxColumn { Name = "density", HeaderText = "Nível visual", Width = 230, FlatStyle = FlatStyle.Flat };
-        density.Items.AddRange("Só ícone", "Ícone + estado", "Dados completos");
+        _list.Columns.Add(new DataGridViewCheckBoxColumn { Name = "visible", HeaderText = L.T("Visível", "Visible"), Width = 64 });
+        _list.Columns.Add(new DataGridViewTextBoxColumn { Name = "provider", HeaderText = L.T("Ferramenta", "Tool"), Width = 258, ReadOnly = true });
+        var density = new DataGridViewComboBoxColumn { Name = "density", HeaderText = L.T("Nível visual", "Detail level"), Width = 230, FlatStyle = FlatStyle.Flat };
+        density.Items.AddRange(DensityLabel(ProviderDensity.IconOnly), DensityLabel(ProviderDensity.IconAndState), DensityLabel(ProviderDensity.Full));
         _list.Columns.Add(density);
         _list.DataError += (_, _) => { };
 
@@ -395,17 +396,15 @@ internal sealed class LauncherForm : Form
 
     private static string DensityLabel(ProviderDensity density) => density switch
     {
-        ProviderDensity.IconOnly => "Só ícone",
-        ProviderDensity.IconAndState => "Ícone + estado",
-        _ => "Dados completos"
+        ProviderDensity.IconOnly => L.T("Só ícone", "Icon only"),
+        ProviderDensity.IconAndState => L.T("Ícone + estado", "Icon + status"),
+        _ => L.T("Dados completos", "Full data")
     };
 
-    private static ProviderDensity ParseDensity(string value) => value switch
-    {
-        "Só ícone" => ProviderDensity.IconOnly,
-        "Ícone + estado" => ProviderDensity.IconAndState,
-        _ => ProviderDensity.Full
-    };
+    private static ProviderDensity ParseDensity(string value) =>
+        value == DensityLabel(ProviderDensity.IconOnly) ? ProviderDensity.IconOnly
+        : value == DensityLabel(ProviderDensity.IconAndState) ? ProviderDensity.IconAndState
+        : ProviderDensity.Full;
 
     private static Label SectionLabel(string text, int x, int y) => new()
     {
@@ -413,7 +412,7 @@ internal sealed class LauncherForm : Form
         Font = new Font("Segoe UI Semibold", 12, FontStyle.Bold)
     };
 
-    private static Button Button(string text, Color color, Action action)
+    private static Button Button(string text, Color color, Action action, string? icon = null)
     {
         var button = new Button
         {
@@ -422,9 +421,9 @@ internal sealed class LauncherForm : Form
             Margin = new Padding(0, 4, 8, 0), Cursor = Cursors.Hand
         };
         button.FlatAppearance.BorderColor = Color.FromArgb(76, 92, 128);
-        if (text is "Mover para cima" or "Mover para baixo")
+        if (icon is not null)
         {
-            var image = LucideIcons.Create(text == "Mover para cima" ? "chevron-up" : "chevron-down", 16, Theme.Text);
+            var image = LucideIcons.Create(icon, 16, Theme.Text);
             button.Image = image;
             button.TextImageRelation = TextImageRelation.ImageBeforeText;
             button.Disposed += (_, _) => image.Dispose();

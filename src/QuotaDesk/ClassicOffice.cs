@@ -373,8 +373,8 @@ internal sealed class ClassicOffice : IDisposable
                     }
                     var ink = frame / 5 % 2 == 0 ? Color.FromArgb(240, 242, 248) : Color.FromArgb(170, 176, 196);
                     Fill(sg, Color.FromArgb(200, 16, 18, 26), 2, h / 2 - 11, w - 4, 21);
-                    PixelFont.Draw(sg, "SEM", (w - PixelFont.Measure("SEM", 1, 1)) / 2f, h / 2 - 9, 1, ink, 1);
-                    PixelFont.Draw(sg, "SINAL", (w - PixelFont.Measure("SINAL", 1, 1)) / 2f, h / 2, 1, ink, 1);
+                    PixelFont.Draw(sg, L.T("SEM", "NO"), (w - PixelFont.Measure(L.T("SEM", "NO"), 1, 1)) / 2f, h / 2 - 9, 1, ink, 1);
+                    PixelFont.Draw(sg, L.T("SINAL", "SIGNAL"), (w - PixelFont.Measure(L.T("SINAL", "SIGNAL"), 1, 1)) / 2f, h / 2, 1, ink, 1);
                     break;
             }
         }

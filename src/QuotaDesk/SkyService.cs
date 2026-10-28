@@ -23,29 +23,29 @@ internal sealed record SkyState(
     {
         var weather = Weather switch
         {
-            Weather.Clear => Night > 0.5f ? "Céu limpo" : "Ensolarado",
-            Weather.PartlyCloudy => "Parcialmente nublado",
-            Weather.Cloudy => "Nublado",
-            Weather.Fog => "Neblina",
-            Weather.Drizzle => "Garoa",
-            Weather.Rain => "Chuva",
-            Weather.Storm => "Tempestade",
-            _ => "Neve"
+            Weather.Clear => Night > 0.5f ? L.T("Céu limpo", "Clear sky") : L.T("Ensolarado", "Sunny"),
+            Weather.PartlyCloudy => L.T("Parcialmente nublado", "Partly cloudy"),
+            Weather.Cloudy => L.T("Nublado", "Cloudy"),
+            Weather.Fog => L.T("Neblina", "Fog"),
+            Weather.Drizzle => L.T("Garoa", "Drizzle"),
+            Weather.Rain => L.T("Chuva", "Rain"),
+            Weather.Storm => L.T("Tempestade", "Storm"),
+            _ => L.T("Neve", "Snow")
         };
         var temp = Temperature is { } t ? $" · {t:0}°C" : "";
-        var source = WeatherLive ? $"{Place} · {weather}{temp}" : $"{Place} · clima real desativado";
+        var source = WeatherLive ? $"{Place} · {weather}{temp}" : L.T($"{Place} · clima real desativado", $"{Place} · live weather off");
         var moon = MoonPhase switch
         {
-            < 0.03 or > 0.97 => "lua nova",
-            < 0.22 => "lua crescente",
-            < 0.28 => "quarto crescente",
-            < 0.47 => "crescente gibosa",
-            < 0.53 => "lua cheia",
-            < 0.72 => "minguante gibosa",
-            < 0.78 => "quarto minguante",
-            _ => "lua minguante"
+            < 0.03 or > 0.97 => L.T("lua nova", "new moon"),
+            < 0.22 => L.T("lua crescente", "waxing crescent"),
+            < 0.28 => L.T("quarto crescente", "first quarter"),
+            < 0.47 => L.T("crescente gibosa", "waxing gibbous"),
+            < 0.53 => L.T("lua cheia", "full moon"),
+            < 0.72 => L.T("minguante gibosa", "waning gibbous"),
+            < 0.78 => L.T("quarto minguante", "last quarter"),
+            _ => L.T("lua minguante", "waning crescent")
         };
-        return $"{source}\nNascer {Sunrise:HH:mm} · pôr {Sunset:HH:mm} · {moon}";
+        return L.T($"{source}\nNascer {Sunrise:HH:mm} · pôr {Sunset:HH:mm} · {moon}", $"{source}\nSunrise {Sunrise:HH:mm} · sunset {Sunset:HH:mm} · {moon}");
     }
 }
 
@@ -168,7 +168,7 @@ internal sealed class SkyService : IDisposable
     {
         var state = Compute(now, _settings, _live is { } l && l.Day == now.Date ? l : null);
         return LastError is not null && !state.WeatherLive && _settings.WeatherEnabled
-            ? state with { Place = $"{state.Place} (clima indisponível agora)" } : state;
+            ? state with { Place = L.T($"{state.Place} (clima indisponível agora)", $"{state.Place} (weather unavailable now)") } : state;
     }
 
     /// <summary>Pure function so previews can render any hour and any weather.</summary>

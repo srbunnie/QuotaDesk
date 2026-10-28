@@ -13,7 +13,7 @@ internal static class NotchForecast
 {
     public static (string Text, Color Color)? For(LimitWindow w, DateTimeOffset now, bool stale)
     {
-        if (stale) return ("Leitura antiga, sem previsão", Theme.TextFaint);
+        if (stale) return (L.T("Leitura antiga, sem previsão", "Old reading, no forecast"), Theme.TextFaint);
         if (w.Credits is { } credits)
         {
             var text = Capitalize(credits.DepletionText(now));
@@ -25,7 +25,7 @@ internal static class NotchForecast
             return (text, left < TimeSpan.FromDays(3) ? Theme.Red : left < TimeSpan.FromDays(10) ? Theme.Amber : Theme.Teal);
         }
         if (w.UsedRounded >= 100)
-            return ("Esgotada" + (w.Countdown(now) is { } back ? $" · volta em {back}" : ""), Theme.Exhausted);
+            return (L.T("Esgotada", "Used up") + (w.Countdown(now) is { } back ? L.T($" · volta em {back}", $" · back in {back}") : ""), Theme.Exhausted);
         if (w.Depletion(now) is { } depletion)
         {
             if (depletion.BeforeReset)
@@ -33,29 +33,29 @@ internal static class NotchForecast
                 var left = depletion.At - now;
                 var local = depletion.At.ToLocalTime();
                 var when = local.Date == now.LocalDateTime.Date ? local.ToString("HH:mm", CultureInfo.InvariantCulture)
-                    : local.ToString("ddd HH:mm", CultureInfo.GetCultureInfo("pt-BR")).Replace(".", "");
-                return ($"Esgota em ~{LimitWindow.Span(left)} ({when})", left < TimeSpan.FromHours(1) ? Theme.Exhausted : Theme.Red);
+                    : local.ToString("ddd HH:mm", L.Culture).Replace(".", "");
+                return (L.T($"Esgota em ~{LimitWindow.Span(left)} ({when})", $"Runs out in ~{LimitWindow.Span(left)} ({when})"), left < TimeSpan.FromHours(1) ? Theme.Exhausted : Theme.Red);
             }
             var pace = w.PacePercent(now) ?? 100;
-            return ($"Dura até renovar · sobram ~{Math.Clamp(100 - w.UsedPercent * 100 / pace, 0, 100):0}%", Theme.Teal);
+            return (L.T($"Dura até renovar · sobram ~{Math.Clamp(100 - w.UsedPercent * 100 / pace, 0, 100):0}%", $"Lasts until reset · ~{Math.Clamp(100 - w.UsedPercent * 100 / pace, 0, 100):0}% left"), Theme.Teal);
         }
-        return w.Kind != WindowKind.Other && w.ResetsAt is not null ? ("Previsão após mais uso", Theme.TextFaint) : null;
+        return w.Kind != WindowKind.Other && w.ResetsAt is not null ? (L.T("Previsão após mais uso", "Forecast after more use"), Theme.TextFaint) : null;
     }
 
     /// <summary>The forecast in a few words for the top line ("Esgota em ~1d 14h"), or null when there is none.</summary>
     public static string? Short(LimitWindow w, DateTimeOffset now, bool stale)
     {
         if (stale) return null;
-        if (w.UsedRounded >= 100) return "Esgotada";
+        if (w.UsedRounded >= 100) return L.T("Esgotada", "Used up");
         if (w.Depletion(now) is not { } depletion) return null;
-        return depletion.BeforeReset ? $"Esgota em ~{LimitWindow.Span(depletion.At - now)}" : "Dura até renovar";
+        return depletion.BeforeReset ? L.T($"Esgota em ~{LimitWindow.Span(depletion.At - now)}", $"Runs out in ~{LimitWindow.Span(depletion.At - now)}") : L.T("Dura até renovar", "Lasts until reset");
     }
 
     public static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>How far ahead of (or behind) the even pace the window is, in plain words.</summary>
     public static (string Text, Color Color)? Pace(LimitWindow w, DateTimeOffset now) => w.PaceDelta(now) is { } delta
-        ? (delta > 3 ? $"{delta:0} pts acima do ritmo" : delta < -3 ? $"{-delta:0} pts de folga" : "no ritmo", Theme.PaceColor(delta))
+        ? (delta > 3 ? L.T($"{delta:0} pts acima do ritmo", $"{delta:0} pts over pace") : delta < -3 ? L.T($"{-delta:0} pts de folga", $"{-delta:0} pts under pace") : L.T("no ritmo", "on pace"), Theme.PaceColor(delta))
         : null;
 }
 
@@ -135,10 +135,10 @@ internal sealed class NotchForm : Form
             }
             OpenRequested?.Invoke();
         };
-        var pin = new ToolStripMenuItem("Manter a barra aberta", null, (_, _) => TogglePinned());
+        var pin = new ToolStripMenuItem(L.T("Manter a barra aberta", "Keep the bar open"), null, (_, _) => TogglePinned());
         _menu.Items.Add(pin);
-        _menu.Items.Add("Abrir painel", null, (_, _) => OpenRequested?.Invoke());
-        _menu.Items.Add("Usar barra de anéis", null, (_, _) => StyleSwitchRequested?.Invoke());
+        _menu.Items.Add(L.T("Abrir painel", "Open panel"), null, (_, _) => OpenRequested?.Invoke());
+        _menu.Items.Add(L.T("Usar barra de anéis", "Use the rings bar"), null, (_, _) => StyleSwitchRequested?.Invoke());
         _menu.Opening += (_, _) => pin.Checked = Pinned;
         _menu.Closed += (_, _) => Evaluate();
         ContextMenuStrip = _menu;
@@ -503,12 +503,12 @@ internal sealed class NotchForm : Form
         DockForm.DrawLogo(g, agent.Id, new RectangleF(x, y, 22, 22));
         DrawText(g, agent.Name, Theme.Font("display", 16), Theme.Text, new RectangleF(x + 30, y, width - 30, 22), StringAlignment.Near);
         if (agent.Quota.Stale)
-            DrawText(g, "desatualizado", Theme.Font("number", 11), Theme.Amber, new RectangleF(x + width - 110, y, 110, 22), StringAlignment.Far);
+            DrawText(g, L.T("desatualizado", "out of date"), Theme.Font("number", 11), Theme.Amber, new RectangleF(x + width - 110, y, 110, 22), StringAlignment.Far);
         y += 22 + 16;
         var windows = DockForm.PickWindows(agent);
         if (windows.Count == 0)
         {
-            var message = agent.ServiceHealth is { } health ? $"Serviço: {StateText.Label(agent)}" : "Cotas indisponíveis";
+            var message = agent.ServiceHealth is { } health ? L.T($"Serviço: {StateText.Label(agent)}", $"Service: {StateText.Label(agent)}") : L.T("Cotas indisponíveis", "Limits unavailable");
             DrawText(g, message, Theme.Font("number", 13), Theme.TextDim, new RectangleF(x, y, width, 20), StringAlignment.Near);
             return;
         }
@@ -545,7 +545,7 @@ internal sealed class NotchForm : Form
             g.FillPath(brush, path);
         }
         // Row 3: used share and how it compares with an even spend.
-        var used = w.Amount is null ? $"{w.UsedRounded}% usado" : $"{w.UsedRounded}% usado · {w.Amount}";
+        var used = w.Amount is null ? L.T($"{w.UsedRounded}% usado", $"{w.UsedRounded}% used") : L.T($"{w.UsedRounded}% usado · {w.Amount}", $"{w.UsedRounded}% used · {w.Amount}");
         DrawText(g, used, small, Theme.Label, new RectangleF(area.X, area.Y + 36, area.Width * 0.6f, 16), StringAlignment.Near);
         if (!agent.Quota.Stale && NotchForecast.Pace(w, now) is { } pace)
             DrawText(g, pace.Text, small, pace.Color, new RectangleF(area.X + area.Width * 0.5f, area.Y + 36, area.Width * 0.5f, 16), StringAlignment.Far);

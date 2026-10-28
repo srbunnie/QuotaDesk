@@ -51,8 +51,8 @@ internal sealed partial class MonitorForm
     private void PaintTitle(Graphics g)
     {
         var now = DateTime.Now;
-        var pt = CultureInfo.GetCultureInfo("pt-BR");
-        var date = now.ToString("ddd, dd/MM", pt).Replace(".", "").ToUpperInvariant();
+        var pt = L.Culture;
+        var date = now.ToString(L.T("ddd, dd/MM", "ddd, MM/dd"), pt).Replace(".", "").ToUpperInvariant();
         var time = now.ToString("HH:mm");
         // Header actions sit on the title row, left of the menu button; anything they would cover is left out.
         var free = Settings.ShowPanelHeader ? HeaderButtonRect(0).X - 8 : PanelMenuRect.X - 8;
@@ -86,7 +86,7 @@ internal sealed partial class MonitorForm
             PixelFont.Draw(g, "DESK", x + quotaWidth + 4 + 1, 24, scale, Theme.Orange, 4, bold: true);
             if (LogicalWidth >= 600)
             {
-                const string subtitle = "MONITOR DE IA // LOCAL";
+                var subtitle = L.T("MONITOR DE IA // LOCAL", "AI MONITOR // LOCAL");
                 var subtitleFont = Theme.Font("mono", 12.5f);
                 var gap = Math.Max(0, (titleWidth - g.MeasureString(subtitle, subtitleFont, 1000, Typographic).Width) / (subtitle.Length - 1));
                 Tracked(g, subtitle, subtitleFont, Color.FromArgb(180, 190, 218), x, 54, gap);
@@ -153,17 +153,17 @@ internal sealed partial class MonitorForm
 
         var label = kind switch
         {
-            WindowKind.Weekly => "USO SEMANAL",
-            WindowKind.FiveHour => "USO 5 HORAS",
-            _ when balance => "SALDO",
-            _ when agent.ServiceHealth is not null && noData => "SERVIÇO",
-            _ => "USO POR MODELO"
+            WindowKind.Weekly => L.T("USO SEMANAL", "WEEKLY USAGE"),
+            WindowKind.FiveHour => L.T("USO 5 HORAS", "5H USAGE"),
+            _ when balance => L.T("SALDO", "BALANCE"),
+            _ when agent.ServiceHealth is not null && noData => L.T("SERVIÇO", "SERVICE"),
+            _ => L.T("USO POR MODELO", "USAGE BY MODEL")
         };
         PixelFont.Draw(g, AsciiUpper(label, 16), x, r.Y + 108, 2, labelColor);
         if (agent.Id == "antigravity" && ModelChoice.Options.Count > 1)
             RightText(g, $"‹ {ModelChoice.Index + 1}/{ModelChoice.Options.Count} ›", Theme.Font("mono", 11), look.Accent, right - (hasBoth ? 28 : 0), r.Y + 110);
         if (main?.Renewed == true)
-            PixelFont.Draw(g, "RENOVADA", right - PixelFont.Measure("RENOVADA", 2) - (hasBoth ? 28 : 0), r.Y + 108, 2, Theme.Green);
+            PixelFont.Draw(g, L.T("RENOVADA", "RESET"), right - PixelFont.Measure(L.T("RENOVADA", "RESET"), 2) - (hasBoth ? 28 : 0), r.Y + 108, 2, Theme.Green);
         if (main?.Renewed == true) stale = false; // a renewal is certain from the clock, not an old reading
         if (hasBoth)
         {
@@ -187,7 +187,7 @@ internal sealed partial class MonitorForm
         {
             PixelFont.Draw(g, "--", x, r.Y + 132, 5, Color.FromArgb(70, 78, 104), 5, bold: true);
             var why = agent.ServiceHealth is { } health && noData ? StateText.Label(agent).ToLowerInvariant()
-                : noData ? "sem dados" : mainExpired ? "aguardando" : "não informado";
+                : noData ? L.T("sem dados", "no data") : mainExpired ? L.T("aguardando", "awaiting") : L.T("não informado", "not reported");
             RightText(g, why, Theme.Font("mono", 12.5f), noData && agent.ServiceHealth is null ? Theme.Amber : labelColor, right, r.Y + 146);
         }
         else
@@ -199,7 +199,7 @@ internal sealed partial class MonitorForm
             PixelFont.Draw(g, $"{used}%", x, r.Y + 132, 5, numberColor, 5, bold: true);
             // A balance names its amount in the tool's own unit; a quota says how much is left.
             RightText(g, main.Amount ?? $"{main.RemainingPercent}%", Theme.Font("mono", 14f, FontStyle.Bold), labelColor, right, r.Y + 134);
-            RightText(g, main.Amount is null ? "restante" : "disponível", Theme.Font("mono", 13f), labelColor, right, r.Y + 152);
+            RightText(g, main.Amount is null ? L.T("restante", "left") : L.T("disponível", "available"), Theme.Font("mono", 13f), labelColor, right, r.Y + 152);
 
             if (used > 0)
             {
@@ -229,7 +229,7 @@ internal sealed partial class MonitorForm
         {
             // Its own row, with its own pace (+N above / -N of slack), so nothing here reads as belonging to the main bar.
             var secondDelta = stale ? null : other.PaceDelta(now);
-            var otherLabel = $"{(other.Kind == WindowKind.Weekly ? "SEM" : "5H")} {other.UsedRounded}%" +
+            var otherLabel = $"{(other.Kind == WindowKind.Weekly ? L.T("SEM", "WK") : "5H")} {other.UsedRounded}%" +
                              (secondDelta is { } sd && Math.Abs(sd) > 3 ? $" {(sd > 0 ? "+" : "-")}{Math.Abs(sd):0}" : "");
             if (secondDelta is { } tint) labelColor = Theme.PaceColor(tint);
             var labelFont = Theme.Font("mono", 11.5f, FontStyle.Bold);
@@ -254,7 +254,7 @@ internal sealed partial class MonitorForm
         // A credit balance shows its burn rate on the row the second bar would use.
         else if (main?.Credits is { } credits && credits.PerDay is { } perDay)
         {
-            var text = $"GASTO ~{credits.Format(perDay)}/DIA" +(credits.EmptyAt is { } empty ? $" · ACABA {empty.LocalDateTime:dd/MM}" : "");
+            var text = L.T($"GASTO ~{credits.Format(perDay)}/DIA", $"SPEND ~{credits.Format(perDay)}/DAY") +(credits.EmptyAt is { } empty ? L.T($" · ACABA {empty.LocalDateTime:dd/MM}", $" · OUT {empty.LocalDateTime:MM/dd}") : "");
             using var rate = new SolidBrush(stale ? Theme.TextFaint : Theme.Label);
             using var format = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
             g.DrawString(text, Theme.Font("mono", 11.5f, FontStyle.Bold), rate, new RectangleF(x, r.Y + 211, right - x, 18), format);
@@ -265,13 +265,13 @@ internal sealed partial class MonitorForm
             var resetFont = Theme.Font("mono", 11.5f, FontStyle.Bold);
             var expiry = resets.NextExpiry(now);
             var text = resets.Available == 0 ? "RESETS 0"
-                : $"RESETS {resets.Available}" + (expiry is { } e ? $" · VENCE {e.LocalDateTime:dd/MM}" : "");
+                : $"RESETS {resets.Available}" + (expiry is { } e ? L.T($" · VENCE {e.LocalDateTime:dd/MM}", $" · EXPIRES {e.LocalDateTime:MM/dd}") : "");
             using var resetBrush = new SolidBrush(resets.Available > 0 ? Theme.Green : Theme.TextFaint);
             g.DrawString(text, resetFont, resetBrush, x, r.Y + 211);
         }
 
         var freshness = agent.Quota.UpdatedAt is { } updated
-            ? $"{(stale ? "DESATUALIZADO" : "LEITURA")} {updated.LocalDateTime:HH:mm}" : noData && agent.ServiceHealth is not null ? "STATUS DO SERVIÇO" : "AGUARDANDO DADOS";
+            ? $"{(stale ? L.T("DESATUALIZADO", "OUT OF DATE") : L.T("LEITURA", "READ AT"))} {updated.LocalDateTime:HH:mm}" : noData && agent.ServiceHealth is not null ? L.T("STATUS DO SERVIÇO", "SERVICE STATUS") : L.T("AGUARDANDO DADOS", "AWAITING DATA");
         if (agent.Id == "antigravity" && main is not null)
         {
             var name = main.Group ?? main.Label;

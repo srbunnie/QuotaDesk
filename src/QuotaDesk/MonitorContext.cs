@@ -62,6 +62,7 @@ internal sealed class MonitorContext : ApplicationContext
             if (id == "openrouter" && _sources.OfType<OpenRouterAgent>().SingleOrDefault() is { } openRouter) _ = openRouter.SwitchAccountAsync();
         };
         _form.ShutdownRequested += Exit;
+        _form.LanguageChangeRequested += ChangeLanguage;
         _form.Settings = _settings;
         if (_settings.OpenClaudeTerminalOnStart) ClaudeQuota.OpenTerminal(onlyIfStale: true);
         _form.TopMost = _settings.AlwaysOnTop;
@@ -96,21 +97,21 @@ internal sealed class MonitorContext : ApplicationContext
         foreach (var source in _sources) source.Changed += ScheduleUpdate;
 
         var menu = new ContextMenuStrip { Renderer = new NeonMenuRenderer(), ShowImageMargin = true, ShowCheckMargin = true };
-        menu.Items.Add("Abrir central de controle", null, (_, _) => ShowLauncher());
-        menu.Items.Add("Reiniciar com configuração", null, (_, _) => Restart());
-        menu.Items.Add("Abrir painel", null, (_, _) => Open());
-        menu.Items.Add("Atualizar agora", null, (_, _) => _ = RefreshAllAsync(true));
+        menu.Items.Add(L.T("Abrir central de controle", "Open control center"), null, (_, _) => ShowLauncher());
+        menu.Items.Add(L.T("Reiniciar com configuração", "Restart with settings"), null, (_, _) => Restart());
+        menu.Items.Add(L.T("Abrir painel", "Open panel"), null, (_, _) => Open());
+        menu.Items.Add(L.T("Atualizar agora", "Refresh now"), null, (_, _) => _ = RefreshAllAsync(true));
         if (_sources.OfType<OpenRouterAgent>().SingleOrDefault() is { } openRouter)
-            menu.Items.Add("Conectar OpenRouter", null, async (_, _) => await openRouter.ConnectAsync());
+            menu.Items.Add(L.T("Conectar OpenRouter", "Connect OpenRouter"), null, async (_, _) => await openRouter.ConnectAsync());
         if (_sources.OfType<MagnificAgent>().SingleOrDefault() is { } magnific)
-            menu.Items.Add("Conectar Magnific", null, async (_, _) => await magnific.ConnectAsync());
-        _pinItem = new ToolStripMenuItem("Sempre no topo", null, (_, _) =>
+            menu.Items.Add(L.T("Conectar Magnific", "Connect Magnific"), null, async (_, _) => await magnific.ConnectAsync());
+        _pinItem = new ToolStripMenuItem(L.T("Sempre no topo", "Always on top"), null, (_, _) =>
         {
             _form.AlwaysOnTop = !_form.AlwaysOnTop;
             _pinItem!.Checked = _form.TopMost;
         });
         menu.Items.Add(_pinItem);
-        _notifyItem = new ToolStripMenuItem("Avisar quando a cota renovar", null, (_, _) =>
+        _notifyItem = new ToolStripMenuItem(L.T("Avisar quando a cota renovar", "Notify when the limit resets"), null, (_, _) =>
         {
             _settings.NotifyRenewals = !_settings.NotifyRenewals;
             _settings.Save();
@@ -118,7 +119,7 @@ internal sealed class MonitorContext : ApplicationContext
         }) { Checked = _settings.NotifyRenewals };
         menu.Items.Add(_notifyItem);
         ToolStripMenuItem? dockItem = null;
-        dockItem = new ToolStripMenuItem("Barra lateral na borda da tela", null, (_, _) =>
+        dockItem = new ToolStripMenuItem(L.T("Barra lateral na borda da tela", "Edge bar"), null, (_, _) =>
         {
             _settings.SideDock = !_settings.SideDock;
             _settings.Save();
@@ -127,16 +128,16 @@ internal sealed class MonitorContext : ApplicationContext
         }) { Checked = _settings.SideDock };
         menu.Items.Add(dockItem);
         ToolStripMenuItem? notchItem = null;
-        notchItem = new ToolStripMenuItem("Barra minimalista", null, (_, _) => SwitchDockStyle())
+        notchItem = new ToolStripMenuItem(L.T("Barra minimalista", "Minimal bar"), null, (_, _) => SwitchDockStyle())
         { Checked = UseNotch };
         menu.Items.Add(notchItem);
-        var miniItem = new ToolStripMenuItem("Mini monitor (tela secundária)");
+        var miniItem = new ToolStripMenuItem(L.T("Mini monitor (tela secundária)", "Mini monitor (second screen)"));
         miniItem.DropDown.Renderer = menu.Renderer;
         if (miniItem.DropDown is ToolStripDropDownMenu miniDrop) { miniDrop.ShowImageMargin = false; miniDrop.ShowCheckMargin = true; }
         miniItem.DropDownOpening += (_, _) => BuildMiniMenu(miniItem);
         miniItem.DropDownItems.Add("…");
         menu.Items.Add(miniItem);
-        _weatherItem = new ToolStripMenuItem("Clima real na janela (Open-Meteo)", null, (_, _) =>
+        _weatherItem = new ToolStripMenuItem(L.T("Clima real na janela (Open-Meteo)", "Real weather in the window (Open-Meteo)"), null, (_, _) =>
         {
             if (_settings.Latitude is null) { _ = ChooseCityAsync(); return; }
             _settings.WeatherEnabled = !_settings.WeatherEnabled;
@@ -147,18 +148,29 @@ internal sealed class MonitorContext : ApplicationContext
         menu.Items.Add(_weatherItem);
         menu.Items.Add(_cityItem);
         menu.Items.Add(new ToolStripSeparator());
-        var startupItem = new ToolStripMenuItem("Iniciar com o Windows", null, (sender, _) =>
+        var startupItem = new ToolStripMenuItem(L.T("Iniciar com o Windows", "Start with Windows"), null, (sender, _) =>
         {
             var item = (ToolStripMenuItem)sender!;
             Startup.Set(!Startup.IsEnabled);
             item.Checked = Startup.IsEnabled;
         });
         menu.Items.Add(startupItem);
+        // Language switcher: the label is bilingual so it can be found in either language.
+        var languageItem = new ToolStripMenuItem("Idioma / Language");
+        for (var i = 0; i < L.Choices.Length; i++)
+        {
+            var choice = L.Choices[i];
+            languageItem.DropDownItems.Add(new ToolStripMenuItem(L.ChoiceLabels[i], null, (_, _) => ChangeLanguage(choice))
+            {
+                Checked = string.Equals(_settings.Language, choice, StringComparison.OrdinalIgnoreCase)
+            });
+        }
+        menu.Items.Add(languageItem);
         menu.Items.Add(new ToolStripSeparator());
         var powerImage = LucideIcons.Create("power", 20, Color.FromArgb(255, 172, 188));
         var power = new ToolStripMenuItem("", powerImage, (_, _) => Exit())
         {
-            AccessibleName = "Desligar o QuotaDesk", ToolTipText = "Desligar o QuotaDesk"
+            AccessibleName = L.T("Desligar o QuotaDesk", "Quit QuotaDesk"), ToolTipText = L.T("Desligar o QuotaDesk", "Quit QuotaDesk")
         };
         power.Disposed += (_, _) => powerImage.Dispose();
         menu.ShowItemToolTips = true;
@@ -170,7 +182,7 @@ internal sealed class MonitorContext : ApplicationContext
             notchItem.Checked = UseNotch;
             _notifyItem.Checked = _settings.NotifyRenewals;
             _weatherItem.Checked = _settings.WeatherEnabled;
-            _cityItem.Text = $"Cidade do clima: {_settings.City ?? "definir…"}";
+            _cityItem.Text = L.T($"Cidade do clima: {_settings.City ?? "definir…"}", $"Weather city: {_settings.City ?? "set…"}");
         };
 
         _icon = new NotifyIcon { Text = AppPaths.Title, ContextMenuStrip = menu, Visible = true };
@@ -313,16 +325,17 @@ internal sealed class MonitorContext : ApplicationContext
     private void BuildMiniMenu(ToolStripMenuItem root)
     {
         root.DropDownItems.Clear();
-        root.DropDownItems.Add(new ToolStripMenuItem("Ligado", null, (_, _) =>
+        root.DropDownItems.Add(new ToolStripMenuItem(L.T("Ligado", "On"), null, (_, _) =>
         {
             _settings.MiniScreen = !_settings.MiniScreen;
             _settings.Save();
             ApplyMini();
             if (_settings.MiniScreen && !_mini.Visible && !_serial.Connected)
-                MessageBox.Show("Não encontrei o mini monitor. Conecte o cabo e escolha a tela na lista (Mini monitor › Tela). Telas USB-C de 3,5\" que só aparecem como porta serial são detectadas sozinhas.", "QuotaDesk");
+                MessageBox.Show(L.T("Não encontrei o mini monitor. Conecte o cabo e escolha a tela na lista (Mini monitor › Tela). Telas USB-C de 3,5\" que só aparecem como porta serial são detectadas sozinhas.",
+                    "Mini monitor not found. Connect the cable and pick the screen in the list (Mini monitor › Screen). 3.5\" USB-C screens that only show up as a serial port are detected automatically."), "QuotaDesk");
         }) { Checked = _settings.MiniScreen });
         root.DropDownItems.Add(new ToolStripSeparator());
-        root.DropDownItems.Add(new ToolStripMenuItem("Tela: detectar sozinho (320×480 ou 480×320)", null, (_, _) =>
+        root.DropDownItems.Add(new ToolStripMenuItem(L.T("Tela: detectar sozinho (320×480 ou 480×320)", "Screen: detect automatically (320×480 or 480×320)"), null, (_, _) =>
         {
             _settings.MiniScreenDevice = null;
             _settings.Save();
@@ -331,18 +344,18 @@ internal sealed class MonitorContext : ApplicationContext
         foreach (var screen in Screen.AllScreens)
         {
             var device = screen.DeviceName;
-            var item = new ToolStripMenuItem("Tela: " + MiniScreenForm.Describe(screen), null, (_, _) =>
+            var item = new ToolStripMenuItem(L.T("Tela: ", "Screen: ") + MiniScreenForm.Describe(screen), null, (_, _) =>
             {
                 _settings.MiniScreenDevice = device;
                 _settings.Save();
                 ApplyMini();
             }) { Checked = _settings.MiniScreenDevice == device };
             // Never cover the screen where the work happens by accident.
-            if (screen.Primary) item.ToolTipText = "É a sua tela principal: o mini painel a cobriria por inteiro.";
+            if (screen.Primary) item.ToolTipText = L.T("É a sua tela principal: o mini painel a cobriria por inteiro.", "This is your main screen: the mini panel would cover all of it.");
             root.DropDownItems.Add(item);
         }
         root.DropDownItems.Add(new ToolStripSeparator());
-        root.DropDownItems.Add(new ToolStripMenuItem("Tela USB serial 3,5\": " + _serial.Status) { Enabled = false });
+        root.DropDownItems.Add(new ToolStripMenuItem(L.T("Tela USB serial 3,5\": ", "3.5\" USB serial screen: ") + _serial.Status) { Enabled = false });
     }
 
     private async Task ChooseCityAsync()
@@ -354,7 +367,7 @@ internal sealed class MonitorContext : ApplicationContext
             var found = await SkyService.GeocodeAsync(dialog.City);
             if (found is null)
             {
-                MessageBox.Show($"Não encontrei \"{dialog.City}\". Tente \"Cidade, UF\".", "QuotaDesk");
+                MessageBox.Show(L.T($"Não encontrei \"{dialog.City}\". Tente \"Cidade, UF\".", $"Could not find \"{dialog.City}\". Try \"City, State\"."), "QuotaDesk");
                 return;
             }
             (_settings.City, _settings.Latitude, _settings.Longitude) = found.Value;
@@ -364,7 +377,7 @@ internal sealed class MonitorContext : ApplicationContext
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
         {
-            MessageBox.Show("Não foi possível consultar a cidade agora (sem internet?).", "QuotaDesk");
+            MessageBox.Show(L.T("Não foi possível consultar a cidade agora (sem internet?).", "Could not look up the city right now (no internet?)."), "QuotaDesk");
         }
     }
 
@@ -413,9 +426,10 @@ internal sealed class MonitorContext : ApplicationContext
         if (!_settings.NotifyPending || _exiting) return;
         if (_settings.Sound) System.Media.SystemSounds.Exclamation.Play();
         var first = items[0];
-        var text = items.Count == 1 ? $"{first.Provider}: {first.Project} — {first.Kind.ToLowerInvariant()}" : $"{items.Count} sessões aguardando você";
+        var text = items.Count == 1 ? $"{first.Provider}: {first.Project} — {first.Kind.ToLowerInvariant()}"
+            : L.T($"{items.Count} sessões aguardando você", $"{items.Count} sessions waiting for you");
         _balloonIsPending = true;
-        _icon.ShowBalloonTip(8_000, "Aguardando você", text + "\nClique para ver a lista.", ToolTipIcon.Warning);
+        _icon.ShowBalloonTip(8_000, L.T("Aguardando você", "Waiting for you"), text + L.T("\nClique para ver a lista.", "\nClick to see the list."), ToolTipIcon.Warning);
     }
 
     private bool _balloonIsPending;
@@ -460,7 +474,7 @@ internal sealed class MonitorContext : ApplicationContext
             }
             catch
             {
-                byId[module.Id] = new UnavailableAgentSource(module.Id, module.DisplayName, "Falha ao ler o estado da ferramenta.").GetStatus(now);
+                byId[module.Id] = new UnavailableAgentSource(module.Id, module.DisplayName, L.T("Falha ao ler o estado da ferramenta.", "Could not read the tool's state.")).GetStatus(now);
             }
         }
 
@@ -527,18 +541,18 @@ internal sealed class MonitorContext : ApplicationContext
                 return $"{name}: {StateText.Label(a).ToLowerInvariant()}";
             var parts = new List<string>();
             if (a.Quota.Find(WindowKind.FiveHour) is { } f) parts.Add($"5h {f.RemainingPercent}%");
-            if (a.Quota.Find(WindowKind.Weekly) is { } w) parts.Add($"sem {w.RemainingPercent}%");
+            if (a.Quota.Find(WindowKind.Weekly) is { } w) parts.Add(L.T($"sem {w.RemainingPercent}%", $"wk {w.RemainingPercent}%"));
             if (a.Id == "antigravity" && ModelChoice.Current(a) is { } model)
             {
                 if (model.Group is { } group) parts.Insert(0, group);
                 else parts.Add($"{model.Label} {model.RemainingPercent}%");
             }
             var staleShown = a.Quota.Stale && a.Quota.Windows.Any(w => !w.Renewed);
-            var quota = parts.Count > 0 ? string.Join(" · ", parts) + (staleShown ? " (antigo)" : "") : "sem dados";
+            var quota = parts.Count > 0 ? string.Join(" · ", parts) + (staleShown ? L.T(" (antigo)", " (old)") : "") : L.T("sem dados", "no data");
             return $"{name}: {quota} · {StateText.Label(a).ToLowerInvariant()}";
         }
         var lines = agents.Select(Short).Where(line => line.Length > 0).ToList();
-        var tooltip = lines.Count == 0 ? AppPaths.Title : AppPaths.Title + " (% restante)\n" + string.Join("\n", lines);
+        var tooltip = lines.Count == 0 ? AppPaths.Title : AppPaths.Title + L.T(" (% restante)\n", " (% left)\n") + string.Join("\n", lines);
         _icon.Text = tooltip.Length <= 127 ? tooltip : tooltip[..127];
     }
 
@@ -582,6 +596,15 @@ internal sealed class MonitorContext : ApplicationContext
     {
         RestartRequested = true;
         Exit();
+    }
+
+    /// <summary>Saves the language and restarts: menus and windows are built once, in the language chosen at startup.</summary>
+    private void ChangeLanguage(string choice)
+    {
+        if (string.Equals(_settings.Language, choice, StringComparison.OrdinalIgnoreCase)) return;
+        _settings.Language = choice;
+        _settings.Save();
+        Restart();
     }
 
     private void Exit()
@@ -661,7 +684,7 @@ internal sealed class CityDialog : Form
 
     public CityDialog(string current)
     {
-        Text = "QuotaDesk · cidade do clima";
+        Text = L.T("QuotaDesk · cidade do clima", "QuotaDesk · weather city");
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = MinimizeBox = false;
@@ -671,10 +694,11 @@ internal sealed class CityDialog : Form
         ForeColor = Theme.Text;
         Font = _font;
         ClientSize = new Size(380, 150);
-        var label = new Label { Text = "Cidade (ex.: Campinas, SP). Envia só a localização aproximada ao Open-Meteo.", Location = new Point(16, 14), Size = new Size(350, 40) };
+        var label = new Label { Text = L.T("Cidade (ex.: Campinas, SP). Envia só a localização aproximada ao Open-Meteo.",
+            "City (e.g. Austin, TX). Only the approximate location is sent to Open-Meteo."), Location = new Point(16, 14), Size = new Size(350, 40) };
         _box = new TextBox { Text = current, Location = new Point(16, 58), Width = 348, BackColor = Color.FromArgb(20, 24, 38), ForeColor = Theme.Text, BorderStyle = BorderStyle.FixedSingle };
-        var ok = new Button { Text = "Salvar", DialogResult = DialogResult.OK, Location = new Point(196, 102), Size = new Size(80, 30), FlatStyle = FlatStyle.Flat, BackColor = Theme.Blue, ForeColor = Color.White };
-        var cancel = new Button { Text = "Cancelar", DialogResult = DialogResult.Cancel, Location = new Point(284, 102), Size = new Size(80, 30), FlatStyle = FlatStyle.Flat, ForeColor = Theme.Text };
+        var ok = new Button { Text = L.T("Salvar", "Save"), DialogResult = DialogResult.OK, Location = new Point(196, 102), Size = new Size(80, 30), FlatStyle = FlatStyle.Flat, BackColor = Theme.Blue, ForeColor = Color.White };
+        var cancel = new Button { Text = L.T("Cancelar", "Cancel"), DialogResult = DialogResult.Cancel, Location = new Point(284, 102), Size = new Size(80, 30), FlatStyle = FlatStyle.Flat, ForeColor = Theme.Text };
         Controls.AddRange([label, _box, ok, cancel]);
         AcceptButton = ok;
         CancelButton = cancel;

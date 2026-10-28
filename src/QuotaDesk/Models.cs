@@ -28,7 +28,7 @@ internal sealed record LimitWindow(string Label, double UsedPercent, DateTimeOff
 
     public int UsedRounded => (int)Math.Round(Math.Clamp(UsedPercent, 0, 100));
     public int RemainingPercent => 100 - UsedRounded;
-    public string RemainingText => $"{RemainingPercent}% restante";
+    public string RemainingText => L.T($"{RemainingPercent}% restante", $"{RemainingPercent}% left");
 
     /// <summary>Length of the window when the tool defines it (5 hours / 7 days); unknown for per-model quotas.</summary>
     public TimeSpan? Duration => Kind switch
@@ -62,10 +62,11 @@ internal sealed record LimitWindow(string Label, double UsedPercent, DateTimeOff
         if (emptyAt < reset)
         {
             var local = emptyAt.ToLocalTime();
-            var when = local.Date == now.LocalDateTime.Date ? $"hoje {local:HH:mm}" : local.ToString("ddd dd/MM HH:mm", CultureInfo.GetCultureInfo("pt-BR"));
-            return $"nesse ritmo a cota acaba ~{when}, antes de renovar";
+            var when = local.Date == now.LocalDateTime.Date ? L.T($"hoje {local:HH:mm}", $"today {local:HH:mm}") : local.ToString(L.T("ddd dd/MM HH:mm", "ddd MM/dd HH:mm"), L.Culture);
+            return L.T($"nesse ritmo a cota acaba ~{when}, antes de renovar", $"at this pace the limit runs out ~{when}, before it resets");
         }
-        return $"nesse ritmo sobram ~{Math.Clamp(100 - UsedPercent * 100 / pace, 0, 100):0}% na renovação";
+        var left = Math.Clamp(100 - UsedPercent * 100 / pace, 0, 100);
+        return L.T($"nesse ritmo sobram ~{left:0}% na renovação", $"at this pace ~{left:0}% will be left at the reset");
     }
 
     public string? Countdown(DateTimeOffset now)
@@ -98,20 +99,19 @@ internal sealed record LimitWindow(string Label, double UsedPercent, DateTimeOff
 
     public string ResetText(DateTimeOffset now)
     {
-        if (ResetsAt is null) return ResetHint ?? "renovação indisponível";
+        if (ResetsAt is null) return ResetHint ?? L.T("renovação indisponível", "reset time unavailable");
         var countdown = Countdown(now);
-        if (countdown is null) return ResetEstimated ? "renovação estimada já passou" : "renovação pendente";
-        return ResetEstimated ? $"renova em ~{countdown}" : $"renova em {countdown}";
+        if (countdown is null) return ResetEstimated ? L.T("renovação estimada já passou", "estimated reset has passed") : L.T("renovação pendente", "reset pending");
+        return ResetEstimated ? L.T($"renova em ~{countdown}", $"resets in ~{countdown}") : L.T($"renova em {countdown}", $"resets in {countdown}");
     }
 
     public string? ResetClock(DateTimeOffset now)
     {
         if (ResetsAt is null) return null;
         var local = ResetsAt.Value.ToLocalTime();
-        var pt = CultureInfo.GetCultureInfo("pt-BR");
-        var text = local.Date == now.LocalDateTime.Date ? $"hoje {local:HH:mm}"
-            : local.Date == now.LocalDateTime.Date.AddDays(1) ? $"amanhã {local:HH:mm}"
-            : local.ToString("ddd dd/MM HH:mm", pt);
+        var text = local.Date == now.LocalDateTime.Date ? L.T($"hoje {local:HH:mm}", $"today {local:HH:mm}")
+            : local.Date == now.LocalDateTime.Date.AddDays(1) ? L.T($"amanhã {local:HH:mm}", $"tomorrow {local:HH:mm}")
+            : local.ToString(L.T("ddd dd/MM HH:mm", "ddd MM/dd HH:mm"), L.Culture);
         return ResetEstimated ? "~" + text : text;
     }
 }
@@ -143,10 +143,11 @@ internal sealed record ProviderSnapshot(string Name, IReadOnlyList<LimitWindow> 
     {
         if (!Windows.Any(w => w.ResetsAt is { } r && r <= now)) return this;
         var windows = Windows.Select(w => w.ResetsAt is { } reset && reset <= now
-            ? w with { ResetsAt = null, ResetHint = "aguardando nova leitura", Renewed = false, RenewedAt = null }
+            ? w with { ResetsAt = null, ResetHint = L.T("aguardando nova leitura", "waiting for a new reading"), Renewed = false, RenewedAt = null }
             : w).ToList();
         return this with { Windows = windows, Stale = true,
-            Note = "Horário de renovação passou; percentual preservado até uma nova leitura confirmar o uso. " + Note };
+            Note = L.T("Horário de renovação passou; percentual preservado até uma nova leitura confirmar o uso. ",
+                "Reset time passed; the percentage is kept until a new reading confirms the usage. ") + Note };
     }
 }
 
@@ -176,24 +177,24 @@ internal static class AgentActions
 {
     public static string Describe(ActionKind kind, bool done, string? other = null) => (kind, done) switch
     {
-        (ActionKind.Thinking, _) => "Pensando…",
-        (ActionKind.Command, false) => "Executando um comando",
-        (ActionKind.Command, true) => "Executou o comando",
-        (ActionKind.Edit, false) => "Editando um arquivo",
-        (ActionKind.Edit, true) => "Editou um arquivo",
-        (ActionKind.Read, false) => "Lendo um arquivo",
-        (ActionKind.Read, true) => "Leu um arquivo",
-        (ActionKind.Search, false) => "Procurando no código",
-        (ActionKind.Search, true) => "Procurou no código",
-        (ActionKind.Web, false) => "Pesquisando na web",
-        (ActionKind.Web, true) => "Pesquisou na web",
-        (ActionKind.Delegate, false) => "Delegando a um subagente",
-        (ActionKind.Delegate, true) => "Subagente terminou",
-        (ActionKind.Plan, _) => "Atualizou o plano",
-        (ActionKind.Connector, false) => "Usando um conector",
-        (ActionKind.Connector, true) => "Usou um conector",
-        (_, false) => other is null ? "Usando uma ferramenta" : $"Usando {other}",
-        _ => other is null ? "Usou uma ferramenta" : $"Usou {other}"
+        (ActionKind.Thinking, _) => L.T("Pensando…", "Thinking…"),
+        (ActionKind.Command, false) => L.T("Executando um comando", "Running a command"),
+        (ActionKind.Command, true) => L.T("Executou o comando", "Ran the command"),
+        (ActionKind.Edit, false) => L.T("Editando um arquivo", "Editing a file"),
+        (ActionKind.Edit, true) => L.T("Editou um arquivo", "Edited a file"),
+        (ActionKind.Read, false) => L.T("Lendo um arquivo", "Reading a file"),
+        (ActionKind.Read, true) => L.T("Leu um arquivo", "Read a file"),
+        (ActionKind.Search, false) => L.T("Procurando no código", "Searching the code"),
+        (ActionKind.Search, true) => L.T("Procurou no código", "Searched the code"),
+        (ActionKind.Web, false) => L.T("Pesquisando na web", "Searching the web"),
+        (ActionKind.Web, true) => L.T("Pesquisou na web", "Searched the web"),
+        (ActionKind.Delegate, false) => L.T("Delegando a um subagente", "Delegating to a subagent"),
+        (ActionKind.Delegate, true) => L.T("Subagente terminou", "Subagent finished"),
+        (ActionKind.Plan, _) => L.T("Atualizou o plano", "Updated the plan"),
+        (ActionKind.Connector, false) => L.T("Usando um conector", "Using a connector"),
+        (ActionKind.Connector, true) => L.T("Usou um conector", "Used a connector"),
+        (_, false) => other is null ? L.T("Usando uma ferramenta", "Using a tool") : L.T($"Usando {other}", $"Using {other}"),
+        _ => other is null ? L.T("Usou uma ferramenta", "Used a tool") : L.T($"Usou {other}", $"Used {other}")
     };
 
     /// <summary>Claude Code tool names (already reduced to [A-Za-z0-9_]; MCP tools arrive as "MCP").</summary>
@@ -235,10 +236,10 @@ internal static class StateText
 {
     public static string Label(ActivityState state) => state switch
     {
-        ActivityState.Working => "Trabalhando",
-        ActivityState.Waiting => "Aguardando",
-        ActivityState.Idle => "Ocioso",
-        _ => "Sem sinal"
+        ActivityState.Working => L.T("Trabalhando", "Working"),
+        ActivityState.Waiting => L.T("Aguardando", "Waiting"),
+        ActivityState.Idle => L.T("Ocioso", "Idle"),
+        _ => L.T("Sem sinal", "No signal")
     };
 
     public static string Label(AgentStatus agent)
@@ -283,15 +284,16 @@ internal static class LimitParsing
 
     public static string LabelForMinutes(int minutes) => minutes switch
     {
-        300 => "5 horas", 10080 => "Semanal", 1440 => "24 horas",
+        300 => L.T("5 horas", "5 hours"), 10080 => L.T("Semanal", "Weekly"), 1440 => L.T("24 horas", "24 hours"),
         _ when minutes > 0 => $"{minutes.ToString(CultureInfo.InvariantCulture)} min",
-        _ => "Limite"
+        _ => L.T("Limite", "Limit")
     };
 
     public static string Ago(TimeSpan span) =>
-        span.TotalMinutes < 1 ? "agora" :
-        span.TotalHours < 1 ? $"há {(int)span.TotalMinutes} min" :
-        span.TotalDays < 1 ? $"há {(int)span.TotalHours}h {span.Minutes:00}min" : $"há {(int)span.TotalDays}d";
+        span.TotalMinutes < 1 ? L.T("agora", "now") :
+        span.TotalHours < 1 ? L.T($"há {(int)span.TotalMinutes} min", $"{(int)span.TotalMinutes} min ago") :
+        span.TotalDays < 1 ? L.T($"há {(int)span.TotalHours}h {span.Minutes:00}min", $"{(int)span.TotalHours}h {span.Minutes:00}min ago")
+            : L.T($"há {(int)span.TotalDays}d", $"{(int)span.TotalDays}d ago");
 }
 
 /// <summary>
@@ -354,20 +356,21 @@ internal sealed record QuotaPause(PauseKind Kind, DateTimeOffset? Until, bool Es
     /// <summary>Two short ASCII lines for the pixel sign: the return day and time, a countdown in the last hour.</summary>
     public string[] SignLines(DateTimeOffset now)
     {
-        var head = Kind == PauseKind.FiveHour ? "PAUSA" : "VOLTO";
-        if (Until is not { } until) return Kind == PauseKind.Weekly ? ["SEM", "COTA"] : [head, "--:--"];
+        var head = Kind == PauseKind.FiveHour ? L.T("PAUSA", "PAUSE") : L.T("VOLTO", "BACK");
+        if (Until is not { } until) return Kind == PauseKind.Weekly ? [L.T("SEM", "NO"), L.T("COTA", "LIMIT")] : [head, "--:--"];
         var tilde = Estimated ? "~" : "";
         var left = until - now;
         if (left <= TimeSpan.FromHours(1))
         {
             var clamp = left < TimeSpan.Zero ? TimeSpan.Zero : left;
-            return [head + " EM", $"{tilde}{(int)clamp.TotalMinutes:00}:{clamp.Seconds:00}"];
+            return [head + L.T(" EM", " IN"), $"{tilde}{(int)clamp.TotalMinutes:00}:{clamp.Seconds:00}"];
         }
         var local = until.ToLocalTime();
         var today = now.ToLocalTime().Date;
-        var day = local.Date == today ? "HOJE" : local.Date == today.AddDays(1) ? "AMANHA"
-            : new[] { "DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB" }[(int)local.DayOfWeek];
+        var isToday = local.Date == today;
+        var day = isToday ? L.T("HOJE", "TODAY") : local.Date == today.AddDays(1) ? L.T("AMANHA", "TMRW")
+            : (L.En ? new[] { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" } : new[] { "DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB" })[(int)local.DayOfWeek];
         var clock = local.ToString("HH:mm", CultureInfo.InvariantCulture); // the pixel sign has no glyph for other separators
-        return [Kind == PauseKind.FiveHour ? "PAUSA ATE" : head + " " + day, $"{tilde}{(Kind == PauseKind.FiveHour && day != "HOJE" ? day + " " : "")}{clock}"];
+        return [Kind == PauseKind.FiveHour ? L.T("PAUSA ATE", "PAUSE UNTIL") : head + " " + day, $"{tilde}{(Kind == PauseKind.FiveHour && !isToday ? day + " " : "")}{clock}"];
     }
 }

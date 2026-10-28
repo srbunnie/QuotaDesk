@@ -9,6 +9,11 @@
 <meta property="og:description" content="Saiba quanto ainda dá para usar das suas IAs, sem abrir nenhuma delas. Um escritório animado na bandeja do Windows.">
 <meta property="og:image" content="https://srbunnie.github.io/QuotaDesk/assets/screens/panel-working.png">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:locale:alternate" content="en_US">
+<link rel="alternate" hreflang="pt-BR" href="https://srbunnie.github.io/QuotaDesk/">
+<link rel="alternate" hreflang="en" href="https://srbunnie.github.io/QuotaDesk/en/">
+<link rel="alternate" hreflang="x-default" href="https://srbunnie.github.io/QuotaDesk/">
 <link rel="icon" href="assets/screens/tray.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,6 +58,12 @@
   nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 15px; }
   nav a:hover { color: var(--text); }
   .top .gh { margin-left: auto; }
+  .lang { display: flex; align-items: center; gap: 2px; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .5px; }
+  .lang a, .lang [aria-current] { display: inline-grid; place-items: center; min-width: 36px; min-height: 36px; padding: 0 8px; border-radius: 8px; text-decoration: none; }
+  .lang a { color: var(--muted); }
+  .lang a:hover { color: var(--text); background: var(--bg-2); }
+  .lang [aria-current] { color: var(--text); background: var(--card); box-shadow: inset 0 0 0 1px var(--edge); }
+  .lang .sep { color: var(--edge); }
 
   .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid transparent; }
   .btn.primary { background: var(--orange); color: #1a0d03; }
@@ -176,6 +187,7 @@
       </ul>
     </nav>
     <a class="btn ghost gh" href="https://github.com/srbunnie/QuotaDesk" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span><span class="sr-only">(abre em nova aba)</span></a>
+    <p class="lang" role="group" aria-label="Idioma / Language"><span aria-current="page" lang="pt-BR">PT<span class="sr-only"> (Português)</span></span><span class="sep" aria-hidden="true">|</span><a href="en/" lang="en" hreflang="en">EN<span class="sr-only"> (English)</span></a></p>
   </div>
 </header>
 

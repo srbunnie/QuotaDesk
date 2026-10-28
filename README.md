@@ -1,5 +1,7 @@
 <div align="center">
 
+**Português** · [English](README.en.md)
+
 ![QuotaDesk: o escritório com uma sala para cada IA](docs/assets/loft-banner.jpg)
 
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078D4)
@@ -103,6 +105,7 @@ O passo a passo de cada uma, com o que fazer quando algo não aparece, está em 
 - **Antigravity:** abra o Antigravity; a cota aparece sozinha enquanto ele está aberto.
 - **Magnific e OpenRouter:** **Conectar** no menu da bandeja ou na central, e faça o login no navegador. **Trocar conta…** no card esquece o login atual.
 - **Clima (opcional):** menu da bandeja › Cidade do clima.
+- **Idioma:** **Configurações › Geral › Idioma / Language** (Automático / Português / English), também no menu da bandeja; o app reinicia para aplicar.
 
 <p align="center"><img src="docs/assets/screens/settings.png" alt="Janela de configurações" width="440"></p>
 

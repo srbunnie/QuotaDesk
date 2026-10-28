@@ -251,9 +251,9 @@ internal sealed class PixelOffice : IDisposable
         Rect(x + 2, y + 14 + extra, 28, 1, accent);
         string[] words = returnsAt is { } back
             // Invariant: in a custom format '/' and ':' become the culture's separators ('.' or '-'), which have no glyph.
-            ? ["VOLTO", back.ToLocalTime().ToString("dd/MM", System.Globalization.CultureInfo.InvariantCulture),
+            ? [L.T("VOLTO", "BACK"), back.ToLocalTime().ToString(L.DayMonth, System.Globalization.CultureInfo.InvariantCulture),
                 back.ToLocalTime().ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)]
-            : ["JA", "VOLTO"];
+            : [L.T("JA", "BACK"), L.T("VOLTO", "SOON")];
         var letters = new Dictionary<char, string[]>
         {
             ['J'] = ["..###", "...#.", "...#.", "#..#.", ".##.."],

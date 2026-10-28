@@ -17,6 +17,9 @@ internal sealed partial class MonitorForm
     /// <summary>Raised after any preference changed; MonitorContext saves them.</summary>
     public event Action? SettingsChanged;
     public event Action? ShutdownRequested;
+    public event Action<string>? LanguageChangeRequested;
+
+    internal void RequestLanguage(string choice) => LanguageChangeRequested?.Invoke(choice);
     /// <summary>Sessions that just started waiting for the user (once per pending item, never for dismissed ones).</summary>
     public event Action<IReadOnlyList<PendingItem>>? NewPending;
 
@@ -78,19 +81,19 @@ internal sealed partial class MonitorForm
     {
         var items = _enabledOfficeAgents.Where(a => agentId is null || a.Id == agentId).SelectMany(PendingOf).OrderBy(p => p.Since).ToList();
         var menu = NewMenu();
-        if (items.Count == 0) menu.Items.Add(new ToolStripMenuItem("Nenhuma pendência") { Enabled = false });
+        if (items.Count == 0) menu.Items.Add(new ToolStripMenuItem(L.T("Nenhuma pendência", "Nothing pending")) { Enabled = false });
         else
         {
-            menu.Items.Add(new ToolStripMenuItem($"Aguardando você ({items.Count})") { Enabled = false });
+            menu.Items.Add(new ToolStripMenuItem(L.T($"Aguardando você ({items.Count})", $"Waiting for you ({items.Count})")) { Enabled = false });
             foreach (var p in items)
             {
                 var item = new ToolStripMenuItem($"{p.Provider} · {p.Project} — {p.Kind} · {LimitParsing.Ago(DateTimeOffset.Now - p.Since)}", null,
                     (_, _) => { _dismissed.Add(p.Key); _lastTip = null; Invalidate(); })
-                { ToolTipText = "Clique para dispensar este aviso. Para responder, abra a conversa na própria ferramenta." };
+                { ToolTipText = L.T("Clique para dispensar este aviso. Para responder, abra a conversa na própria ferramenta.", "Click to dismiss this alert. To reply, open the conversation in the tool itself.") };
                 menu.Items.Add(item);
             }
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Dispensar todos", null, (_, _) => { foreach (var p in items) _dismissed.Add(p.Key); _lastTip = null; Invalidate(); });
+            menu.Items.Add(L.T("Dispensar todos", "Dismiss all"), null, (_, _) => { foreach (var p in items) _dismissed.Add(p.Key); _lastTip = null; Invalidate(); });
         }
         ShowMenu(menu, anchor);
     }
@@ -138,7 +141,7 @@ internal sealed partial class MonitorForm
 
     private SettingsForm? _settingsWindow;
 
-    internal static readonly string[] SkinNames = ["Escritório", "Retrô", "Só os cards"];
+    internal static string[] SkinNames => [L.T("Escritório", "Office"), L.T("Retrô", "Retro"), L.T("Só os cards", "Cards only")];
 
     /// <summary>0 = Escritório (Loft), 1 = Retrô (classic voxel office), 2 = Só os cards (compact).</summary>
     internal int SkinIndex => Settings.Compact ? 2 : Classic ? 1 : 0;
@@ -187,43 +190,45 @@ internal sealed partial class MonitorForm
     {
         var agent = _agents[index];
         var menu = NewMenu();
-        menu.Items.Add("Atualizar consumo", null, (_, _) => RefreshProviderRequested?.Invoke(agent.Id));
+        menu.Items.Add(L.T("Atualizar consumo", "Refresh usage"), null, (_, _) => RefreshProviderRequested?.Invoke(agent.Id));
         if (agent.Id == "claude")
-            menu.Items.Add(new ToolStripMenuItem("Abrir Claude Code no terminal", null, (_, _) => ClaudeQuota.OpenTerminal(onlyIfStale: false))
+            menu.Items.Add(new ToolStripMenuItem(L.T("Abrir Claude Code no terminal", "Open Claude Code in the terminal"), null, (_, _) => ClaudeQuota.OpenTerminal(onlyIfStale: false))
             {
-                ToolTipText = "A cota exata vem do Claude Code no terminal; a aba Code do app Claude não a atualiza."
+                ToolTipText = L.T("A cota exata vem do Claude Code no terminal; a aba Code do app Claude não a atualiza.", "The exact limit comes from Claude Code in the terminal; the Code tab of the Claude app does not update it.")
             });
         if (agent.Id is "magnific" or "openrouter")
         {
             if (agent.Quota.UpdatedAt is null)
-                menu.Items.Add($"Conectar {agent.Name}…", null, (_, _) => ConnectProviderRequested?.Invoke(agent.Id));
+                menu.Items.Add(L.T($"Conectar {agent.Name}…", $"Connect {agent.Name}…"), null, (_, _) => ConnectProviderRequested?.Invoke(agent.Id));
             else
-                menu.Items.Add(new ToolStripMenuItem("Trocar conta…", null, (_, _) => SwitchAccountRequested?.Invoke(agent.Id))
+                menu.Items.Add(new ToolStripMenuItem(L.T("Trocar conta…", "Switch account…"), null, (_, _) => SwitchAccountRequested?.Invoke(agent.Id))
                 {
-                    ToolTipText = $"Esquece o login atual e abre o login do {agent.Name} no navegador.\n" +
-                                  "Se o navegador entrar direto na mesma conta, saia dela no site antes."
+                    ToolTipText = L.T($"Esquece o login atual e abre o login do {agent.Name} no navegador.\n" +
+                                  "Se o navegador entrar direto na mesma conta, saia dela no site antes.",
+                                  $"Forgets the current login and opens the {agent.Name} login in the browser.\n" +
+                                  "If the browser signs straight into the same account, sign out on the site first.")
                 });
         }
         else if (AccountHint(agent.Id) is { } hint)
             // Local tools read the account already signed in on this PC: switching happens in the tool itself.
-            menu.Items.Add(new ToolStripMenuItem("Trocar conta…") { Enabled = false, ToolTipText = hint });
+            menu.Items.Add(new ToolStripMenuItem(L.T("Trocar conta…", "Switch account…")) { Enabled = false, ToolTipText = hint });
         var count = PendingOf(agent).Count;
-        menu.Items.Add(new ToolStripMenuItem(count > 0 ? $"Ver pendências ({count})" : "Nenhuma pendência", null, (_, _) =>
+        menu.Items.Add(new ToolStripMenuItem(count > 0 ? L.T($"Ver pendências ({count})", $"See pending ({count})") : L.T("Nenhuma pendência", "Nothing pending"), null, (_, _) =>
         {
             // The cards may have changed while the menu was open: find this provider's card again.
             var at = CardIndexOf(agent.Id);
             if (at >= 0) ShowPendingMenu(agent.Id, MenuRect(at));
         }) { Enabled = count > 0 });
         if (agent.Id == "antigravity" && ModelChoice.Options.Count > 1)
-            menu.Items.Add("Próximo grupo / modelo", null, (_, _) => StepModel(1));
+            menu.Items.Add(L.T("Próximo grupo / modelo", "Next group / model"), null, (_, _) => StepModel(1));
         if (ProviderCategories.Position(agent.Id, _presentable).Count > 1)
-            menu.Items.Add($"Próxima ferramenta de {CardName(agent)}", null, (_, _) => { if (CardIndexOf(agent.Id) is var at && at >= 0) StepCategory(at, 1); });
-        var density = Sub(menu, "Nível visual");
+            menu.Items.Add(L.T($"Próxima ferramenta de {CardName(agent)}", $"Next {CardName(agent)} tool"), null, (_, _) => { if (CardIndexOf(agent.Id) is var at && at >= 0) StepCategory(at, 1); });
+        var density = Sub(menu, L.T("Nível visual", "Detail level"));
         foreach (var (label, value) in new[]
         {
-            ("Só ícone", ProviderDensity.IconOnly),
-            ("Ícone + estado", ProviderDensity.IconAndState),
-            ("Dados completos", ProviderDensity.Full)
+            (L.T("Só ícone", "Icon only"), ProviderDensity.IconOnly),
+            (L.T("Ícone + estado", "Icon + status"), ProviderDensity.IconAndState),
+            (L.T("Dados completos", "Full data"), ProviderDensity.Full)
         })
             density.DropDownItems.Add(Check(label, ProviderPresentation.DensityFor(Settings, agent.Id) == value, () =>
             {
@@ -232,7 +237,7 @@ internal sealed partial class MonitorForm
             }));
         menu.Items.Add(density);
         if (_enabledOfficeAgents.Count > 1)
-            menu.Items.Add("Ocultar esta ferramenta", null, (_, _) =>
+            menu.Items.Add(L.T("Ocultar esta ferramenta", "Hide this tool"), null, (_, _) =>
             {
                 Settings.HiddenProviders.Add(agent.Id);
                 ShowData(_allAgents);
@@ -332,25 +337,25 @@ internal sealed partial class MonitorForm
     {
         var tip = hit switch
         {
-            "sound" => Settings.Sound ? "Som ligado: toca quando uma sessão pede sua atenção\nClique para silenciar" : "Som desligado\nClique para ligar",
-            "bell" => TotalPending > 0 ? $"{TotalPending} sessão(ões) aguardando você\nClique para ver a lista" : "Nenhuma pendência no momento",
-            "lock" => Settings.PositionLocked ? "Posição fixada\nClique para liberar o painel" : "Fixar a posição do painel",
-            "top" => TopMost ? "Sempre no topo: ligado\nClique para desligar" : "Manter o painel acima das outras janelas",
-            "refresh" => (Refreshing ? "Atualizando…" : "Atualizar todas as fontes (F5)") +
-                         (LastSync is { } at ? $"\nÚltima atualização: {at.LocalDateTime:HH:mm:ss}" : ""),
-            "compact" => Compact ? "Expandir: cena do escritório e detalhes" : "Compactar: só os cards",
-            "panel-menu" => "Menu do painel (F10) · arraste para mover",
-            "mini" => "Mini monitor 480×320 · clique direito ou F10: menu · F11: voltar ao desktop · arraste para mover",
-            "office-previous" => _officeViewport.CanPrevious ? "Estações anteriores (←)" : "Primeira estação",
-            "office-next" => _officeViewport.CanNext ? "Próximas estações (→)" : "Última estação",
-            "gear" => "Configurações",
-            "minimize" => "Minimizar para a bandeja; reabra pelo ícone do QuotaDesk",
-            "shutdown" => "Desligar o QuotaDesk",
+            "sound" => Settings.Sound ? L.T("Som ligado: toca quando uma sessão pede sua atenção\nClique para silenciar", "Sound on: plays when a session needs your attention\nClick to mute") : L.T("Som desligado\nClique para ligar", "Sound off\nClick to turn on"),
+            "bell" => TotalPending > 0 ? L.T($"{TotalPending} sessão(ões) aguardando você\nClique para ver a lista", $"{TotalPending} session(s) waiting for you\nClick to see the list") : L.T("Nenhuma pendência no momento", "Nothing pending right now"),
+            "lock" => Settings.PositionLocked ? L.T("Posição fixada\nClique para liberar o painel", "Position locked\nClick to unlock the panel") : L.T("Fixar a posição do painel", "Lock the panel position"),
+            "top" => TopMost ? L.T("Sempre no topo: ligado\nClique para desligar", "Always on top: on\nClick to turn off") : L.T("Manter o painel acima das outras janelas", "Keep the panel above other windows"),
+            "refresh" => (Refreshing ? L.T("Atualizando…", "Refreshing…") : L.T("Atualizar todas as fontes (F5)", "Refresh all sources (F5)")) +
+                         (LastSync is { } at ? L.T($"\nÚltima atualização: {at.LocalDateTime:HH:mm:ss}", $"\nLast refresh: {at.LocalDateTime:HH:mm:ss}") : ""),
+            "compact" => Compact ? L.T("Expandir: cena do escritório e detalhes", "Expand: office scene and details") : L.T("Compactar: só os cards", "Compact: cards only"),
+            "panel-menu" => L.T("Menu do painel (F10) · arraste para mover", "Panel menu (F10) · drag to move"),
+            "mini" => L.T("Mini monitor 480×320 · clique direito ou F10: menu · F11: voltar ao desktop · arraste para mover", "Mini monitor 480×320 · right-click or F10: menu · F11: back to desktop · drag to move"),
+            "office-previous" => _officeViewport.CanPrevious ? L.T("Estações anteriores (←)", "Previous desks (←)") : L.T("Primeira estação", "First desk"),
+            "office-next" => _officeViewport.CanNext ? L.T("Próximas estações (→)", "Next desks (→)") : L.T("Última estação", "Last desk"),
+            "gear" => L.T("Configurações", "Settings"),
+            "minimize" => L.T("Minimizar para a bandeja; reabra pelo ícone do QuotaDesk", "Minimize to the tray; reopen from the QuotaDesk icon"),
+            "shutdown" => L.T("Desligar o QuotaDesk", "Quit QuotaDesk"),
             "scene" => CurrentSky().Describe(),
-            _ when Idx(hit, "menu") is not null => "Opções desta ferramenta",
-            _ when Idx(hit, "pager") is { } pg => $"{CardName(_agents[pg])}: trocar de ferramenta (clique à esquerda/direita ou role a roda)",
-            _ when Idx(hit, "badge") is { } b => $"{PendingOf(_agents[b]).Count} sessão(ões) aguardando você\nClique para ver",
-            _ when Idx(hit, "card") is { } c => Details(_agents[c]) + (Classic ? "" : "\nClique para alternar entre \"renova em\" e \"esgota em\""),
+            _ when Idx(hit, "menu") is not null => L.T("Opções desta ferramenta", "Options for this tool"),
+            _ when Idx(hit, "pager") is { } pg => L.T($"{CardName(_agents[pg])}: trocar de ferramenta (clique à esquerda/direita ou role a roda)", $"{CardName(_agents[pg])}: switch tool (click left/right or scroll the wheel)"),
+            _ when Idx(hit, "badge") is { } b => L.T($"{PendingOf(_agents[b]).Count} sessão(ões) aguardando você\nClique para ver", $"{PendingOf(_agents[b]).Count} session(s) waiting for you\nClick to see"),
+            _ when Idx(hit, "card") is { } c => Details(_agents[c]) + (Classic ? "" : L.T("\nClique para alternar entre \"renova em\" e \"esgota em\"", "\nClick to switch between \"resets in\" and \"runs out in\"")),
             _ => null
         };
         if (tip == _lastTip) return;
@@ -476,18 +481,18 @@ internal sealed partial class MonitorForm
 
     private string PillLabel(AgentStatus agent)
     {
-        if (Refreshing) return "SINCRONIZANDO";
+        if (Refreshing) return L.T("SINCRONIZANDO", "SYNCING");
         if (agent.ServiceHealth is not null) return StateText.Label(agent).ToUpperInvariant();
-        if (QuotaExhausted(agent, DateTimeOffset.Now)) return "ESGOTADA";
+        if (QuotaExhausted(agent, DateTimeOffset.Now)) return L.T("ESGOTADA", "USED UP");
         // A category card names the tool it is showing; the dot keeps the activity color.
         if (ProviderCategories.Of(agent.Id) is not null) return AsciiUpper(agent.Name, 14);
         var text = agent.State switch
         {
-            ActivityState.Working => "EXECUTANDO",
-            ActivityState.Waiting => "AGUARDANDO",
-            ActivityState.Idle => agent.SessionOpen ? "ATIVO" : "OCIOSO",
-            _ when HasFreshAntigravityQuota(agent) => QuotaRows(agent).Any(w => w.UsedRounded >= 100) ? "COTA ESGOTADA" : "COTA OK",
-            _ => "SEM SINAL"
+            ActivityState.Working => L.T("EXECUTANDO", "WORKING"),
+            ActivityState.Waiting => L.T("AGUARDANDO", "WAITING"),
+            ActivityState.Idle => agent.SessionOpen ? L.T("ATIVO", "ACTIVE") : L.T("OCIOSO", "IDLE"),
+            _ when HasFreshAntigravityQuota(agent) => QuotaRows(agent).Any(w => w.UsedRounded >= 100) ? L.T("COTA ESGOTADA", "LIMIT USED UP") : L.T("COTA OK", "LIMIT OK"),
+            _ => L.T("SEM SINAL", "NO SIGNAL")
         };
         return text + (agent.StateEstimated ? " ~" : "");
     }
@@ -500,10 +505,10 @@ internal sealed partial class MonitorForm
 
     private static string? AccountHint(string id) => id switch
     {
-        "codex" => "O QuotaDesk lê a conta logada no Codex deste PC.\nPara trocar: codex logout e depois codex login.",
-        "claude" => "O QuotaDesk lê a conta logada no Claude Code deste PC.\nPara trocar: /logout e /login no Claude Code.",
-        "antigravity" => "O QuotaDesk lê a conta aberta no Antigravity.\nPara trocar: saia e entre com a outra conta no Antigravity.",
-        "figma" => "O Figma mostra o status global do serviço, sem conta.",
+        "codex" => L.T("O QuotaDesk lê a conta logada no Codex deste PC.\nPara trocar: codex logout e depois codex login.", "QuotaDesk reads the account signed in to Codex on this PC.\nTo switch: codex logout, then codex login."),
+        "claude" => L.T("O QuotaDesk lê a conta logada no Claude Code deste PC.\nPara trocar: /logout e /login no Claude Code.", "QuotaDesk reads the account signed in to Claude Code on this PC.\nTo switch: /logout and /login in Claude Code."),
+        "antigravity" => L.T("O QuotaDesk lê a conta aberta no Antigravity.\nPara trocar: saia e entre com a outra conta no Antigravity.", "QuotaDesk reads the account open in Antigravity.\nTo switch: sign out and sign in with the other account in Antigravity."),
+        "figma" => L.T("O Figma mostra o status global do serviço, sem conta.", "Figma shows the global service status, no account."),
         _ => null
     };
 
@@ -725,10 +730,10 @@ internal sealed partial class MonitorForm
             return;
         }
         // Says why the row is empty instead of a bare dashed line that reads as a broken reading.
-        PixelFont.Draw(g, slot == 0 ? "5 HORAS" : slot == 2 ? "SEMANAL" : "OUTRA", area.X, area.Y + 3, 1.7f, Theme.TextFaint);
+        PixelFont.Draw(g, slot == 0 ? L.T("5 HORAS", "5 HOURS") : slot == 2 ? L.T("SEMANAL", "WEEKLY") : L.T("OUTRA", "OTHER"), area.X, area.Y + 3, 1.7f, Theme.TextFaint);
         using (var track = new Pen(Color.FromArgb(40, 48, 70), 2f) { DashStyle = DashStyle.Dot })
             g.DrawLine(track, area.X, area.Y + 26, area.Right, area.Y + 26);
-        TextOut(g, "não informada por esta ferramenta", Theme.Font("mono", 11f), Theme.TextFaint, area.X - 2, area.Y + 35);
+        TextOut(g, L.T("não informada por esta ferramenta", "not reported by this tool"), Theme.Font("mono", 11f), Theme.TextFaint, area.X - 2, area.Y + 35);
     }
 
     private static void PaintMenuButton(Graphics g, RectangleF r, bool hover, string icon = "ellipsis")
@@ -777,7 +782,7 @@ internal sealed partial class MonitorForm
     /// </summary>
     private static void PaintCreditRate(Graphics g, CreditBalance credits, bool stale, RectangleF area, DateTimeOffset now)
     {
-        PixelFont.Draw(g, "RITMO", area.X, area.Y + 3, 1.7f, Theme.Label);
+        PixelFont.Draw(g, L.T("RITMO", "PACE"), area.X, area.Y + 3, 1.7f, Theme.Label);
         var left = credits.EmptyAt is { } at ? at - now : (TimeSpan?)null;
         var color = stale ? Theme.TextDim : left is { } l && l <= TimeSpan.FromDays(1) ? Theme.Red
             : left is { } m && m <= TimeSpan.FromDays(3) ? Theme.Amber : Color.FromArgb(244, 246, 250);
@@ -797,13 +802,13 @@ internal sealed partial class MonitorForm
             using var brush = new SolidBrush(Theme.Mix(color, Theme.TextFaint, 0.25f));
             g.FillPath(brush, fillPath);
         }
-        var text = stale ? "leitura antiga · " + credits.DepletionText(now) : credits.DepletionText(now);
+        var text = stale ? L.T("leitura antiga · ", "old reading · ") + credits.DepletionText(now) : credits.DepletionText(now);
         using var brushText = new SolidBrush(left is not null && color != Color.FromArgb(244, 246, 250) ? color : Theme.TextDim);
         using var format = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
         g.DrawString(text, Theme.Font("mono", 12f), brushText, new RectangleF(area.X - 2, bar.Bottom + 5, area.Width + 4, 18), format);
     }
 
-    private static string SlotLabel(WindowKind kind) => kind == WindowKind.Weekly ? "SEMANAL" : kind == WindowKind.FiveHour ? "5 HORAS" : "COTA";
+    private static string SlotLabel(WindowKind kind) => kind == WindowKind.Weekly ? L.T("SEMANAL", "WEEKLY") : kind == WindowKind.FiveHour ? L.T("5 HORAS", "5 HOURS") : L.T("COTA", "LIMIT");
 
     /// <summary>
     /// Loft card row: label and "usado N%" (the widget shows the remaining share, so the measure is spelled out), a bar
@@ -818,7 +823,7 @@ internal sealed partial class MonitorForm
         var exhausted = known && used >= 100;
         var color = !known ? Theme.TextFaint : stale ? Theme.Mix(Theme.Consumption(used), Theme.TextFaint, 0.55f) : Theme.Consumption(used);
 
-        var label = w is null ? (agent.Id == "figma" ? "CREDITOS" : "COTA") : w.Kind is WindowKind.Weekly or WindowKind.FiveHour ? SlotLabel(w.Kind) : AsciiUpper(w.Label, 12);
+        var label = w is null ? (agent.Id == "figma" ? L.T("CREDITOS", "CREDITS") : L.T("COTA", "LIMIT")) : w.Kind is WindowKind.Weekly or WindowKind.FiveHour ? SlotLabel(w.Kind) : AsciiUpper(w.Label, 12);
         PixelFont.Draw(g, label, area.X, area.Y + 3, 1.7f, Theme.Label);
         var value = known ? $"{used}%" : "--";
         var valueWidth = PixelFont.Measure(value, 2.25f, 2, bold: true);
@@ -826,7 +831,7 @@ internal sealed partial class MonitorForm
         if (known)
         {
             var unit = Theme.Font("mono", 11f);
-            RightText(g, "usado", unit, Theme.TextDim, area.Right - valueWidth - 5, area.Y + 2);
+            RightText(g, L.T("usado", "used"), unit, Theme.TextDim, area.Right - valueWidth - 5, area.Y + 2);
         }
 
         var bar = new RectangleF(area.X, area.Y + 22, area.Width, 8);
@@ -859,24 +864,24 @@ internal sealed partial class MonitorForm
 
         var mono = Theme.Font("mono", 12f);
         var ly = bar.Bottom + 5;
-        var leftText = !known ? (w is null ? (agent.Id == "figma" ? "saldo no Figma" : "sem dados") : "aguardando leitura")
-            : exhausted ? "ESGOTADA" : w!.Credits is { } balance ? $"{balance.Format(balance.Available)} disponíveis"
-            : w.Amount is { } amount ? amount : stale ? $"{w.RemainingPercent}% · antigo" : $"{w.RemainingPercent}% restante";
+        var leftText = !known ? (w is null ? (agent.Id == "figma" ? L.T("saldo no Figma", "balance in Figma") : L.T("sem dados", "no data")) : L.T("aguardando leitura", "awaiting reading"))
+            : exhausted ? L.T("ESGOTADA", "USED UP") : w!.Credits is { } balance ? L.T($"{balance.Format(balance.Available)} disponíveis", $"{balance.Format(balance.Available)} available")
+            : w.Amount is { } amount ? amount : stale ? L.T($"{w.RemainingPercent}% · antigo", $"{w.RemainingPercent}% · old") : L.T($"{w.RemainingPercent}% restante", $"{w.RemainingPercent}% left");
         var leftFont = exhausted ? Theme.Font("mono", 12f, FontStyle.Bold) : mono;
         var leftColor = !known ? Theme.Amber : exhausted ? Theme.Exhausted : stale ? Theme.Amber : Theme.Label;
         TextOut(g, leftText, leftFont, leftColor, area.X - 2, ly);
         if (!known) return;
 
         string rightLong, rightShort;
-        if (w!.Renewed) rightLong = rightShort = "renovada";
+        if (w!.Renewed) rightLong = rightShort = L.T("renovada", "reset");
         else if (w.Countdown(now) is { } countdown)
         {
             var tilde = w.ResetEstimated ? "~" : "";
-            rightLong = $"renova em {tilde}{countdown}";
-            rightShort = $"em {tilde}{countdown}";
+            rightLong = L.T($"renova em {tilde}{countdown}", $"resets in {tilde}{countdown}");
+            rightShort = L.T($"em {tilde}{countdown}", $"in {tilde}{countdown}");
         }
-        else if (w.Credits is { } total) { rightLong = $"de {total.Format(total.Total)} total"; rightShort = $"de {total.Format(total.Total)}"; }
-        else if (w.Amount is not null) rightLong = rightShort = $"{w.RemainingPercent}% livre";
+        else if (w.Credits is { } total) { rightLong = L.T($"de {total.Format(total.Total)} total", $"of {total.Format(total.Total)} total"); rightShort = L.T($"de {total.Format(total.Total)}", $"of {total.Format(total.Total)}"); }
+        else if (w.Amount is not null) rightLong = rightShort = L.T($"{w.RemainingPercent}% livre", $"{w.RemainingPercent}% free");
         else rightLong = rightShort = w.ResetHint ?? "";
         var room = Math.Max(20, area.Width - g.MeasureString(leftText, leftFont).Width - 4);
         var rightText = g.MeasureString(rightLong, mono).Width <= room ? rightLong : rightShort;
@@ -906,11 +911,11 @@ internal sealed partial class MonitorForm
 
         // label row
         DrawQuotaIcon(g, w?.Kind == WindowKind.Weekly, x, y + 2, Theme.Label);
-        var label = w is null ? (agent.Id == "figma" ? "CREDITOS DE IA" : "COTA") : w.Kind switch
+        var label = w is null ? (agent.Id == "figma" ? L.T("CREDITOS DE IA", "AI CREDITS") : L.T("COTA", "LIMIT")) : w.Kind switch
         {
-            WindowKind.FiveHour => "USO 5 HORAS",
-            WindowKind.Weekly => "USO SEMANAL",
-            _ => agent.Id == "antigravity" ? "USO MODELO" : "USO " + AsciiUpper(w.Label, 9)
+            WindowKind.FiveHour => L.T("USO 5 HORAS", "5H USAGE"),
+            WindowKind.Weekly => L.T("USO SEMANAL", "WEEKLY USAGE"),
+            _ => agent.Id == "antigravity" ? L.T("USO MODELO", "MODEL USAGE") : L.T("USO ", "USAGE ") + AsciiUpper(w.Label, 9)
         };
         PixelFont.Draw(g, label, x + 26, y + 4, 2, Theme.Label);
 
@@ -946,8 +951,8 @@ internal sealed partial class MonitorForm
         var mono = Theme.Font("mono", 12.5f);
         var secondary = Theme.Label;
         // Exhausted says so in words (the bar is hatched too); stale readings turn amber (the expanded footer says "desatualizado").
-        var leftText = noData ? (agent.Id == "figma" ? "saldo no Figma" : "sem dados")
-            : expired ? "aguardando leitura" : exhausted ? "ESGOTADA" : w!.Amount ?? $"{w.RemainingPercent}% restante";
+        var leftText = noData ? (agent.Id == "figma" ? L.T("saldo no Figma", "balance in Figma") : L.T("sem dados", "no data"))
+            : expired ? L.T("aguardando leitura", "awaiting reading") : exhausted ? L.T("ESGOTADA", "USED UP") : w!.Amount ?? L.T($"{w.RemainingPercent}% restante", $"{w.RemainingPercent}% left");
         var leftFont = exhausted ? Theme.Font("mono", 12.5f, FontStyle.Bold) : mono;
         var leftColor = noData ? Theme.Amber : exhausted ? Theme.Exhausted : stale ? Theme.Amber : secondary;
         var leftWidth = g.MeasureString(leftText, leftFont).Width;
@@ -959,18 +964,18 @@ internal sealed partial class MonitorForm
         // Longest wording that still fits next to the left text; the short one drops "Renova".
         string rightLong, rightShort;
         if (noData) rightLong = rightShort = "";
-        else if (expired) rightLong = rightShort = "renovação pendente";
-        else if (w!.Renewed) rightLong = rightShort = "Renovada";
+        else if (expired) rightLong = rightShort = L.T("renovação pendente", "reset pending");
+        else if (w!.Renewed) rightLong = rightShort = L.T("Renovada", "Reset");
         else if (swapped && depletionTop is { } top)
-            (rightLong, rightShort) = (top, top.Replace("Esgota em ", "esgota ", StringComparison.Ordinal));
+            (rightLong, rightShort) = (top, top.Replace(L.T("Esgota em ", "Runs out in "), L.T("esgota ", "out in "), StringComparison.Ordinal));
         else if (w.Countdown(now) is { } countdown)
         {
             var tilde = w.ResetEstimated ? "~" : "";
-            rightLong = $"Renova em {tilde}{countdown}";
-            rightShort = $"em {tilde}{countdown}";
+            rightLong = L.T($"Renova em {tilde}{countdown}", $"Resets in {tilde}{countdown}");
+            rightShort = L.T($"em {tilde}{countdown}", $"in {tilde}{countdown}");
         }
-        else if (w.Amount is not null) rightLong = rightShort = $"{w.RemainingPercent}% livre";
-        else rightLong = rightShort = w.ResetHint ?? "Renovação indisponível";
+        else if (w.Amount is not null) rightLong = rightShort = L.T($"{w.RemainingPercent}% livre", $"{w.RemainingPercent}% free");
+        else rightLong = rightShort = w.ResetHint ?? L.T("Renovação indisponível", "Reset unavailable");
         var room = Math.Max(20, right - x - leftWidth - 8);
         var rightText = g.MeasureString(rightLong, mono).Width <= room ? rightLong : rightShort;
         // Whatever still does not fit (a long hint from the tool) is cut with an ellipsis instead of spilling into the next card.
@@ -992,10 +997,10 @@ internal sealed partial class MonitorForm
             var left = depletion.At - now;
             var local = depletion.At.ToLocalTime();
             var when = local.Date == now.LocalDateTime.Date ? local.ToString("HH:mm", CultureInfo.InvariantCulture)
-                : local.ToString("ddd HH:mm", CultureInfo.GetCultureInfo("pt-BR")).Replace(".", "");
-            TextOut(g, $"Acaba em ~{LimitWindow.Span(left)} ({when})", forecastFont, left < TimeSpan.FromHours(1) ? Theme.Exhausted : Theme.Red, x, ly + 19);
+                : local.ToString("ddd HH:mm", L.Culture).Replace(".", "");
+            TextOut(g, L.T($"Acaba em ~{LimitWindow.Span(left)} ({when})", $"Runs out in ~{LimitWindow.Span(left)} ({when})"), forecastFont, left < TimeSpan.FromHours(1) ? Theme.Exhausted : Theme.Red, x, ly + 19);
         }
         else
-            TextOut(g, "No ritmo atual dura até renovar", forecastFont, Theme.Teal, x, ly + 19);
+            TextOut(g, L.T("No ritmo atual dura até renovar", "At this pace it lasts until reset"), forecastFont, Theme.Teal, x, ly + 19);
     }
 }

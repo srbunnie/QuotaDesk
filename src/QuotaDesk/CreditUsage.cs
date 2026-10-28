@@ -11,24 +11,25 @@ internal sealed record CreditBalance(decimal Available, decimal Total, string Un
     TimeSpan Measured)
 {
     public string Format(decimal value) => Unit == "US$"
-        ? "US$ " + value.ToString("N2", CultureInfo.GetCultureInfo("pt-BR"))
-        : value.ToString("N0", CultureInfo.GetCultureInfo("pt-BR"));
+        ? L.T("US$ ", "$") + value.ToString("N2", L.Culture)
+        : value.ToString("N0", L.Culture);
 
     /// <summary>"~1.240/dia" in the balance's unit, or null while measuring.</summary>
     public string? RateText => PerDay switch
     {
         null => null,
-        0 => "sem uso",
-        { } rate => "~" + Format(rate) + "/dia"
+        0 => L.T("sem uso", "no usage"),
+        { } rate => "~" + Format(rate) + L.T("/dia", "/day")
     };
 
     /// <summary>Time until the balance runs out at the measured rate ("acaba em ~16d 4h"), or why there is none.</summary>
     public string DepletionText(DateTimeOffset now) => PerDay switch
     {
-        null => "medindo o ritmo de uso…",
-        0 => $"sem consumo nas últimas {LimitWindow.Span(Measured)}",
-        _ when Available <= 0 => "créditos esgotados",
-        _ when EmptyAt is { } at => $"acaba em ~{LimitWindow.Span(at - now)} ({at.LocalDateTime.ToString("dd/MM", CultureInfo.InvariantCulture)})",
+        null => L.T("medindo o ritmo de uso…", "measuring the usage pace…"),
+        0 => L.T($"sem consumo nas últimas {LimitWindow.Span(Measured)}", $"no usage in the last {LimitWindow.Span(Measured)}"),
+        _ when Available <= 0 => L.T("créditos esgotados", "credits used up"),
+        _ when EmptyAt is { } at => L.T($"acaba em ~{LimitWindow.Span(at - now)} ({at.LocalDateTime.ToString("dd/MM", CultureInfo.InvariantCulture)})",
+            $"runs out in ~{LimitWindow.Span(at - now)} ({at.LocalDateTime.ToString("MM/dd", CultureInfo.InvariantCulture)})"),
         _ => ""
     };
 }

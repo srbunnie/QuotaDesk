@@ -67,9 +67,9 @@ internal sealed class SerialMiniScreen : IDisposable
     }
 
     /// <summary>One line for the tray menu.</summary>
-    public string Status => _screen.PortName is { } open ? $"conectada em {open}"
-        : UsbSerialScreen.FindPortName() is { } found ? $"encontrada em {found}"
-        : "nenhuma tela USB serial encontrada";
+    public string Status => _screen.PortName is { } open ? L.T($"conectada em {open}", $"connected on {open}")
+        : UsbSerialScreen.FindPortName() is { } found ? L.T($"encontrada em {found}", $"found on {found}")
+        : L.T("nenhuma tela USB serial encontrada", "no USB serial screen found");
 
     private void Tick()
     {

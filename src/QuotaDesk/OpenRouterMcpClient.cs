@@ -280,7 +280,7 @@ internal sealed class OpenRouterLoopbackCallback : IDisposable
         var requestLine = await reader.ReadLineAsync(token).ConfigureAwait(false);
         if (requestLine is null || requestLine.Length > 4096)
         {
-            await RespondAsync(stream, "Requisição inválida. Volte ao QuotaDesk.", token).ConfigureAwait(false);
+            await RespondAsync(stream, L.T("Requisição inválida. Volte ao QuotaDesk.", "Invalid request. Go back to QuotaDesk."), token).ConfigureAwait(false);
             return (false, null);
         }
         string? header;
@@ -296,29 +296,31 @@ internal sealed class OpenRouterLoopbackCallback : IDisposable
         }
         if (malformedHeaders)
         {
-            await RespondAsync(stream, "Cabeçalhos inválidos. Volte ao QuotaDesk.", token).ConfigureAwait(false);
+            await RespondAsync(stream, L.T("Cabeçalhos inválidos. Volte ao QuotaDesk.", "Invalid headers. Go back to QuotaDesk."), token).ConfigureAwait(false);
             return (false, null);
         }
 
         var parts = requestLine?.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
         if (parts is not { Length: 3 } || parts[0] != "GET")
         {
-            await RespondAsync(stream, "Acesso recusado. Volte ao QuotaDesk.", token).ConfigureAwait(false);
+            await RespondAsync(stream, L.T("Acesso recusado. Volte ao QuotaDesk.", "Access refused. Go back to QuotaDesk."), token).ConfigureAwait(false);
             return (false, null);
         }
 
         var callbackUri = new Uri(new Uri($"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}"), parts[1]);
         if (!string.Equals(callbackUri.AbsolutePath, RedirectUri.AbsolutePath, StringComparison.Ordinal))
         {
-            await RespondAsync(stream, "Rota de retorno inválida. Volte ao QuotaDesk.", token).ConfigureAwait(false);
+            await RespondAsync(stream, L.T("Rota de retorno inválida. Volte ao QuotaDesk.", "Invalid return route. Go back to QuotaDesk."), token).ConfigureAwait(false);
             return (false, null);
         }
 
         var query = ParseQuery(callbackUri.Query);
         var denied = query.ContainsKey("error");
         await RespondAsync(stream, denied
-            ? "A autorização não foi concluída. Você pode fechar esta página e voltar ao QuotaDesk."
-            : $"{_provider} autorizado. Você pode fechar esta página e voltar ao QuotaDesk.", token).ConfigureAwait(false);
+            ? L.T("A autorização não foi concluída. Você pode fechar esta página e voltar ao QuotaDesk.",
+                "Authorization was not completed. You can close this page and go back to QuotaDesk.")
+            : L.T($"{_provider} autorizado. Você pode fechar esta página e voltar ao QuotaDesk.",
+                $"{_provider} authorized. You can close this page and go back to QuotaDesk."), token).ConfigureAwait(false);
 
         if (denied) return (true, null);
         return (true, new AuthorizationResult

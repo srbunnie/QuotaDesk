@@ -22,7 +22,7 @@ internal sealed class MagnificAgent : IAgentSource
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private readonly System.Threading.Timer _timer;
     private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Magnific",
-        "Conecte sua conta no menu da bandeja para ler os créditos.", SourceName);
+        L.T("Conecte sua conta no menu da bandeja para ler os créditos.", "Connect your account from the tray menu to read the credits."), SourceName);
     private DateTimeOffset _lastAttempt = DateTimeOffset.MinValue;
     private readonly CreditUsageTracker _usage = new("magnific");
     private bool _disposed;
@@ -38,9 +38,10 @@ internal sealed class MagnificAgent : IAgentSource
     public AgentStatus GetStatus(DateTimeOffset now)
     {
         var connected = _quota.UpdatedAt is not null;
-        var detail = _quota.Stale ? "créditos Magnific desatualizados" : connected ? "créditos Magnific" : "Magnific desconectado";
+        var detail = _quota.Stale ? L.T("créditos Magnific desatualizados", "Magnific credits outdated")
+            : connected ? L.T("créditos Magnific", "Magnific credits") : L.T("Magnific desconectado", "Magnific disconnected");
         return new AgentStatus(Id, "Magnific", connected ? ActivityState.Idle : ActivityState.Unknown, connected, detail,
-            SourceName + " · consulta a cada 15 min", _quota);
+            SourceName + L.T(" · consulta a cada 15 min", " · checked every 15 min"), _quota);
     }
 
     public Task RefreshQuotaAsync(bool force) => RefreshCoreAsync(allowAuthorization: false, force, CancellationToken.None);
@@ -56,7 +57,7 @@ internal sealed class MagnificAgent : IAgentSource
         await _refreshGate.WaitAsync().ConfigureAwait(false);
         try { await _tokenCache.ClearAsync(CancellationToken.None).ConfigureAwait(false); }
         finally { _refreshGate.Release(); }
-        _quota = ProviderSnapshot.Unavailable("Magnific", "Trocando de conta: conclua o login no navegador.", SourceName);
+        _quota = ProviderSnapshot.Unavailable("Magnific", L.T("Trocando de conta: conclua o login no navegador.", "Switching account: finish signing in in the browser."), SourceName);
         _lastAttempt = DateTimeOffset.MinValue;
         Changed?.Invoke();
         await ConnectAsync().ConfigureAwait(false);
@@ -78,7 +79,7 @@ internal sealed class MagnificAgent : IAgentSource
 
             if (!allowAuthorization && await _tokenCache.GetTokensAsync(cancellationToken).ConfigureAwait(false) is null)
             {
-                SetUnavailable("Conecte ou reautorize Magnific no menu da bandeja.");
+                SetUnavailable(L.T("Conecte ou reautorize Magnific no menu da bandeja.", "Connect or reauthorize Magnific from the tray menu."));
                 return;
             }
 
@@ -86,11 +87,13 @@ internal sealed class MagnificAgent : IAgentSource
             var result = await RemoteMcpTool.CallAsync(Endpoint, "Magnific", "account_balance", _tokenCache, allowAuthorization, cancellationToken)
                 .ConfigureAwait(false);
             var credits = ParseResult(result);
-            var hint = $"{Credits(credits.Available)} créditos disponíveis de {Credits(credits.TotalPlan)} ({Credits(credits.Spent)} gastos)" +
-                       (credits.Plan is { } plan ? $" · plano {plan}" : "");
-            var window = new LimitWindow("Créditos", credits.UsedPercent, null, WindowKind.Other, ResetHint: hint)
+            var hint = L.T($"{Credits(credits.Available)} créditos disponíveis de {Credits(credits.TotalPlan)} ({Credits(credits.Spent)} gastos)",
+                           $"{Credits(credits.Available)} credits available of {Credits(credits.TotalPlan)} ({Credits(credits.Spent)} spent)") +
+                       (credits.Plan is { } plan ? L.T($" · plano {plan}", $" · plan {plan}") : "");
+            var window = new LimitWindow(L.T("Créditos", "Credits"), credits.UsedPercent, null, WindowKind.Other, ResetHint: hint)
             {
-                Amount = credits.Unlimited ? "ilimitado" : $"{Credits(credits.Available)} de {Credits(credits.TotalPlan)} cr",
+                Amount = credits.Unlimited ? L.T("ilimitado", "unlimited")
+                    : L.T($"{Credits(credits.Available)} de {Credits(credits.TotalPlan)} cr", $"{Credits(credits.Available)} of {Credits(credits.TotalPlan)} cr"),
                 Credits = credits.Unlimited ? null : _usage.Record(credits.Available, credits.TotalPlan, credits.Spent, "cr", DateTimeOffset.Now)
             };
             _quota = new ProviderSnapshot("Magnific", [window], DateTimeOffset.Now, null, SourceName);
@@ -99,16 +102,18 @@ internal sealed class MagnificAgent : IAgentSource
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (OpenRouterAuthorizationRequiredException)
         {
-            SetUnavailableOrStale("Autorização expirada ou revogada. Escolha Conectar Magnific no menu da bandeja.");
+            SetUnavailableOrStale(L.T("Autorização expirada ou revogada. Escolha Conectar Magnific no menu da bandeja.",
+                "Authorization expired or revoked. Choose Connect Magnific from the tray menu."));
         }
         catch (Exception)
         {
-            SetUnavailableOrStale("Não foi possível consultar os créditos do Magnific; nova tentativa em 15 minutos.");
+            SetUnavailableOrStale(L.T("Não foi possível consultar os créditos do Magnific; nova tentativa em 15 minutos.",
+                "Could not read Magnific credits; retrying in 15 minutes."));
         }
         finally { _refreshGate.Release(); }
     }
 
-    private static string Credits(decimal value) => value.ToString("N0", CultureInfo.GetCultureInfo("pt-BR"));
+    private static string Credits(decimal value) => value.ToString("N0", L.Culture);
 
     private static MagnificCredits ParseResult(CallToolResult result)
     {

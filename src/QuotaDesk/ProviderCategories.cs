@@ -13,7 +13,8 @@ internal static class ProviderCategories
     public static IReadOnlyList<ProviderCategory> All { get; } =
     [
         // Higgsfield has no adapter yet: it joins this card as soon as a source with that id is registered.
-        new("criativos", "Criativos", "magnific", ["magnific", "higgsfield"]),
+        // The name is read on first use, after Program.Main has chosen the language.
+        new("criativos", L.T("Criativos", "Creative"), "magnific", ["magnific", "higgsfield"]),
     ];
 
     private static readonly Dictionary<string, string> Selected = new(StringComparer.OrdinalIgnoreCase);

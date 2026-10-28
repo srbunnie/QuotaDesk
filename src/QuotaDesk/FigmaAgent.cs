@@ -13,8 +13,9 @@ internal sealed class FigmaAgent : IAgentSource
     private static readonly Uri SummaryUri = new("https://status.figma.com/api/v2/summary.json");
     private static readonly TimeSpan PollInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan RetryInterval = TimeSpan.FromMinutes(5);
-    private static readonly string CreditLimitMessage =
-        "Saldo individual não está disponível por API pública. Consulte AI balance no Figma; a API de consumo exige Enterprise e acesso de administrador.";
+    private static string CreditLimitMessage => L.T(
+        "Saldo individual não está disponível por API pública. Consulte AI balance no Figma; a API de consumo exige Enterprise e acesso de administrador.",
+        "Individual balance is not available through a public API. Check AI balance in Figma; the usage API needs Enterprise and admin access.");
 
     private readonly object _sync = new();
     private AgentStatus _status = CreateUnavailable(DateTimeOffset.UtcNow);
@@ -65,7 +66,7 @@ internal sealed class FigmaAgent : IAgentSource
             var health = ParseHealth(document.RootElement, DateTimeOffset.UtcNow);
             var snapshot = new AgentStatus(Id, "Figma Agent",
                 ActivityState.Unknown,
-                false, health.Detail, "Figma Status API (estado global)", CreateQuotaSnapshot())
+                false, health.Detail, L.T("Figma Status API (estado global)", "Figma Status API (global status)"), CreateQuotaSnapshot())
             {
                 ServiceHealth = health
             };
@@ -82,12 +83,13 @@ internal sealed class FigmaAgent : IAgentSource
                 var checkedAt = DateTimeOffset.UtcNow;
                 var previousHealth = _status.ServiceHealth;
                 var health = previousHealth is null
-                    ? new ServiceHealthSnapshot(ServiceAvailability.Unknown, "Status indisponível",
-                        "Não foi possível consultar a página de status do Figma.", checkedAt)
-                    : previousHealth with { Stale = true, Detail = "Não foi possível atualizar o status global do Figma Agent; exibindo a última leitura." };
+                    ? new ServiceHealthSnapshot(ServiceAvailability.Unknown, L.T("Status indisponível", "Status unavailable"),
+                        L.T("Não foi possível consultar a página de status do Figma.", "Could not reach the Figma status page."), checkedAt)
+                    : previousHealth with { Stale = true, Detail = L.T("Não foi possível atualizar o status global do Figma Agent; exibindo a última leitura.",
+                        "Could not update the Figma Agent global status; showing the last reading.") };
                 _status = new AgentStatus(Id, "Figma Agent",
                     ActivityState.Unknown,
-                    false, health.Detail, "Figma Status API (estado global)", CreateQuotaSnapshot())
+                    false, health.Detail, L.T("Figma Status API (estado global)", "Figma Status API (global status)"), CreateQuotaSnapshot())
                 {
                     ServiceHealth = health
                 };
@@ -104,8 +106,8 @@ internal sealed class FigmaAgent : IAgentSource
     {
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("components", out var components) ||
             components.ValueKind != JsonValueKind.Array)
-            return new(ServiceAvailability.Unknown, "Status indisponível",
-                "A resposta da página de status do Figma não contém os componentes esperados.", checkedAt);
+            return new(ServiceAvailability.Unknown, L.T("Status indisponível", "Status unavailable"),
+                L.T("A resposta da página de status do Figma não contém os componentes esperados.", "The Figma status page response lacks the expected components."), checkedAt);
 
         foreach (var component in components.EnumerateArray())
         {
@@ -118,33 +120,35 @@ internal sealed class FigmaAgent : IAgentSource
                 : null;
             var (state, label) = raw?.ToLowerInvariant() switch
             {
-                "operational" => (ServiceAvailability.Operational, "Serviço OK"),
-                "degraded_performance" => (ServiceAvailability.Degraded, "Degradado"),
-                "partial_outage" => (ServiceAvailability.PartialOutage, "Falha parcial"),
-                "major_outage" => (ServiceAvailability.MajorOutage, "Fora do ar"),
-                "under_maintenance" => (ServiceAvailability.Maintenance, "Em manutenção"),
-                _ => (ServiceAvailability.Unknown, "Sem sinal")
+                "operational" => (ServiceAvailability.Operational, L.T("Serviço OK", "Service OK")),
+                "degraded_performance" => (ServiceAvailability.Degraded, L.T("Degradado", "Degraded")),
+                "partial_outage" => (ServiceAvailability.PartialOutage, L.T("Falha parcial", "Partial outage")),
+                "major_outage" => (ServiceAvailability.MajorOutage, L.T("Fora do ar", "Down")),
+                "under_maintenance" => (ServiceAvailability.Maintenance, L.T("Em manutenção", "Maintenance")),
+                _ => (ServiceAvailability.Unknown, L.T("Sem sinal", "No signal"))
             };
             return new(state, label,
-                $"Status global do Figma Agent: {label.ToLowerInvariant()}. Isso não verifica créditos ou tarefas da sua conta.", checkedAt);
+                L.T($"Status global do Figma Agent: {label.ToLowerInvariant()}. Isso não verifica créditos ou tarefas da sua conta.",
+                    $"Figma Agent global status: {label.ToLowerInvariant()}. This does not check your account's credits or tasks."), checkedAt);
         }
 
-        return new(ServiceAvailability.Unknown, "Sem sinal",
-            "O componente Figma Agent não foi encontrado na página de status oficial.", checkedAt);
+        return new(ServiceAvailability.Unknown, L.T("Sem sinal", "No signal"),
+            L.T("O componente Figma Agent não foi encontrado na página de status oficial.", "The Figma Agent component was not found on the official status page."), checkedAt);
     }
 
     private static ProviderSnapshot CreateQuotaSnapshot() =>
-        new("Créditos de IA do Figma", [], null, CreditLimitMessage, "Menu AI balance do Figma")
+        new(L.T("Créditos de IA do Figma", "Figma AI credits"), [], null, CreditLimitMessage, L.T("Menu AI balance do Figma", "Figma AI balance menu"))
         {
-            Note = "A API de uso do Figma é exclusiva do plano Enterprise e retorna consumo diário atrasado; não informa o saldo atual desta conta."
+            Note = L.T("A API de uso do Figma é exclusiva do plano Enterprise e retorna consumo diário atrasado; não informa o saldo atual desta conta.",
+                "Figma's usage API is Enterprise-only and returns delayed daily usage; it does not report this account's current balance.")
         };
 
     private static AgentStatus CreateUnavailable(DateTimeOffset now)
     {
-        var health = new ServiceHealthSnapshot(ServiceAvailability.Unknown, "Consultando status",
-            "Aguardando a primeira consulta à página de status do Figma.", now);
+        var health = new ServiceHealthSnapshot(ServiceAvailability.Unknown, L.T("Consultando status", "Checking status"),
+            L.T("Aguardando a primeira consulta à página de status do Figma.", "Waiting for the first Figma status page check."), now);
         return new AgentStatus("figma", "Figma Agent", ActivityState.Unknown, false, health.Detail,
-            "Figma Status API (estado global)", CreateQuotaSnapshot())
+            L.T("Figma Status API (estado global)", "Figma Status API (global status)"), CreateQuotaSnapshot())
         {
             ServiceHealth = health
         };

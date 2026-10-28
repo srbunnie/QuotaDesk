@@ -22,7 +22,7 @@ internal sealed class CodexAgent : IAgentSource
     private readonly Dictionary<string, (ActivityState State, DateTimeOffset At, string Detail, string? Action)> _files = [];
     private Dictionary<string, string> _titles = [];
     private DateTime _titlesRead;
-    private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Codex", "Consultando...", "codex app-server");
+    private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Codex", L.T("Consultando...", "Checking..."), "codex app-server");
     private DateTimeOffset _lastRefresh = DateTimeOffset.MinValue;
     private int _refreshing;
     private bool _visible;
@@ -124,14 +124,14 @@ internal sealed class CodexAgent : IAgentSource
             var approval = Math.Max(Last("_approval_request\""), Last("\"type\":\"request_user_input\""));
             var end = Math.Max(complete, aborted);
             var step = ActionMarkers.Select(m => (At: Last(m.Marker), m.Kind)).MaxBy(m => m.At);
-            var action = step.At >= 0 ? AgentActions.Describe(step.Kind, true) : "Trabalhando…";
-            if (approval > started && approval > end) return (ActivityState.Waiting, lastWrite, "aguardando sua aprovação", "Precisa da sua aprovação");
-            if (started > end) return (ActivityState.Working, lastWrite, "executando tarefa", action);
+            var action = step.At >= 0 ? AgentActions.Describe(step.Kind, true) : L.T("Trabalhando…", "Working…");
+            if (approval > started && approval > end) return (ActivityState.Waiting, lastWrite, L.T("aguardando sua aprovação", "waiting for your approval"), L.T("Precisa da sua aprovação", "Needs your approval"));
+            if (started > end) return (ActivityState.Working, lastWrite, L.T("executando tarefa", "running a task"), action);
             if (end >= 0) return complete > aborted
-                ? (ActivityState.Waiting, lastWrite, "tarefa concluída · aguardando você", "Terminou · sua vez")
-                : (ActivityState.Waiting, lastWrite, "tarefa interrompida", "Tarefa interrompida");
+                ? (ActivityState.Waiting, lastWrite, L.T("tarefa concluída · aguardando você", "task done · waiting for you"), L.T("Terminou · sua vez", "Done · your turn"))
+                : (ActivityState.Waiting, lastWrite, L.T("tarefa interrompida", "task interrupted"), L.T("Tarefa interrompida", "Task interrupted"));
             // Tail without markers (very long turn): recent writes still mean work in progress.
-            return (ActivityState.Working, lastWrite, "executando tarefa", action);
+            return (ActivityState.Working, lastWrite, L.T("executando tarefa", "running a task"), action);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
     }
@@ -158,9 +158,9 @@ internal sealed class CodexAgent : IAgentSource
             {
                 var entry = _files[key];
                 if (entry.State == ActivityState.Working && now - entry.At > WorkingSilence)
-                    entry = (ActivityState.Idle, entry.At, "sem atividade recente", null);
+                    entry = (ActivityState.Idle, entry.At, L.T("sem atividade recente", "no recent activity"), null);
                 else if (entry.State == ActivityState.Waiting && now - entry.At > WaitingTimeout)
-                    entry = (ActivityState.Idle, entry.At, "sessão parada", null);
+                    entry = (ActivityState.Idle, entry.At, L.T("sessão parada", "session stopped"), null);
                 if (entry.State == ActivityState.Idle && now - entry.At > TimeSpan.FromHours(2)) { _files.Remove(key); continue; }
                 if (best is null || entry.State > best.Value.State || (entry.State == best.Value.State && entry.At > best.Value.At))
                     (best, bestFile) = (entry, key);
@@ -169,9 +169,10 @@ internal sealed class CodexAgent : IAgentSource
         var activity = best is { Action: { } action } && bestFile is not null
             ? new AgentActivity(ThreadTitle(bestFile), action, best.Value.At) : null;
         var state = best?.State ?? ActivityState.Idle;
-        var detail = best?.Detail ?? "nenhuma tarefa recente";
-        var source = _watcher is null ? "pasta de sessões do Codex não encontrada"
-            : best is null ? "inferido do log local de sessões" : $"inferido do log local · {LimitParsing.Ago(now - best.Value.At)}";
+        var detail = best?.Detail ?? L.T("nenhuma tarefa recente", "no recent task");
+        var source = _watcher is null ? L.T("pasta de sessões do Codex não encontrada", "Codex sessions folder not found")
+            : best is null ? L.T("inferido do log local de sessões", "inferred from the local session log")
+            : L.T($"inferido do log local · {LimitParsing.Ago(now - best.Value.At)}", $"inferred from the local log · {LimitParsing.Ago(now - best.Value.At)}");
         // The same quota is spent by Codex and by the Work space (only plain chat does not count).
         return new AgentStatus(Id, "ChatGPT Codex", state, true, detail, source, _quota) { Activity = activity };
     }
@@ -225,7 +226,7 @@ internal sealed class CodexAgent : IAgentSource
             var result = await CodexClient.ReadAsync(CancellationToken.None);
             // Keep the last good reading on a transient failure, but flag it.
             _quota = result.Windows.Count == 0 && _quota.Windows.Count > 0
-                ? _quota with { Stale = true, Note = $"{result.Error} Mostrando a última leitura." }
+                ? _quota with { Stale = true, Note = L.T($"{result.Error} Mostrando a última leitura.", $"{result.Error} Showing the last reading.") }
                 : result;
             Changed?.Invoke();
         }

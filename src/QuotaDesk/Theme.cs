@@ -58,7 +58,7 @@ internal static class Theme
     public static Color PaceColor(double delta) => delta > 10 ? Red : delta > 3 ? Amber : Green;
 
     public static string PaceLabel(double delta) =>
-        delta > 3 ? $"ACIMA +{delta:0}" : delta < -3 ? $"FOLGA {-delta:0}" : "NO RITMO";
+        delta > 3 ? L.T($"ACIMA +{delta:0}", $"OVER +{delta:0}") : delta < -3 ? L.T($"FOLGA {-delta:0}", $"UNDER {-delta:0}") : L.T("NO RITMO", "ON PACE");
 
     public static readonly Color Teal = Color.FromArgb(46, 230, 196);
     public static readonly Color Exhausted = Color.FromArgb(240, 36, 56);

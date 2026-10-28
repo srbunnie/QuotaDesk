@@ -51,7 +51,7 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         }
         catch (SocketException)
         {
-            ListenerError = $"Porta local {Port} ocupada: hooks do Claude indisponíveis.";
+            ListenerError = L.T($"Porta local {Port} ocupada: hooks do Claude indisponíveis.", $"Local port {Port} in use: Claude hooks unavailable.");
         }
     }
 
@@ -85,13 +85,15 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         var quota = ClaudeQuota.Read(now);
         var (state, detail) = Aggregate(now);
         var source = ListenerError.Length > 0 ? ListenerError
-            : _eventCounts.IsEmpty ? "hooks do Claude Code · nenhum evento recebido ainda"
-            : $"hooks do Claude Code · último evento {LimitParsing.Ago(now - _eventCounts.Values.Max(x => x.Last))}";
+            : _eventCounts.IsEmpty ? L.T("hooks do Claude Code · nenhum evento recebido ainda", "Claude Code hooks · no event received yet")
+            : L.T($"hooks do Claude Code · último evento {LimitParsing.Ago(now - _eventCounts.Values.Max(x => x.Last))}",
+                $"Claude Code hooks · last event {LimitParsing.Ago(now - _eventCounts.Values.Max(x => x.Last))}");
         // Chat and Cowork do not run Claude Code hooks and leave no real-time local signal. The desktop usage samples
         // (~every 15 min) only say usage rose at some point in the last interval, so they are shown as information,
         // never as the live state.
         if (ClaudeQuota.LastUsageRise is { } rise)
-            source += $" · último uso da cota detectado às {rise.LocalDateTime:HH:mm} (chat, Cowork ou Code)";
+            source += L.T($" · último uso da cota detectado às {rise.LocalDateTime:HH:mm} (chat, Cowork ou Code)",
+                $" · last limit usage seen at {rise.LocalDateTime:HH:mm} (chat, Cowork or Code)");
         // The bubble follows the session that is working (or, if none, the one waiting for you) and changed last.
         var latest = _sessions.Values.Where(s => s.Action is not null && s.State != ActivityState.Idle && now - s.At <= WaitingTimeout)
             .OrderByDescending(s => s.State == ActivityState.Working).ThenByDescending(s => s.At).FirstOrDefault();
@@ -110,7 +112,7 @@ internal sealed partial class ClaudeIntegration : IAgentSource
     private List<PendingItem> PendingSessions(DateTimeOffset now) =>
         _sessions.Where(p => p.Value is { State: ActivityState.Waiting, PendingKind: not null } s && now - s.At <= WaitingTimeout)
             .OrderBy(p => p.Value.At)
-            .Select(p => new PendingItem(p.Key + "|" + p.Value.At.ToUnixTimeSeconds(), "Claude Code", p.Value.Project ?? "sessão", p.Value.PendingKind!, p.Value.At))
+            .Select(p => new PendingItem(p.Key + "|" + p.Value.At.ToUnixTimeSeconds(), "Claude Code", p.Value.Project ?? L.T("sessão", "session"), p.Value.PendingKind!, p.Value.At))
             .ToList();
 
     private (ActivityState, string) Aggregate(DateTimeOffset now)
@@ -120,17 +122,17 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         var effective = _sessions.Values.Select(s => s.State switch
         {
             ActivityState.Working when now - s.At > WorkingTimeout =>
-                s with { State = ActivityState.Waiting, Detail = "sem eventos há mais de 10 min" },
-            ActivityState.Waiting when now - s.At > WaitingTimeout => s with { State = ActivityState.Idle, Detail = "sessão parada" },
+                s with { State = ActivityState.Waiting, Detail = L.T("sem eventos há mais de 10 min", "no events for over 10 min") },
+            ActivityState.Waiting when now - s.At > WaitingTimeout => s with { State = ActivityState.Idle, Detail = L.T("sessão parada", "session stopped") },
             _ => s
         }).ToList();
         var working = effective.Where(s => s.State == ActivityState.Working).OrderByDescending(s => s.At).FirstOrDefault();
         if (working is not null)
             return (ActivityState.Working, effective.Count(s => s.State == ActivityState.Working) > 1
-                ? $"{effective.Count(s => s.State == ActivityState.Working)} sessões ativas" : working.Detail);
+                ? L.T($"{effective.Count(s => s.State == ActivityState.Working)} sessões ativas", $"{effective.Count(s => s.State == ActivityState.Working)} active sessions") : working.Detail);
         var waiting = effective.Where(s => s.State == ActivityState.Waiting).OrderByDescending(s => s.At).FirstOrDefault();
         if (waiting is not null) return (ActivityState.Waiting, waiting.Detail);
-        return (ActivityState.Idle, effective.Count > 0 ? "sessão aberta, sem pedido em andamento" : "nenhuma sessão ativa");
+        return (ActivityState.Idle, effective.Count > 0 ? L.T("sessão aberta, sem pedido em andamento", "session open, no request running") : L.T("nenhuma sessão ativa", "no active session"));
     }
 
     public string DiagnosticsJson(DateTimeOffset now)
@@ -241,21 +243,21 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         var kind = AgentActions.ForClaudeTool(tool);
         SessionState? next = eventName switch
         {
-            "SessionStart" => new(ActivityState.Idle, DateTimeOffset.Now, "sessão iniciada"),
-            "UserPromptSubmit" => new(ActivityState.Working, DateTimeOffset.Now, "processando pedido", Action: AgentActions.Describe(ActionKind.Thinking, false)),
-            "PreToolUse" => new(ActivityState.Working, DateTimeOffset.Now, tool is null ? "usando ferramenta" : $"usando {tool}",
+            "SessionStart" => new(ActivityState.Idle, DateTimeOffset.Now, L.T("sessão iniciada", "session started")),
+            "UserPromptSubmit" => new(ActivityState.Working, DateTimeOffset.Now, L.T("processando pedido", "working on your request"), Action: AgentActions.Describe(ActionKind.Thinking, false)),
+            "PreToolUse" => new(ActivityState.Working, DateTimeOffset.Now, tool is null ? L.T("usando ferramenta", "using a tool") : L.T($"usando {tool}", $"using {tool}"),
                 Action: AgentActions.Describe(kind, false, tool)),
-            "PostToolUse" => new(ActivityState.Working, DateTimeOffset.Now, "processando resultado", Action: AgentActions.Describe(kind, true, tool)),
-            "PermissionRequest" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua permissão", "Permissão", Action: "Precisa da sua permissão"),
+            "PostToolUse" => new(ActivityState.Working, DateTimeOffset.Now, L.T("processando resultado", "processing the result"), Action: AgentActions.Describe(kind, true, tool)),
+            "PermissionRequest" => new(ActivityState.Waiting, DateTimeOffset.Now, L.T("aguardando sua permissão", "waiting for your permission"), L.T("Permissão", "Permission"), Action: L.T("Precisa da sua permissão", "Needs your permission")),
             "Notification" => Str("notification_type") switch
             {
-                "permission_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua permissão", "Permissão", Action: "Precisa da sua permissão"),
-                "elicitation_dialog" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua resposta", "Pergunta", Action: "Tem uma pergunta para você"),
-                "idle_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua resposta", Action: "Esperando sua resposta"),
-                _ => new SessionState(ActivityState.Waiting, DateTimeOffset.Now, "aguardando você", Action: "Esperando você")
+                "permission_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, L.T("aguardando sua permissão", "waiting for your permission"), L.T("Permissão", "Permission"), Action: L.T("Precisa da sua permissão", "Needs your permission")),
+                "elicitation_dialog" => new(ActivityState.Waiting, DateTimeOffset.Now, L.T("aguardando sua resposta", "waiting for your answer"), L.T("Pergunta", "Question"), Action: L.T("Tem uma pergunta para você", "Has a question for you")),
+                "idle_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, L.T("aguardando sua resposta", "waiting for your answer"), Action: L.T("Esperando sua resposta", "Waiting for your answer")),
+                _ => new SessionState(ActivityState.Waiting, DateTimeOffset.Now, L.T("aguardando você", "waiting for you"), Action: L.T("Esperando você", "Waiting for you"))
             },
-            "Stop" => new(ActivityState.Waiting, DateTimeOffset.Now, "resposta concluída · aguardando você", Action: "Terminou · sua vez"),
-            "StopFailure" => new(ActivityState.Waiting, DateTimeOffset.Now, "turno interrompido por erro", Action: "Parou por um erro"),
+            "Stop" => new(ActivityState.Waiting, DateTimeOffset.Now, L.T("resposta concluída · aguardando você", "answer done · waiting for you"), Action: L.T("Terminou · sua vez", "Done · your turn")),
+            "StopFailure" => new(ActivityState.Waiting, DateTimeOffset.Now, L.T("turno interrompido por erro", "turn stopped by an error"), Action: L.T("Parou por um erro", "Stopped by an error")),
             _ => null
         };
         if (eventName is not ("SessionEnd" or "SessionStart" or "UserPromptSubmit" or "PreToolUse" or "PostToolUse" or

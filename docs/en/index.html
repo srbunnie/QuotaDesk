@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuotaDesk — know how much of your AI you can still use</title>
+<meta name="description" content="QuotaDesk shows how much of Codex, Claude Code, Antigravity, OpenRouter, Magnific and Figma you can still use, warns you before a limit runs out and tells you when an agent is waiting for you. Free, open source, and nothing leaves your computer.">
+<meta property="og:title" content="QuotaDesk">
+<meta property="og:description" content="Know how much of your AI you can still use, without opening any of it. A tiny animated office in your Windows tray.">
+<meta property="og:image" content="https://srbunnie.github.io/QuotaDesk/assets/screens/panel-working.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="pt_BR">
+<link rel="alternate" hreflang="pt-BR" href="https://srbunnie.github.io/QuotaDesk/">
+<link rel="alternate" hreflang="en" href="https://srbunnie.github.io/QuotaDesk/en/">
+<link rel="alternate" hreflang="x-default" href="https://srbunnie.github.io/QuotaDesk/">
+<link rel="icon" href="../assets/screens/tray.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d1a;
+    --bg-2: #11142a;
+    --card: #161a33;
+    --edge: #262b52;
+    --text: #e7e9f6;
+    --muted: #a3a8c9;
+    --cyan: #4fd8ff;
+    --orange: #ff8a3d;
+    --violet: #a774ff;
+    --green: #3ee6a1;
+    --radius: 14px;
+    --max: 1120px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.65 Inter, system-ui, "Segoe UI", sans-serif;
+  }
+  a { color: var(--cyan); }
+  a:hover { color: #9ae9ff; }
+  :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; border-radius: 6px; }
+  img { max-width: 100%; height: auto; display: block; }
+  code, pre { font-family: "JetBrains Mono", Consolas, monospace; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
+  .skip { position: absolute; left: -999px; top: 8px; background: var(--orange); color: #000; padding: 8px 14px; border-radius: 8px; z-index: 10; }
+  .skip:focus { left: 12px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  header.top { position: sticky; top: 0; z-index: 5; background: rgba(11,13,26,.88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--edge); }
+  .top .wrap { display: flex; align-items: center; gap: 24px; min-height: 64px; flex-wrap: wrap; }
+  .logo { font-family: Silkscreen, monospace; font-size: 22px; color: var(--text); text-decoration: none; letter-spacing: 1px; }
+  .logo b { color: var(--orange); font-weight: 400; }
+  nav ul { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+  nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 15px; }
+  nav a:hover { color: var(--text); }
+  .top .gh { margin-left: auto; }
+  .lang { display: flex; align-items: center; gap: 2px; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .5px; }
+  .lang a, .lang [aria-current] { display: inline-grid; place-items: center; min-width: 36px; min-height: 36px; padding: 0 8px; border-radius: 8px; text-decoration: none; }
+  .lang a { color: var(--muted); }
+  .lang a:hover { color: var(--text); background: var(--bg-2); }
+  .lang [aria-current] { color: var(--text); background: var(--card); box-shadow: inset 0 0 0 1px var(--edge); }
+  .lang .sep { color: var(--edge); }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid transparent; }
+  .btn.primary { background: var(--orange); color: #1a0d03; }
+  .btn.primary:hover { background: #ffa463; color: #1a0d03; }
+  .btn.ghost { border-color: var(--edge); color: var(--text); background: var(--bg-2); }
+  .btn.ghost:hover { border-color: var(--cyan); color: var(--text); }
+
+  .hero { padding: 64px 0 40px; background: radial-gradient(1200px 500px at 50% -10%, #23205a 0%, transparent 70%); }
+  .hero .grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 44px; align-items: center; }
+  .eyebrow { font-family: Silkscreen, monospace; color: var(--cyan); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
+  h1 { font-size: clamp(32px, 4.6vw, 52px); line-height: 1.1; margin: 0 0 18px; letter-spacing: -.5px; }
+  h1 em { font-style: normal; color: var(--orange); }
+  .lead { font-size: 19px; color: var(--muted); margin: 0 0 22px; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 26px; padding: 0; list-style: none; }
+  .badges li { font-size: 13px; padding: 4px 10px; border: 1px solid var(--edge); border-radius: 999px; color: var(--muted); background: var(--bg-2); }
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .shot { border-radius: var(--radius); box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px var(--edge); }
+  .note { font-size: 13px; color: var(--muted); margin-top: 10px; text-align: center; }
+  .banner { margin-top: 48px; border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 0 1px var(--edge); }
+
+  section { padding: 72px 0; }
+  section.alt { background: var(--bg-2); border-block: 1px solid var(--edge); }
+  h2 { font-size: clamp(26px, 3.2vw, 36px); margin: 0 0 10px; letter-spacing: -.3px; }
+  h2 + .sub { color: var(--muted); margin: 0 0 36px; max-width: 720px; font-size: 17px; }
+  h3 { margin: 0 0 8px; font-size: 19px; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius); padding: 22px; }
+  .card p { margin: 0; color: var(--muted); }
+  .card .tag { font-family: Silkscreen, monospace; font-size: 12px; color: var(--cyan); display: block; margin-bottom: 8px; letter-spacing: .5px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--edge); }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--edge); vertical-align: top; }
+  th { background: #1c2142; font-size: 14px; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  .table-scroll { overflow-x: auto; }
+
+  .usecase { display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center; margin-bottom: 64px; }
+  .usecase:last-child { margin-bottom: 0; }
+  .usecase.flip .text { order: 2; }
+  .usecase .text p { color: var(--muted); margin: 0 0 12px; }
+  .usecase .num { font-family: Silkscreen, monospace; color: var(--orange); font-size: 14px; display: block; margin-bottom: 6px; }
+  .usecase figure { margin: 0; }
+  .usecase figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; text-align: center; }
+  .pair { display: flex; gap: 14px; align-items: flex-start; justify-content: center; }
+  .notch-bg { background: linear-gradient(135deg, #2a2f52, #1a1d38); border-radius: var(--radius); padding: 24px; display: flex; justify-content: flex-end; box-shadow: 0 0 0 1px var(--edge); }
+
+  /* Three devices drawn in CSS around the real screenshots: a desk monitor, a 3.5" USB screen and a portrait screen. */
+  .devices { display: grid; grid-template-columns: 2.3fr 1.25fr .85fr; gap: 34px; align-items: end; }
+  .devices > * { min-width: 0; }
+  .device { margin: 0; display: flex; flex-direction: column; align-items: center; }
+  .device .screen { background: #05060c; border: 1px solid #343a63; box-shadow: 0 24px 60px rgba(0,0,0,.55), inset 0 0 0 2px #0b0d1a; }
+  .device .screen img { border-radius: 4px; width: 100%; }
+  .device.desktop .screen { width: 100%; padding: 12px 12px 18px; border-radius: 14px; }
+  .device.desktop .stand { width: 22%; height: 34px; background: linear-gradient(#2a2f52, #1a1d38); clip-path: polygon(30% 0, 70% 0, 82% 100%, 18% 100%); }
+  .device.desktop .stand::after { content: ""; display: block; }
+  .device.mini .screen { width: 100%; padding: 9px; border-radius: 10px; border-color: #4a4f78; }
+  .device.portrait .screen { width: 100%; padding: 8px; border-radius: 12px; border-color: #4a4f78; }
+  .device .foot { width: 46%; height: 10px; margin-top: 6px; border-radius: 0 0 8px 8px; background: #23284a; }
+  .device.desktop .foot { display: none; }
+  .device figcaption { margin-top: 16px; text-align: center; color: var(--muted); font-size: 15px; max-width: 320px; }
+  .device figcaption strong { display: block; color: var(--text); font-size: 17px; margin-bottom: 2px; }
+
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .gallery figure { margin: 0; }
+  .gallery figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  .steps { counter-reset: s; display: grid; gap: 16px; padding: 0; list-style: none; margin: 0; }
+  .steps li { counter-increment: s; background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius); padding: 20px 22px 20px 72px; position: relative; }
+  .steps li::before { content: counter(s); position: absolute; left: 22px; top: 18px; width: 34px; height: 34px; border-radius: 9px; background: var(--orange); color: #1a0d03; font-family: Silkscreen, monospace; display: grid; place-items: center; font-size: 18px; }
+  .steps p { margin: 4px 0 0; color: var(--muted); }
+
+  .install { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .term { background: #070912; border: 1px solid var(--edge); border-radius: var(--radius); overflow: hidden; }
+  .term .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--edge); background: #0f1224; font-size: 13px; color: var(--muted); }
+  .term pre { margin: 0; padding: 18px; overflow-x: auto; color: #d6f6ff; font-size: 14px; line-height: 1.6; }
+  .copy { font: 600 13px Inter, sans-serif; background: var(--bg-2); color: var(--text); border: 1px solid var(--edge); border-radius: 7px; padding: 5px 12px; cursor: pointer; }
+  .copy:hover { border-color: var(--cyan); }
+  .term .after { padding: 0 18px 16px; color: var(--muted); font-size: 14px; }
+  .term .after p { margin: 0 0 6px; }
+  .ok { color: var(--green); }
+  .warn { background: rgba(255,138,61,.08); border: 1px solid rgba(255,138,61,.35); border-radius: var(--radius); padding: 14px 18px; color: var(--muted); margin-top: 20px; }
+  .warn strong { color: var(--text); }
+
+  .skill { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: center; }
+  .skill ul { color: var(--muted); padding-left: 20px; }
+  .cast { background: radial-gradient(600px 220px at 50% 80%, #2b2366, transparent 70%); border-radius: var(--radius); padding: 18px; }
+
+  .credits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  /* Grid items default to min-width:auto, so a long code line would widen the column past the screen. */
+  .hero .grid > *, .usecase > *, .install > *, .skill > *, .credits > *, .cards > * { min-width: 0; }
+
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--edge); color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer p { margin: 0; }
+
+  @media (max-width: 900px) {
+    .hero .grid, .usecase, .install, .skill, .credits { grid-template-columns: 1fr; }
+    .devices { grid-template-columns: 1fr 1fr; }
+    .device.desktop { grid-column: 1 / -1; }
+    .usecase.flip .text { order: 0; }
+    .cards, .gallery { grid-template-columns: 1fr; }
+    .top .gh { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#">QUOTA<b>DESK</b></a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="#recursos">How it works</a></li>
+        <li><a href="#telas">Where to use it</a></li>
+        <li><a href="#casos">What it's for</a></li>
+        <li><a href="#instalar">Install</a></li>
+        <li><a href="#privacidade">Privacy</a></li>
+      </ul>
+    </nav>
+    <a class="btn ghost gh" href="https://github.com/srbunnie/QuotaDesk" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span><span class="sr-only">(opens in a new tab)</span></a>
+    <p class="lang" role="group" aria-label="Language / Idioma"><a href="../" lang="pt-BR" hreflang="pt-BR">PT<span class="sr-only"> (Português)</span></a><span class="sep" aria-hidden="true">|</span><span aria-current="page" lang="en">EN<span class="sr-only"> (English)</span></span></p>
+  </div>
+</header>
+
+<main id="conteudo">
+  <div class="hero">
+    <div class="wrap">
+      <div class="grid">
+        <div>
+          <p class="eyebrow">For people who use several AIs</p>
+          <h1>Know how much of your AI you can still use. <em>Without opening any of it.</em></h1>
+          <p class="lead">A tiny animated office sits in the corner of your screen. Each AI gets its own character: it works when the AI works, calls you when the AI needs you, and warns you before the limit runs out.</p>
+          <ul class="badges" aria-label="Highlights">
+            <li>Free</li><li>Open source</li><li>Nothing leaves your computer</li><li>Windows 10 and 11</li>
+          </ul>
+          <div class="ctas">
+            <a class="btn primary" href="#instalar">Install for free</a>
+            <a class="btn ghost" href="#telas">See it in action</a>
+          </div>
+          <p class="note" style="text-align:left">Works with Codex, Claude Code, Antigravity, OpenRouter, Magnific and Figma.</p>
+        </div>
+        <figure style="margin:0">
+          <img class="shot" src="../assets/screens/panel-working.png" width="711" height="400"
+               alt="QuotaDesk panel: three rooms with characters typing and, below, the cards for Codex (77% of the weekly limit used), Claude Code (21% of the 5-hour limit) and Antigravity (24%).">
+          <figcaption class="note">Sample data.</figcaption>
+        </figure>
+      </div>
+      <div class="banner">
+        <img src="../assets/loft-banner.jpg" width="1800" height="185" loading="lazy"
+             alt="The whole office: six rooms side by side, one for each AI, with windows, desks and monitors.">
+      </div>
+    </div>
+  </div>
+
+  <section id="recursos">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="sub">Install it and use your AIs as usual. QuotaDesk keeps track on its own. Each AI gets a room, a character and a card with what matters.</p>
+      <div class="cards">
+        <div class="card"><span class="tag">What's left</span><p>How much you can still use in the next 5 hours and this week, and when the limit resets. For Magnific and OpenRouter, your credit balance.</p></div>
+        <div class="card"><span class="tag">When it runs out</span><p>QuotaDesk follows your pace and works out when the limit will run out. If that's before it resets, you'll know in time to switch AIs.</p></div>
+        <div class="card"><span class="tag">Who needs you</span><p>When an agent asks for permission or has a question, its character calls you and Windows shows a notification. One click opens the list.</p></div>
+      </div>
+      <h3 style="margin-top:40px">What you see for each AI</h3>
+      <div class="table-scroll" style="margin-top:12px">
+        <table>
+          <caption class="sr-only">Supported AIs, what you see and what you need to do</caption>
+          <thead><tr><th scope="col">AI</th><th scope="col">What you see</th><th scope="col">What you do</th></tr></thead>
+          <tbody>
+            <tr><td>Codex</td><td>5-hour and weekly limits, what it's doing right now</td><td>nothing, if you already use Codex</td></tr>
+            <tr><td>Claude Code</td><td>5-hour and weekly limits, what it's doing, permission requests</td><td>a 5-minute setup</td></tr>
+            <tr><td>Antigravity</td><td>limit for each group of models</td><td>nothing, just keep it open</td></tr>
+            <tr><td>Magnific</td><td>credit balance and daily spend</td><td>sign in once</td></tr>
+            <tr><td>OpenRouter</td><td>balance in dollars and daily spend</td><td>sign in once</td></tr>
+            <tr><td>Figma</td><td>whether the service is up</td><td>nothing</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px;color:var(--muted)">When a number is an estimate, it shows a <code>~</code>. If an AI doesn't answer, its card says "no signal". QuotaDesk never makes up a number.</p>
+    </div>
+  </section>
+
+  <section id="telas" class="alt">
+    <div class="wrap">
+      <h2>On any screen</h2>
+      <p class="sub">Use it on your main monitor, on a tiny USB screen next to your keyboard or on a screen turned upright. QuotaDesk adapts on its own.</p>
+      <div class="devices">
+        <figure class="device desktop">
+          <div class="screen"><img src="../assets/screens/panel-working.png" width="711" height="400" loading="lazy"
+               alt="Desk monitor showing the full panel: three rooms with characters at work and a card for each AI."></div>
+          <div class="stand" aria-hidden="true"></div>
+          <figcaption><strong>On your computer</strong>The full panel, right by the clock. It can stay on top of your other windows if you want.</figcaption>
+        </figure>
+        <figure class="device mini">
+          <div class="screen"><img src="../assets/screens/mini-landscape.png" width="480" height="320" loading="lazy"
+               alt="A 3.5-inch USB screen lying flat, showing Codex, Claude and Antigravity."></div>
+          <div class="foot" aria-hidden="true"></div>
+          <figcaption><strong>Tiny 3.5" screen</strong>A cheap USB-C screen becomes an always-on panel that cycles through your AIs.</figcaption>
+        </figure>
+        <figure class="device portrait">
+          <div class="screen"><img src="../assets/screens/mini-portrait.png" width="320" height="480" loading="lazy"
+               alt="An upright screen in portrait mode, with a card for each AI stacked one below the other."></div>
+          <div class="foot" aria-hidden="true"></div>
+          <figcaption><strong>Upright</strong>Turn the screen and the panel becomes a column. Great next to your monitor.</figcaption>
+        </figure>
+      </div>
+      <p class="note">Images use sample data.</p>
+    </div>
+  </section>
+
+  <section id="casos">
+    <div class="wrap">
+      <h2>What it's for</h2>
+      <p class="sub">For people who use several AIs every day and don't want to hit a limit halfway through a task.</p>
+
+      <div class="usecase">
+        <div class="text">
+          <span class="num">01</span>
+          <h3>Never run out of AI mid-task</h3>
+          <p>If you're using it up faster than the limit allows, the card tells you: "at this pace, runs out at 4:08 PM, before it resets." You have time to wrap up calmly or switch AIs.</p>
+          <p>When the limit runs out, the character takes a break and leaves a sign saying when it will be back.</p>
+        </div>
+        <figure>
+          <img class="shot" src="../assets/screens/panel-waiting.png" width="711" height="400" loading="lazy"
+               alt="Codex with its 5-hour limit used up and a break sign, Claude Code at 93% used with a badge showing 2 pending requests.">
+          <figcaption>Codex on a break, Claude at 93% and waiting for you.</figcaption>
+        </figure>
+      </div>
+
+      <div class="usecase flip">
+        <div class="text">
+          <span class="num">02</span>
+          <h3>Know right away when an AI needs you</h3>
+          <p>Asked for permission? Has a question? The character stops to think, the card shows how many pending requests there are, and Windows lets you know. Click the notification to see the list.</p>
+          <p>While they work, the characters tell you what they're doing: "Ran the command", "Editing a file".</p>
+        </div>
+        <figure>
+          <div class="notch-bg"><img src="../assets/screens/notch.png" width="382" height="286" loading="lazy"
+               alt="Edge bar bubble: Claude Code with 93% of its 5-hour limit used, expected to run out in about 20 minutes."></div>
+          <figcaption>The Edge bar in its Minimal style. Click it to switch between "Resets in" and "Runs out in".</figcaption>
+        </figure>
+      </div>
+
+      <div class="usecase">
+        <div class="text">
+          <span class="num">03</span>
+          <h3>Pick the best AI for your next task</h3>
+          <p>Codex paused until 6 PM, Claude with plenty left this week, Gemini free in Antigravity: all side by side, with the time each limit resets.</p>
+          <p>For Magnific and OpenRouter, you see your balance, how much you spend per day and how long it will last.</p>
+        </div>
+        <figure>
+          <img class="shot" src="../assets/screens/panel-compact.png" width="711" height="208" loading="lazy"
+               alt="The Cards only look: three cards side by side, without the office.">
+          <figcaption>The "Cards only" look, for a low-key panel.</figcaption>
+        </figure>
+      </div>
+
+      <div class="usecase flip">
+        <div class="text">
+          <span class="num">04</span>
+          <h3>An always-on panel on a tiny screen</h3>
+          <p>Plug in a 3.5" USB-C screen (like the Turing Smart Screen) or a small monitor. QuotaDesk finds it and shows one AI at a time, in landscape or portrait.</p>
+        </div>
+        <figure>
+          <div class="pair">
+            <img class="shot" src="../assets/screens/mini-landscape.png" width="480" height="320" loading="lazy" style="width:62%"
+                 alt="A 480 by 320 mini screen showing Codex, Claude and Antigravity.">
+            <img class="shot" src="../assets/screens/mini-portrait.png" width="320" height="480" loading="lazy" style="width:30%"
+                 alt="A 320 by 480 mini screen in portrait.">
+          </div>
+          <figcaption>The tiny screen, in landscape and portrait.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="wrap">
+      <h2>An office that follows your day</h2>
+      <p class="sub">Pick your city and the windows show the real sky: sunrise, sunshine, rain, storms and the moon in its right phase. When the AIs stop, the characters take a nap.</p>
+      <div class="gallery">
+        <figure><img class="shot" src="../assets/screens/sky-sunset.png" width="711" height="400" loading="lazy" alt="The office at sunset."><figcaption>Sunset</figcaption></figure>
+        <figure><img class="shot" src="../assets/screens/sky-storm.png" width="711" height="400" loading="lazy" alt="The office in the rain, with lightning."><figcaption>Storm</figcaption></figure>
+        <figure><img class="shot" src="../assets/screens/idle-sleep.png" width="711" height="400" loading="lazy" alt="Idle characters napping at night."><figcaption>After hours</figcaption></figure>
+        <figure><img class="shot" src="../assets/screens/sky-night.png" width="711" height="400" loading="lazy" alt="The office at night, with the moon."><figcaption>Night</figcaption></figure>
+        <figure><img class="shot" src="../assets/screens/panel-no-signal.png" width="711" height="354" loading="lazy" alt="Tools with no signal, with characters looking for signal on their phones."><figcaption>No signal</figcaption></figure>
+        <figure><img class="shot" src="../assets/screens/settings.png" width="440" height="432" loading="lazy" alt="The Settings window, with a tab for each group of options, including Tools."><figcaption>Settings</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="instalar">
+    <div class="wrap">
+      <h2>Install in a minute</h2>
+      <p class="sub">No admin rights, nothing else to install. Pick one of the two ways.</p>
+      <div class="install">
+        <div class="term">
+          <div class="bar"><span>Fastest: paste into PowerShell</span><button class="copy" type="button" data-copy="irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex">Copy</button></div>
+          <pre><code>irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex</code></pre>
+          <div class="after">
+            <p><span class="ok">✓</span> downloads the latest version</p>
+            <p><span class="ok">✓</span> adds shortcuts to the Start menu and your desktop</p>
+            <p><span class="ok">✓</span> opens QuotaDesk</p>
+          </div>
+        </div>
+        <div class="term">
+          <div class="bar"><span>If you'd rather get the code</span><button class="copy" type="button" data-copy="git clone https://github.com/srbunnie/QuotaDesk.git">Copy</button></div>
+          <pre><code>git clone https://github.com/srbunnie/QuotaDesk.git
+<span style="color:#a3a8c9"># then double-click</span> QuotaDesk.cmd</code></pre>
+          <div class="after">
+            <p><span class="ok">✓</span> opens QuotaDesk, or installs it if it isn't there yet</p>
+            <p><span class="ok">✓</span> updates when a new version is out, keeping your settings</p>
+            <p><span class="ok">✓</span> developers can test their own changes from there too</p>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:18px"><a href="https://github.com/srbunnie/QuotaDesk/releases/latest/download/QuotaDesk-win-x64.zip">Download the .zip</a> · <a href="https://github.com/srbunnie/QuotaDesk/archive/refs/heads/main.zip">Download the code</a></p>
+      <div class="warn"><strong>The first time</strong>, Windows may say "Windows protected your PC". This happens with new apps that don't have a digital signature yet. Click <strong>More info › Run anyway</strong>.</div>
+
+      <h3 style="margin-top:44px">After you install</h3>
+      <ol class="steps" style="margin-top:14px">
+        <li><h3>Codex and Antigravity show up on their own</h3><p>Just have them installed and signed in. Antigravity needs to be open.</p></li>
+        <li><h3>Connect Claude Code</h3><p>A 5-minute setup shows the exact limit and tells you when Claude Code asks for your permission.</p></li>
+        <li><h3>Sign in to Magnific and OpenRouter</h3><p>Click the QuotaDesk icon next to the clock, choose <strong>Connect</strong> and sign in to your account.</p></li>
+      </ol>
+      <p style="margin-top:14px"><a href="https://github.com/srbunnie/QuotaDesk/blob/main/tutorials/connect-tools.md">Step-by-step guide for each AI</a>, including what to do if something doesn't show up.</p>
+    </div>
+  </section>
+
+  <section id="provedor" class="alt">
+    <div class="wrap">
+      <div class="skill">
+        <div>
+          <h2>Missing your AI? Ask your agent</h2>
+          <p class="sub" style="margin-bottom:18px">The <a href="https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md"><code>add-provider</code></a> skill teaches an agent (Claude Code, Codex…) to add a new tool from start to finish. The steps, the project rules and a starting template are in <a href="https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta"><code>AGENTS.md</code></a>.</p>
+          <ul>
+            <li><strong>Reading the limit</strong>, always with real numbers.</li>
+            <li><strong>A new room</strong> in the office, in the same style as the others, with an animated sky and screen.</li>
+            <li><strong>A character</strong> with 12 poses: typing, thinking, having coffee, napping.</li>
+            <li>Automatic checks before you send your contribution.</li>
+          </ul>
+          <div class="term" style="margin-top:18px">
+            <div class="bar"><span>Ask your agent</span><button class="copy" type="button" data-copy="Use the skills/add-provider skill to add Cursor to QuotaDesk.">Copy</button></div>
+            <pre><code>Use the skills/add-provider skill to add Cursor to QuotaDesk.</code></pre>
+          </div>
+        </div>
+        <div class="cast">
+          <img src="../assets/characters.png" width="1428" height="250" loading="lazy"
+               alt="The cast: six blocky 3D characters sitting in gaming chairs, one for each AI.">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacidade">
+    <div class="wrap">
+      <h2>Your conversations stay with you</h2>
+      <p class="sub">QuotaDesk runs entirely on your computer and only looks at what it needs to show limits and status.</p>
+      <div class="cards">
+        <div class="card"><span class="tag">Doesn't read your chats</span><p>It never reads or sends what you ask your AIs or what they answer. What the characters say comes only from the type of action, like "Ran the command".</p></div>
+        <div class="card"><span class="tag">Sign-ins kept safe</span><p>Your Magnific and OpenRouter sign-ins are encrypted by Windows. Only your account, on this computer, can open them.</p></div>
+        <div class="card"><span class="tag">No open doors</span><p>The link to Claude Code only accepts calls from your own computer. Websites can't talk to it.</p></div>
+      </div>
+      <p style="margin-top:20px;color:var(--muted)">QuotaDesk only goes online to read your Magnific and OpenRouter balance, check whether Figma is up and get the weather, if you turn it on. Found a security issue? See how to report it in <a href="https://github.com/srbunnie/QuotaDesk/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+    </div>
+  </section>
+
+  <section id="roteiro" class="alt">
+    <div class="wrap">
+      <h2>What's next</h2>
+      <p class="sub">Today QuotaDesk runs on Windows. The next versions bring the same office to Linux and macOS.</p>
+      <div class="cards">
+        <div class="card"><span class="tag">Now</span><p>Windows 10 and 11, with the panel, the Edge bar, the tray icon and the tiny USB screen.</p></div>
+        <div class="card"><span class="tag">Next</span><p>Linux: panel and tray icon on the most popular desktops.</p></div>
+        <div class="card"><span class="tag">Later</span><p>macOS: menu bar icon and panel, on Intel and Apple Silicon Macs.</p></div>
+      </div>
+      <p style="margin-top:14px;color:var(--muted)">Want to help or follow along? See the <a href="https://github.com/srbunnie/QuotaDesk/blob/main/ROADMAP.en.md">full roadmap</a>.</p>
+    </div>
+  </section>
+
+  <section id="creditos">
+    <div class="wrap">
+      <h2>Credits</h2>
+      <div class="credits" style="margin-top:22px">
+        <div class="card"><span class="tag">Authors</span><p>A partnership between <a href="https://github.com/edirsooo">@edirsooo</a>, who had the original idea and contributes ideas and code, and <a href="https://github.com/srbunnie">@srbunnie</a>, who carried the project forward. The launch belongs to both.</p></div>
+        <div class="card"><span class="tag">Art</span><p>Every illustration — the office rooms, the characters and their poses — was made with AI in Magnific by <a href="https://github.com/edirsooo">@edirsooo</a> and is <strong>free for personal use</strong>.</p></div>
+        <div class="card"><span class="tag">Code</span><p><a href="https://github.com/srbunnie/QuotaDesk/blob/main/LICENSE">MIT</a> license. Icons from <a href="https://lucide.dev">Lucide</a> (ISC). Contributions are welcome.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><strong>QuotaDesk</strong> 0.4.0 · by <a href="https://github.com/edirsooo">@edirsooo</a> and <a href="https://github.com/srbunnie">@srbunnie</a> · <a href="https://github.com/srbunnie/QuotaDesk/blob/main/README.en.md">GitHub</a> · <a href="https://github.com/srbunnie/QuotaDesk/blob/main/LICENSE">MIT</a></p>
+    <p>Independent project. Claude, Codex, Antigravity, Figma, Magnific and OpenRouter are trademarks of their owners; QuotaDesk isn't affiliated with any of them.</p>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var text = button.getAttribute('data-copy');
+      var done = function () {
+        button.textContent = 'Copied';
+        setTimeout(function () { button.textContent = 'Copy'; }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+  });
+</script>
+</body>
+</html>

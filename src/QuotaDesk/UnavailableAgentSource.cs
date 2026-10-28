@@ -7,11 +7,11 @@ internal sealed class UnavailableAgentSource(string id, string name, string? rea
     public event Action? Changed { add { } remove { } }
 
     public AgentStatus GetStatus(DateTimeOffset now) => new(Id, name, ActivityState.Unknown, false,
-        reason is null ? "Nenhum adaptador de atividade conectado." : "Adaptador indisponível.",
-        reason is null ? "Sem conexão ou adaptador" : "Adaptador indisponível",
+        reason is null ? L.T("Nenhum adaptador de atividade conectado.", "No activity adapter connected.") : L.T("Adaptador indisponível.", "Adapter unavailable."),
+        reason is null ? L.T("Sem conexão ou adaptador", "No connection or adapter") : L.T("Adaptador indisponível", "Adapter unavailable"),
         ProviderSnapshot.Unavailable(name, reason is null
-            ? "Sem adaptador de cota conectado."
-            : $"Adaptador indisponível: {reason}"));
+            ? L.T("Sem adaptador de cota conectado.", "No limit adapter connected.")
+            : L.T($"Adaptador indisponível: {reason}", $"Adapter unavailable: {reason}")));
 
     public Task RefreshQuotaAsync(bool force) => Task.CompletedTask;
     public void Dispose() { }

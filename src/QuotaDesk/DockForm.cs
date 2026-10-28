@@ -97,12 +97,12 @@ internal sealed class DockForm : Form
         _leave.Interval = 250;
         _leave.Tick += (_, _) => SetWide(Bounds.Contains(Cursor.Position));
         VisibleChanged += (_, _) => { if (Visible) _leave.Start(); else _leave.Stop(); };
-        var pinItem = new ToolStripMenuItem("Fixar barra aberta", null, (_, _) => TogglePinned());
+        var pinItem = new ToolStripMenuItem(L.T("Fixar barra aberta", "Pin bar open"), null, (_, _) => TogglePinned());
         _menu.Items.Add(pinItem);
-        _menu.Items.Add("Abrir painel", null, (_, _) => OpenRequested?.Invoke());
+        _menu.Items.Add(L.T("Abrir painel", "Open panel"), null, (_, _) => OpenRequested?.Invoke());
         _menu.Opening += (_, _) => pinItem.Checked = Pinned;
         ContextMenuStrip = _menu;
-        _tips.SetToolTip(this, "Percentual usado. Duas cotas: 5h no anel externo e semanal no interno. Alfinete: fixar aberta.");
+        _tips.SetToolTip(this, L.T("Percentual usado. Duas cotas: 5h no anel externo e semanal no interno. Alfinete: fixar aberta.", "Percent used. Two limits: 5h on the outer ring and weekly on the inner one. Pin: keep open."));
     }
 
     private void UpdateTip(PointF point)
@@ -111,19 +111,19 @@ internal sealed class DockForm : Form
         var horizontal = _edge is WidgetEdge.Top or WidgetEdge.Bottom;
         var index = (int)Math.Floor(((horizontal ? point.X : point.Y) - Toolbar - Pad) / Cell);
         if (_wide && PinRect.Contains(point))
-            tip = Pinned ? "Desafixar: permitir recolher a barra" : "Fixar: sempre exibir a barra aberta";
+            tip = Pinned ? L.T("Desafixar: permitir recolher a barra", "Unpin: let the bar collapse") : L.T("Fixar: sempre exibir a barra aberta", "Pin: always show the bar open");
         else if (index >= 0 && index < _agents.Count)
         {
             var agent = _agents[index];
             var windows = WidgetWindows(agent);
-            var lines = windows.Select(w => $"{(w.Kind == WindowKind.FiveHour ? "5 horas" : w.Kind == WindowKind.Weekly ? "Semanal" : w.Label)}: " +
-                $"{w.UsedRounded}% usado ({w.RemainingPercent}% restante)" + (w.Amount is { } amount ? $" · {amount}" : ""));
-            var empty = agent.ServiceHealth is { } health ? $"Serviço: {StateText.Label(agent)}" : "Cotas indisponíveis";
+            var lines = windows.Select(w => $"{(w.Kind == WindowKind.FiveHour ? L.T("5 horas", "5 hours") : w.Kind == WindowKind.Weekly ? L.T("Semanal", "Weekly") : w.Label)}: " +
+                L.T($"{w.UsedRounded}% usado ({w.RemainingPercent}% restante)", $"{w.UsedRounded}% used ({w.RemainingPercent}% left)") + (w.Amount is { } amount ? $" · {amount}" : ""));
+            var empty = agent.ServiceHealth is { } health ? L.T($"Serviço: {StateText.Label(agent)}", $"Service: {StateText.Label(agent)}") : L.T("Cotas indisponíveis", "Limits unavailable");
             tip = agent.Name + "\n" + (windows.Count == 0 ? empty : string.Join("\n", lines)) +
-                (windows.Count > 1 ? "\nAnel externo / interno, respectivamente." : "") +
-                (agent.Quota.Stale ? "\nÚltima leitura desatualizada." : "");
+                (windows.Count > 1 ? L.T("\nAnel externo / interno, respectivamente.", "\nOuter / inner ring, respectively.") : "") +
+                (agent.Quota.Stale ? L.T("\nÚltima leitura desatualizada.", "\nLast reading out of date.") : "");
         }
-        else tip = "Alfinete: fixar barra aberta. Clique com o botão direito para mais opções.";
+        else tip = L.T("Alfinete: fixar barra aberta. Clique com o botão direito para mais opções.", "Pin: keep the bar open. Right-click for more options.");
         if (tip == _lastTip) return;
         _lastTip = tip;
         _tips.SetToolTip(this, tip);
@@ -328,8 +328,8 @@ internal sealed class DockForm : Form
         {
             ServiceAvailability.Operational => "OK",
             ServiceAvailability.Unknown => "--",
-            ServiceAvailability.Maintenance => "MANUT",
-            _ => "FALHA"
+            ServiceAvailability.Maintenance => L.T("MANUT", "MAINT"),
+            _ => L.T("FALHA", "DOWN")
         }, health.Stale ? Theme.TextDim : Theme.ServiceColor(health.State))
         : null;
 
@@ -409,7 +409,7 @@ internal sealed class DockForm : Form
             {
                 var value = $"{windows[i].UsedRounded}%";
                 var valueWidth = PixelFont.Measure(value, 1.5f, 1.5f, bold: true);
-                var tag = windows[i].Kind == WindowKind.FiveHour ? "5H" : windows[i].Kind == WindowKind.Weekly ? "SEM" : "";
+                var tag = windows[i].Kind == WindowKind.FiveHour ? "5H" : windows[i].Kind == WindowKind.Weekly ? L.T("SEM", "WK") : "";
                 var tagWidth = tag.Length == 0 ? 0 : PixelFont.Measure(tag, 1f, 1f) + 4;
                 var textX = (WideWidth - valueWidth - tagWidth) / 2;
                 if (tag.Length > 0) PixelFont.Draw(g, tag, textX, top + 57 + i * 15, 1f, Theme.TextDim, 1f);

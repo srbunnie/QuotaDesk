@@ -1,5 +1,7 @@
 # Conectar cada ferramenta
 
+**Português** · [English](../tutorials/connect-tools.md)
+
 O QuotaDesk lê o que cada ferramenta já guarda ou expõe na sua máquina. Ele não pede chave de API e não lê credenciais de outras ferramentas. Três delas funcionam sozinhas: Codex, Antigravity e Figma. O Claude Code precisa de uma configuração única. Magnific e OpenRouter precisam de um login no navegador.
 
 | Ferramenta | O que você faz | Tempo |

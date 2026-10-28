@@ -487,8 +487,8 @@ internal sealed partial class MonitorForm : Form
 
         if (PixelScene) // the voxel plates already carry the poster text
         {
-            PosterText(g, PixelOffice.LeftPoster, ["CODIGO", "LIMPO,", "MENTE", "LEVE"]);
-            PosterText(g, PixelOffice.RightPoster, ["MENOS", "TOKENS,", "MAIS", "IDEIAS"]);
+            PosterText(g, PixelOffice.LeftPoster, [L.T("CODIGO", "CLEAN"), L.T("LIMPO,", "CODE,"), L.T("MENTE", "CLEAR"), L.T("LEVE", "MIND")]);
+            PosterText(g, PixelOffice.RightPoster, [L.T("MENOS", "FEWER"), "TOKENS,", L.T("MAIS", "MORE"), L.T("IDEIAS", "IDEAS")]);
         }
         PaintSpeech(g);
         g.Restore(state);
@@ -560,7 +560,16 @@ internal sealed partial class MonitorForm : Form
     }
 
     // Short decorative lines; "|" separates the two lines of a bubble.
-    private static readonly Dictionary<string, string[]> Chatter = new()
+    private static Dictionary<string, string[]> Chatter => L.En ? ChatterEnglish : ChatterPortuguese;
+
+    private static readonly Dictionary<string, string[]> ChatterEnglish = new()
+    {
+        ["codex"] = ["running the|tests...", "found the bug!", "compiling...", "one more|patch!", "refactoring|the module", "reading the|code...", "almost there!", "commit|done!", "coffee,|back soon", "every pixel|in place", "new idea!", "just one|more detail"],
+        ["claude"] = ["thinking...", "good idea!", "writing|code...", "reviewing|the plan", "leave it|to me!", "testing|an idea", "hmm, what if...", "sorting|files", "one step|at a time...", "a final|touch!", "coffee helps!", "look, a cat!"],
+        ["antigravity"] = ["lifting off...", "zero|gravity!", "orbiting|the bug", "agent|on the field", "plan|charted!", "mission|complete!", "adjusting|course", "almost in|orbit"],
+    };
+
+    private static readonly Dictionary<string, string[]> ChatterPortuguese = new()
     {
         ["codex"] = ["rodando os|testes...", "achei o bug!", "compilando...", "mais um|patch!", "refatorando|o modulo", "lendo o|codigo...", "quase la!", "commit|feito!", "um cafe|e ja volto", "cada pixel|no lugar", "ideia nova!", "so mais|um detalhe"],
         ["claude"] = ["pensando...", "boa ideia!", "escrevendo|codigo...", "revisando|o plano", "deixa|comigo!", "testando|uma ideia", "hmm, e se...", "organizando|arquivos", "vamos por|partes...", "um toque|final!", "cafe ajuda!", "olha o gato!"],
@@ -742,7 +751,7 @@ internal sealed partial class MonitorForm : Form
         var pill = new RectangleF(area.X, area.Y, w, area.Height);
         using (var bg = new SolidBrush(Theme.Card)) g.FillRectangle(bg, RectangleF.Inflate(pill, 3, 3));
         using var path = Theme.Rounded(pill, 14);
-        var exhausted = text == "ESGOTADA";
+        var exhausted = text == L.T("ESGOTADA", "USED UP");
         using (var pen = new Pen(exhausted ? Theme.TextFaint : look.Accent, 2.5f)) g.DrawPath(pen, path);
         if (exhausted)
         {
@@ -790,36 +799,36 @@ internal sealed partial class MonitorForm : Form
             g.DrawLine(pen, cx, cy, cx + 5, cy);
         }
         var x = box.X + 54;
-        Tracked(g, "RENOVA EM", Theme.Font("mono", 11f), Theme.Label, x, box.Y + 7, 1.2f);
+        Tracked(g, L.T("RENOVA EM", "RESETS IN"), Theme.Font("mono", 11f), Theme.Label, x, box.Y + 7, 1.2f);
 
         string big, line1 = "", line2 = "";
         var bigColor = Color.FromArgb(246, 248, 252);
-        if (noData) { big = "sem dados"; bigColor = Theme.Amber; }
+        if (noData) { big = L.T("sem dados", "no data"); bigColor = Theme.Amber; }
         else if (w is null) { big = "--"; bigColor = Theme.TextFaint; }
         else if (w.Renewed)
         {
-            big = "renovada";
+            big = L.T("renovada", "reset");
             bigColor = Theme.Green;
-            line1 = (w.ResetEstimated ? "~" : "") + "às";
+            line1 = (w.ResetEstimated ? "~" : "") + L.T("às", "at");
             line2 = w.RenewedAt?.ToLocalTime().ToString("HH:mm") ?? "";
         }
-        else if (expired) { big = "renovada"; line1 = "aguardando"; line2 = "leitura"; }
+        else if (expired) { big = L.T("renovada", "reset"); line1 = L.T("aguardando", "awaiting"); line2 = L.T("leitura", "reading"); }
         else if (w.Countdown(now) is { } countdown)
         {
             big = (w.ResetEstimated ? "~" : "") + countdown;
             var local = w.ResetsAt!.Value.ToLocalTime();
-            var pt = CultureInfo.GetCultureInfo("pt-BR");
-            line1 = (w.ResetEstimated ? "~" : "") + (local.Date == now.LocalDateTime.Date ? "Hoje"
-                : local.Date == now.LocalDateTime.Date.AddDays(1) ? "Amanhã"
-                : pt.TextInfo.ToTitleCase(local.ToString("ddd, dd/MM", pt).Replace(".", "")));
+            var pt = L.Culture;
+            line1 = (w.ResetEstimated ? "~" : "") + (local.Date == now.LocalDateTime.Date ? L.T("Hoje", "Today")
+                : local.Date == now.LocalDateTime.Date.AddDays(1) ? L.T("Amanhã", "Tomorrow")
+                : pt.TextInfo.ToTitleCase(local.ToString(L.T("ddd, dd/MM", "ddd, MM/dd"), pt).Replace(".", "")));
             line2 = local.ToString("HH:mm");
         }
         else
         {
-            big = w.ResetsAt is null ? "--" : "renovando";
+            big = w.ResetsAt is null ? "--" : L.T("renovando", "resetting");
             bigColor = Theme.TextDim;
-            line1 = w.ResetsAt is null ? "horário" : "";
-            line2 = w.ResetsAt is null ? "indisponível" : "";
+            line1 = w.ResetsAt is null ? L.T("horário", "time") : "";
+            line2 = w.ResetsAt is null ? L.T("indisponível", "unavailable") : "";
         }
         if (stale && !noData) bigColor = Theme.Amber;
         if (big.Length <= 10 && big.All(c => c < 128 || c == '~'))
@@ -868,48 +877,51 @@ internal sealed partial class MonitorForm : Form
         {
             agent.ServiceHealth is { } health
                 ? $"{agent.Name} — {StateText.Label(agent)}"
-                : $"{agent.Name} — {StateText.Label(agent.State)}{(agent.StateEstimated ? " (estimado)" : "")}",
+                : $"{agent.Name} — {StateText.Label(agent.State)}{(agent.StateEstimated ? L.T(" (estimado)", " (estimated)") : "")}",
             $"{agent.StateDetail} · {agent.StateSource}",
             ""
         };
-        if (agent.Quota.Windows.Count == 0) lines.Add($"Cota: {agent.Quota.Error ?? "sem dados"}");
+        if (agent.Quota.Windows.Count == 0) lines.Add(L.T($"Cota: {agent.Quota.Error ?? "sem dados"}", $"Limit: {agent.Quota.Error ?? "no data"}"));
         foreach (var w in agent.Quota.Windows.Where(w => w.Amount is not null))
-            lines.Add($"{w.Label}: {w.ResetHint ?? w.Amount} ({w.UsedRounded}% usado)");
+            lines.Add(L.T($"{w.Label}: {w.ResetHint ?? w.Amount} ({w.UsedRounded}% usado)", $"{w.Label}: {w.ResetHint ?? w.Amount} ({w.UsedRounded}% used)"));
         var grouped = agent.Quota.Windows.Any(w => w.Kind != WindowKind.Other);
         if (agent.Id == "antigravity" && agent.Quota.Windows.FirstOrDefault()?.Group is { } group)
-            lines.Add($"Grupo: {group} ({ModelChoice.Index + 1} de {ModelChoice.Options.Count}: {string.Join(", ", ModelChoice.Options)})");
-        foreach (var (kind, label) in agent.Id == "antigravity" && !grouped ? Array.Empty<(WindowKind, string)>() : new[] { (WindowKind.FiveHour, "5 horas"), (WindowKind.Weekly, "Semanal") })
+            lines.Add(L.T($"Grupo: {group} ({ModelChoice.Index + 1} de {ModelChoice.Options.Count}: {string.Join(", ", ModelChoice.Options)})",
+                $"Group: {group} ({ModelChoice.Index + 1} of {ModelChoice.Options.Count}: {string.Join(", ", ModelChoice.Options)})"));
+        foreach (var (kind, label) in agent.Id == "antigravity" && !grouped ? Array.Empty<(WindowKind, string)>() : new[] { (WindowKind.FiveHour, L.T("5 horas", "5 hours")), (WindowKind.Weekly, L.T("Semanal", "Weekly")) })
         {
             if (agent.Quota.Windows.Count == 0) break;
             var w = agent.Quota.Find(kind);
-            if (w is null) { lines.Add($"{label}: não informado por esta ferramenta"); continue; }
+            if (w is null) { lines.Add(L.T($"{label}: não informado por esta ferramenta", $"{label}: not reported by this tool")); continue; }
             var clock = w.ResetClock(now);
-            lines.Add($"{label}: {w.UsedRounded}% usado ({w.RemainingPercent}% restante) · {w.ResetText(now)}" +
-                      (clock is null ? "" : $" · {clock}") + (w.ResetsAt is not null && w.ResetHint is { } h ? (w.ResetEstimated ? $" (estimado {h})" : $" ({h})") : ""));
+            lines.Add(L.T($"{label}: {w.UsedRounded}% usado ({w.RemainingPercent}% restante) · {w.ResetText(now)}", $"{label}: {w.UsedRounded}% used ({w.RemainingPercent}% left) · {w.ResetText(now)}") +
+                      (clock is null ? "" : $" · {clock}") + (w.ResetsAt is not null && w.ResetHint is { } h ? (w.ResetEstimated ? L.T($" (estimado {h})", $" (estimated {h})") : $" ({h})") : ""));
             if (kind == WindowKind.Weekly && agent.Quota.Resets is { } resets)
-                lines.Add(resets.Available == 0 ? "Resets de limite disponíveis: nenhum"
-                    : $"Resets de limite disponíveis: {resets.Available}" +
-                      (resets.Expirations.Count > 0 ? " · validade: " + string.Join(", ", resets.Expirations.Where(x => x > now).Select(x => x.LocalDateTime.ToString("dd/MM HH:mm"))) : " · validade não informada"));
+                lines.Add(resets.Available == 0 ? L.T("Resets de limite disponíveis: nenhum", "Limit resets available: none")
+                    : L.T($"Resets de limite disponíveis: {resets.Available}", $"Limit resets available: {resets.Available}") +
+                      (resets.Expirations.Count > 0 ? L.T(" · validade: ", " · expires: ") + string.Join(", ", resets.Expirations.Where(x => x > now).Select(x => x.LocalDateTime.ToString(L.T("dd/MM HH:mm", "MM/dd HH:mm")))) : L.T(" · validade não informada", " · expiry not reported")));
             if (!agent.Quota.Stale && w.PacePercent(now) is { } pace && w.PaceDelta(now) is { } delta)
-                lines.Add($"   ritmo: uso uniforme estaria em {pace:0}% · {(delta > 3 ? $"{delta:0} pontos acima" : delta < -3 ? $"{-delta:0} pontos de folga" : "no ritmo")}" +
+                lines.Add(L.T($"   ritmo: uso uniforme estaria em {pace:0}% · {(delta > 3 ? $"{delta:0} pontos acima" : delta < -3 ? $"{-delta:0} pontos de folga" : "no ritmo")}",
+                              $"   pace: even usage would be at {pace:0}% · {(delta > 3 ? $"{delta:0} pts over pace" : delta < -3 ? $"{-delta:0} pts under pace" : "on pace")}") +
                           (w.PaceForecast(now) is { } forecast ? $" · {forecast}" : ""));
         }
         foreach (var w in agent.Quota.Windows.Where(w => w.Kind == WindowKind.Other))
-            lines.Add($"{w.Label}: {w.UsedRounded}% usado · {w.ResetText(now)}");
+            lines.Add(L.T($"{w.Label}: {w.UsedRounded}% usado · {w.ResetText(now)}", $"{w.Label}: {w.UsedRounded}% used · {w.ResetText(now)}"));
         lines.Add("");
         if (agent.ServiceHealth is { } serviceHealth)
-            lines.Add($"Status consultado {serviceHealth.CheckedAt.LocalDateTime:HH:mm} ({LimitParsing.Ago(now - serviceHealth.CheckedAt)})");
-        else if (agent.Quota.UpdatedAt is { } at) lines.Add($"Atualizado {at.LocalDateTime:HH:mm} ({LimitParsing.Ago(now - at)})");
-        if (agent.Quota.Source is { } source) lines.Add($"Fonte: {source}");
+            lines.Add(L.T($"Status consultado {serviceHealth.CheckedAt.LocalDateTime:HH:mm} ({LimitParsing.Ago(now - serviceHealth.CheckedAt)})",
+                $"Status checked {serviceHealth.CheckedAt.LocalDateTime:HH:mm} ({LimitParsing.Ago(now - serviceHealth.CheckedAt)})"));
+        else if (agent.Quota.UpdatedAt is { } at) lines.Add(L.T($"Atualizado {at.LocalDateTime:HH:mm} ({LimitParsing.Ago(now - at)})", $"Updated {at.LocalDateTime:HH:mm} ({LimitParsing.Ago(now - at)})"));
+        if (agent.Quota.Source is { } source) lines.Add(L.T($"Fonte: {source}", $"Source: {source}"));
         if (agent.Quota.Note is { Length: > 0 } note) lines.Add(note);
         if (agent.Pending.Count > 0)
-            lines.Add("Aguardando você: " + string.Join(", ", agent.Pending.Select(p => $"{p.Project} ({p.Kind.ToLowerInvariant()}, {LimitParsing.Ago(now - p.Since)})")));
+            lines.Add(L.T("Aguardando você: ", "Waiting for you: ") + string.Join(", ", agent.Pending.Select(p => $"{p.Project} ({p.Kind.ToLowerInvariant()}, {LimitParsing.Ago(now - p.Since)})")));
         if (agent.Id == "antigravity" && ModelChoice.Options.Count > 1)
-            lines.Add(grouped ? "Role a rodinha do mouse sobre o card para trocar o grupo de modelos."
-                : "Role a rodinha do mouse sobre o card ou clique (metade direita: próximo; esquerda: anterior) para trocar o modelo.");
+            lines.Add(grouped ? L.T("Role a rodinha do mouse sobre o card para trocar o grupo de modelos.", "Scroll the mouse wheel over the card to switch the model group.")
+                : L.T("Role a rodinha do mouse sobre o card ou clique (metade direita: próximo; esquerda: anterior) para trocar o modelo.", "Scroll the mouse wheel over the card or click it (right half: next; left: previous) to switch the model."));
         lines.Add(agent.Id == "figma"
-            ? "O status é global. Créditos e atividade individual do Agent não são expostos por essa API."
-            : "~ = valor estimado · cotas lidas localmente, sem prompts e sem credenciais");
+            ? L.T("O status é global. Créditos e atividade individual do Agent não são expostos por essa API.", "The status is global. Credits and individual Agent activity are not exposed by this API.")
+            : L.T("~ = valor estimado · cotas lidas localmente, sem prompts e sem credenciais", "~ = estimated value · limits read locally, no prompts and no credentials"));
         return string.Join("\n", lines).TrimEnd();
     }
 

@@ -213,7 +213,7 @@ internal sealed class MiniScreenForm : Form
 
         // State pill; an exhausted quota turns it grey with a crossed circle.
         var stale = a.Quota.Stale;
-        var state = exhausted ? "ESGOTADA" : category is not null ? ShortName(a).ToUpperInvariant() : StateText.Label(a).ToUpperInvariant();
+        var state = exhausted ? L.T("ESGOTADA", "USED UP") : category is not null ? ShortName(a).ToUpperInvariant() : StateText.Label(a).ToUpperInvariant();
         var dot = a.ServiceHealth is { } health ? Theme.ServiceColor(health.State) : a.State switch
         {
             ActivityState.Working => Theme.Green, ActivityState.Waiting => Theme.Amber, ActivityState.Idle => look.Accent, _ => Theme.TextFaint
@@ -245,17 +245,17 @@ internal sealed class MiniScreenForm : Form
         var rows = Rows(a).Take(2).ToArray();
         if (a.Id == "openrouter" && rows.FirstOrDefault().Window is { } credits)
         {
-            PixelFont.Draw(g, "SALDO", body.X, body.Y + 4, 1.25f, Theme.Label);
-            Put(g, credits.ResetHint ?? "indisponível", Theme.Font("mono", 12, FontStyle.Bold), stale ? Theme.Amber : Theme.Text, body.X - 1, body.Y + 18);
-            Put(g, $"{credits.UsedRounded}% usado" + (stale ? " · antigo" : ""), Theme.Font("mono", 9.5f), Theme.Label, body.X - 1, body.Y + 36);
+            PixelFont.Draw(g, L.T("SALDO", "BALANCE"), body.X, body.Y + 4, 1.25f, Theme.Label);
+            Put(g, credits.ResetHint ?? L.T("indisponível", "unavailable"), Theme.Font("mono", 12, FontStyle.Bold), stale ? Theme.Amber : Theme.Text, body.X - 1, body.Y + 18);
+            Put(g, L.T($"{credits.UsedRounded}% usado", $"{credits.UsedRounded}% used") + (stale ? L.T(" · antigo", " · old") : ""), Theme.Font("mono", 9.5f), Theme.Label, body.X - 1, body.Y + 36);
             return;
         }
         if (rows.Length == 0)
         {
-            PixelFont.Draw(g, a.Id == "figma" ? "CREDITOS" : "COTA", body.X, body.Y + 4, 1.25f, Theme.TextFaint);
+            PixelFont.Draw(g, a.Id == "figma" ? L.T("CREDITOS", "CREDITS") : L.T("COTA", "LIMIT"), body.X, body.Y + 4, 1.25f, Theme.TextFaint);
             using (var dash = new Pen(Color.FromArgb(40, 48, 70), 1.5f) { DashStyle = DashStyle.Dot })
                 g.DrawLine(dash, body.X, body.Y + 22, body.Right, body.Y + 22);
-            Put(g, a.Id == "figma" ? "saldo no Figma" : "sem leitura de cota", Theme.Font("mono", 9.5f), Theme.TextDim, body.X - 1, body.Y + 30);
+            Put(g, a.Id == "figma" ? L.T("saldo no Figma", "balance in Figma") : L.T("sem leitura de cota", "no limit reading"), Theme.Font("mono", 9.5f), Theme.TextDim, body.X - 1, body.Y + 30);
             return;
         }
         var rowH = body.Height / 2;
@@ -272,7 +272,7 @@ internal sealed class MiniScreenForm : Form
             var area = new RectangleF(body.X, body.Y + rowH, body.Width, rowH);
             using (var dash = new Pen(Color.FromArgb(46, 54, 78), 1.2f) { DashStyle = DashStyle.Dash })
                 g.DrawLine(dash, area.X, area.Y - 3, area.Right, area.Y - 3);
-            PixelFont.Draw(g, "RITMO", area.X, area.Y + 3, 1.25f, Theme.Label);
+            PixelFont.Draw(g, L.T("RITMO", "PACE"), area.X, area.Y + 3, 1.25f, Theme.Label);
             var rate = balance.RateText ?? "--";
             var soon = balance.EmptyAt is { } at && at - now <= TimeSpan.FromDays(3);
             var rateScale = PixelFont.Measure(rate, 1.5f, 1.5f, bold: true) > area.Width * 0.62f ? 1.25f : 1.5f;
@@ -291,7 +291,7 @@ internal sealed class MiniScreenForm : Form
         var used = w.UsedRounded;
         var exhausted = valid && used >= 100;
         var color = !valid ? Theme.TextFaint : stale ? Theme.Mix(Theme.Consumption(used), Theme.TextFaint, 0.55f) : Theme.Consumption(used);
-        var label = w.Kind == WindowKind.FiveHour ? "5 HORAS" : w.Kind == WindowKind.Weekly ? "SEMANAL" : (w.Group ?? w.Label).ToUpperInvariant();
+        var label = w.Kind == WindowKind.FiveHour ? L.T("5 HORAS", "5 HOURS") : w.Kind == WindowKind.Weekly ? L.T("SEMANAL", "WEEKLY") : (w.Group ?? w.Label).ToUpperInvariant();
         if (label.Length > 9) label = label[..9];
         PixelFont.Draw(g, label, r.X, r.Y + 3, 1.25f, Theme.Label);
         var pct = valid ? $"{used}%" : "--";
@@ -323,9 +323,10 @@ internal sealed class MiniScreenForm : Form
             g.DrawLine(tick, mx, bar.Y - 2, mx, bar.Bottom + 2);
         }
 
-        var left = !valid ? "aguardando" : exhausted ? "esgotada" : w.Credits is { } bal ? $"{bal.Format(bal.Available)} de {bal.Format(bal.Total)}"
-            : stale ? $"{w.RemainingPercent}% antigo" : $"{w.RemainingPercent}% resta";
-        var right = !valid ? "" : w.Renewed ? "renovada" : w.Countdown(now) is { } c ? "em " + (w.ResetEstimated ? "~" : "") + c : "";
+        var left = !valid ? L.T("aguardando", "waiting") : exhausted ? L.T("esgotada", "used up")
+            : w.Credits is { } bal ? L.T($"{bal.Format(bal.Available)} de {bal.Format(bal.Total)}", $"{bal.Format(bal.Available)} of {bal.Format(bal.Total)}")
+            : stale ? L.T($"{w.RemainingPercent}% antigo", $"{w.RemainingPercent}% old") : L.T($"{w.RemainingPercent}% resta", $"{w.RemainingPercent}% left");
+        var right = !valid ? "" : w.Renewed ? L.T("renovada", "reset") : w.Countdown(now) is { } c ? L.T("em ", "in ") + (w.ResetEstimated ? "~" : "") + c : "";
         var small = Theme.Font("mono", 9.5f);
         Put(g, left, small, exhausted ? Theme.Exhausted : stale || !valid ? Theme.Amber : Theme.Label, r.X - 1, bar.Bottom + 3);
         if (right.Length > 0) Put(g, right, small, Theme.TextDim, r.Right - Measure(g, right, small), bar.Bottom + 3);
@@ -369,7 +370,7 @@ internal sealed class MiniScreenForm : Form
         var slots = Math.Max(1, Math.Min(3, visible.Count));
         var cardH = (480 - top - Pad - footer - Gap * (slots - 1)) / slots;
         var now = new DateTimeOffset(clock);
-        if (visible.Count == 0) Put(g, "sem provedores", Theme.Font("mono", 12), Theme.TextFaint, Pad + 8, top + 12);
+        if (visible.Count == 0) Put(g, L.T("sem provedores", "no providers"), Theme.Font("mono", 12), Theme.TextFaint, Pad + 8, top + 12);
         for (var i = 0; i < visible.Count && i < 3; i++)
             PaintCard(g, visible[i], new RectangleF(Pad, top + i * (cardH + Gap), 320 - 2 * Pad, cardH), now,
                 ProviderPresentation.DensityFor(settings, visible[i].Id));
@@ -406,7 +407,7 @@ internal sealed class MiniScreenForm : Form
 
     public static bool IsMiniSize(Size s) => (s.Width, s.Height) is (320, 480) or (480, 320) or (480, 800) or (800, 480);
 
-    public static string Describe(Screen s) => $"{s.DeviceName.TrimStart('\\', '.')} · {s.Bounds.Width}×{s.Bounds.Height}{(s.Primary ? " (principal)" : "")}";
+    public static string Describe(Screen s) => $"{s.DeviceName.TrimStart('\\', '.')} · {s.Bounds.Width}×{s.Bounds.Height}{(s.Primary ? L.T(" (principal)", " (primary)") : "")}";
 
     // ---------------------------------------------------------------- rendering
 
@@ -438,7 +439,7 @@ internal sealed class MiniScreenForm : Form
 
         if (agents.Count == 0)
         {
-            Put(g, "sem provedores", Theme.Font("mono", 12), Theme.TextFaint, Pad + 8, HeaderH + 20);
+            Put(g, L.T("sem provedores", "no providers"), Theme.Font("mono", 12), Theme.TextFaint, Pad + 8, HeaderH + 20);
             return;
         }
         var now = new DateTimeOffset(clock);
@@ -471,7 +472,7 @@ internal sealed class MiniScreenForm : Form
     {
         var rows = new List<(string, LimitWindow)>();
         if (a.Quota.Find(WindowKind.FiveHour) is { } five) rows.Add(("5H", five));
-        if (a.Quota.Find(WindowKind.Weekly) is { } week) rows.Add(("SEM", week));
+        if (a.Quota.Find(WindowKind.Weekly) is { } week) rows.Add((L.T("SEM", "WK"), week));
         if (rows.Count == 0 && (a.Id == "antigravity" ? ModelChoice.Current(a) : a.Quota.Windows.FirstOrDefault()) is { } other)
         {
             var name = (other.Group ?? other.Label).ToUpperInvariant();
@@ -506,7 +507,7 @@ internal sealed class MiniScreenForm : Form
         {
             ActivityState.Working => Theme.Green, ActivityState.Waiting => Theme.Amber, ActivityState.Idle => look.Accent, _ => Theme.TextFaint
         };
-        var stateText = StateText.Label(agent).ToUpperInvariant() + (stale ? " · ANTIGO" : "");
+        var stateText = StateText.Label(agent).ToUpperInvariant() + (stale ? L.T(" · ANTIGO", " · OLD") : "");
         var stateFont = Theme.Font("mono", 10);
         var nameFont = Theme.Font("display", 15, FontStyle.Bold);
         var group = agent.Id == "antigravity" && rows.Count > 0 ? rows[0].Window.Group : null;
@@ -536,7 +537,7 @@ internal sealed class MiniScreenForm : Form
 
         if (rows.Count == 0)
         {
-            var msg = agent.Quota.Error ?? "sem dados de cota";
+            var msg = agent.Quota.Error ?? L.T("sem dados de cota", "no limit data");
             using var brush = new SolidBrush(Theme.Amber);
             using var format = new StringFormat { Trimming = StringTrimming.EllipsisWord };
             g.DrawString(msg, Theme.Font("mono", 10.5f), brush, body, format);
@@ -574,7 +575,7 @@ internal sealed class MiniScreenForm : Form
         var shortName = ShortName(agent);
         Put(g, shortName, Theme.Font("display", 15, FontStyle.Bold), Theme.Text, r.X + 68, r.Y + 13);
         StateDot(g, stale ? Theme.Amber : state, agent.State == ActivityState.Working, r.X + 68, r.Y + 39);
-        Put(g, StateText.Label(agent).ToUpperInvariant() + (stale ? " · ANTIGO" : ""),
+        Put(g, StateText.Label(agent).ToUpperInvariant() + (stale ? L.T(" · ANTIGO", " · OLD") : ""),
             Theme.Font("mono", 10, FontStyle.Bold), stale ? Theme.Amber : state, r.X + 82, r.Y + 36);
     }
 
@@ -588,7 +589,8 @@ internal sealed class MiniScreenForm : Form
         var small = Theme.Font("mono", 10);
         const float labelW = 40, barH = 12;
 
-        var reset = w.Renewed ? "renovada" : w.Countdown(now) is { } c ? "renova " + (w.ResetEstimated ? "~" : "") + c : w.ResetHint ?? "sem horário";
+        var reset = w.Renewed ? L.T("renovada", "reset") : w.Countdown(now) is { } c ? L.T("renova ", "resets ") + (w.ResetEstimated ? "~" : "") + c
+            : w.ResetHint ?? L.T("sem horário", "no time");
         var pace = !stale && w.PaceDelta(now) is { } d ? (Theme.PaceLabel(d), Theme.PaceColor(d)) : ((string, Color)?)null;
         var pct = $"{used}%";
         var pctColor = stale ? Theme.TextDim : used >= Theme.CriticalAt ? Theme.Red : Color.FromArgb(246, 248, 252);
@@ -680,7 +682,7 @@ internal sealed class MiniScreenForm : Form
     {
         var now = new DateTimeOffset(at ?? DateTime.Now);
         LimitWindow W(WindowKind k, double used, double hours, bool est = false) =>
-            new(k == WindowKind.FiveHour ? "5 horas" : "Semanal", used, now.AddHours(hours), k, est);
+            new(k == WindowKind.FiveHour ? L.T("5 horas", "5 hours") : L.T("Semanal", "Weekly"), used, now.AddHours(hours), k, est);
         AgentStatus A(string id, string name, ActivityState s, params LimitWindow[] windows) =>
             new(id, name, s, false, "", "", new ProviderSnapshot(name, windows, now.AddMinutes(-2)));
         return
@@ -688,8 +690,8 @@ internal sealed class MiniScreenForm : Form
             A("codex", "ChatGPT Codex", ActivityState.Working, W(WindowKind.FiveHour, 34, 2.3), W(WindowKind.Weekly, 77, 90)),
             A("claude", "Claude Code", ActivityState.Waiting, W(WindowKind.FiveHour, 93, 0.6, true), W(WindowKind.Weekly, 21, 150, true)),
             A("antigravity", "Antigravity", ActivityState.Idle,
-                new LimitWindow("5 horas", 12, now.AddHours(3), WindowKind.FiveHour) { Group = "Gemini" },
-                new LimitWindow("Semanal", 48, now.AddHours(70), WindowKind.Weekly) { Group = "Gemini" }),
+                new LimitWindow(L.T("5 horas", "5 hours"), 12, now.AddHours(3), WindowKind.FiveHour) { Group = "Gemini" },
+                new LimitWindow(L.T("Semanal", "Weekly"), 48, now.AddHours(70), WindowKind.Weekly) { Group = "Gemini" }),
         ];
     }
 
@@ -707,7 +709,7 @@ internal sealed class MiniScreenForm : Form
                 using var font = new Font("Segoe UI", 8, FontStyle.Bold, GraphicsUnit.Pixel);
                 using var brush = new SolidBrush(Color.FromArgb(230, 255, 190, 70));
                 g.ResetTransform();
-                g.DrawString("DADOS SIMULADOS", font, brush, 4, size.Height - 12);
+                g.DrawString(L.T("DADOS SIMULADOS", "SIMULATED DATA"), font, brush, 4, size.Height - 12);
             }
             bmp.Save(Path.Combine(folder, $"mini-{name}.png"), System.Drawing.Imaging.ImageFormat.Png);
         }

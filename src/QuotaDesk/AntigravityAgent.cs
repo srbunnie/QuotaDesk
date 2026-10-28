@@ -16,9 +16,9 @@ internal sealed class AntigravityAgent : IAgentSource
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _sync = new();
-    private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Antigravity", "Abra o Antigravity para consultar a cota.");
+    private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Antigravity", L.T("Abra o Antigravity para consultar a cota.", "Open Antigravity to read the limit."));
     private ActivityState _state = ActivityState.Unknown;
-    private string _detail = "Antigravity fechado ou sem sinal local.";
+    private string _detail = L.T("Antigravity fechado ou sem sinal local.", "Antigravity closed or no local signal.");
     private DateTimeOffset _lastQuota;
     private int _port, _pid;
     private string? _csrf; // Ephemeral loopback session token, never persisted or logged.
@@ -34,7 +34,7 @@ internal sealed class AntigravityAgent : IAgentSource
         {
             if (File.Exists(CachePath) && JsonSerializer.Deserialize<ProviderSnapshot>(File.ReadAllText(CachePath)) is { Name: "Antigravity", UpdatedAt: not null, Windows: { Count: > 0 } } cached &&
                 cached.Windows.All(w => !string.IsNullOrWhiteSpace(w.Label) && double.IsFinite(w.UsedPercent) && w.UsedPercent is >= 0 and <= 100))
-                _quota = cached with { Stale = true, Note = "Última leitura salva; aguardando o Antigravity atualizar." };
+                _quota = cached with { Stale = true, Note = L.T("Última leitura salva; aguardando o Antigravity atualizar.", "Last saved reading; waiting for Antigravity to update.") };
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { }
         _ = PollAsync();
@@ -44,7 +44,7 @@ internal sealed class AntigravityAgent : IAgentSource
     {
         // The card, dock and tray see only the chosen group, so its 5-hour and weekly windows behave like Claude's.
         lock (_sync) return new(Id, "Antigravity", _state, false, _detail,
-            "Servidor local do Antigravity", _quota with { Windows = ModelChoice.Narrow(_quota.Windows) });
+            L.T("Servidor local do Antigravity", "Antigravity local server"), _quota with { Windows = ModelChoice.Narrow(_quota.Windows) });
     }
 
     private async Task PollAsync()
@@ -67,7 +67,7 @@ internal sealed class AntigravityAgent : IAgentSource
         try
         {
             if (_port == 0 || !Alive()) await DiscoverAsync();
-            if (_port == 0) throw new IOException("Antigravity fechado. Abra o aplicativo para atualizar a cota.");
+            if (_port == 0) throw new IOException(L.T("Antigravity fechado. Abra o aplicativo para atualizar a cota.", "Antigravity closed. Open the app to update the limit."));
             if (force || DateTimeOffset.UtcNow - _lastQuota >= TimeSpan.FromSeconds(30))
             {
                 // Groups with separate 5-hour and weekly windows (the Settings screen). Older versions only report
@@ -77,11 +77,11 @@ internal sealed class AntigravityAgent : IAgentSource
                 catch (Exception ex) when (ex is HttpRequestException or JsonException) { }
                 var grouped = windows.Count > 0;
                 if (!grouped) { using var data = await ReadAsync("GetUserStatus"); windows = ParseQuota(data.RootElement); }
-                if (windows.Count == 0) throw new IOException("O servidor local ainda não informou cotas.");
+                if (windows.Count == 0) throw new IOException(L.T("O servidor local ainda não informou cotas.", "The local server has not reported limits yet."));
                 lock (_sync) _quota = new("Antigravity", windows, DateTimeOffset.Now,
-                    Source: "Antigravity · servidor local", Note: grouped
-                        ? "Cota por grupo de modelos, com limite de 5 horas e semanal; não representa o chat Gemini."
-                        : "Cota por modelo (rodinha do mouse para trocar); não representa o chat Gemini.");
+                    Source: L.T("Antigravity · servidor local", "Antigravity · local server"), Note: grouped
+                        ? L.T("Cota por grupo de modelos, com limite de 5 horas e semanal; não representa o chat Gemini.", "Limit per model group, with 5-hour and weekly limits; not the Gemini chat.")
+                        : L.T("Cota por modelo (rodinha do mouse para trocar); não representa o chat Gemini.", "Limit per model (mouse wheel to switch); not the Gemini chat."));
                 _lastQuota = DateTimeOffset.UtcNow;
                 SaveCache();
             }
@@ -90,18 +90,20 @@ internal sealed class AntigravityAgent : IAgentSource
             {
                 using var data = await ReadHubActivityAsync();
                 var state = ParseActivity(data.RootElement);
-                lock (_sync) { _state = state; _detail = state == ActivityState.Working ? "Execução ativa informada pelo Antigravity." : state == ActivityState.Idle ? "Nenhuma execução ativa informada pelo Antigravity." : "Atividade não informada por esta versão do Antigravity."; }
+                lock (_sync) { _state = state; _detail = state == ActivityState.Working ? L.T("Execução ativa informada pelo Antigravity.", "Antigravity reports an active run.")
+                    : state == ActivityState.Idle ? L.T("Nenhuma execução ativa informada pelo Antigravity.", "Antigravity reports no active run.")
+                    : L.T("Atividade não informada por esta versão do Antigravity.", "This Antigravity version does not report activity."); }
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or IOException or TaskCanceledException)
-            { lock (_sync) { _state = ActivityState.Unknown; _detail = "Cota disponível; atividade sem sinal local."; } }
+            { lock (_sync) { _state = ActivityState.Unknown; _detail = L.T("Cota disponível; atividade sem sinal local.", "Limit available; no local activity signal."); } }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             _port = 0; _csrf = null;
             lock (_sync)
             {
-                _state = ActivityState.Unknown; _detail = "Antigravity fechado ou sem sinal local.";
-                _quota = _quota with { Stale = _quota.Windows.Count > 0, Error = ex is IOException ? ex.Message : "Não foi possível consultar o servidor local do Antigravity." };
+                _state = ActivityState.Unknown; _detail = L.T("Antigravity fechado ou sem sinal local.", "Antigravity closed or no local signal.");
+                _quota = _quota with { Stale = _quota.Windows.Count > 0, Error = ex is IOException ? ex.Message : L.T("Não foi possível consultar o servidor local do Antigravity.", "Could not reach the Antigravity local server.") };
             }
         }
         finally { _gate.Release(); Changed?.Invoke(); }
@@ -158,7 +160,7 @@ internal sealed class AntigravityAgent : IAgentSource
         var start = new ProcessStartInfo(shell) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         start.ArgumentList.Add("-NoProfile"); start.ArgumentList.Add("-NonInteractive"); start.ArgumentList.Add("-Command");
         start.ArgumentList.Add("Get-CimInstance Win32_Process -Filter \"name like 'language_server%'\" | ForEach-Object { [pscustomobject]@{ ProcessId = $_.ProcessId; ExecutablePath = $_.ExecutablePath; CommandLine = $_.CommandLine; Ports = @(Get-NetTCPConnection -State Listen -OwningProcess $_.ProcessId -ErrorAction SilentlyContinue | ForEach-Object { $_.LocalPort }) } } | ConvertTo-Json -Compress");
-        using var process = Process.Start(start) ?? throw new IOException("Servidor local indisponível.");
+        using var process = Process.Start(start) ?? throw new IOException(L.T("Servidor local indisponível.", "Local server unavailable."));
         var outputTask = process.StandardOutput.ReadToEndAsync(_stop.Token);
         var errorTask = process.StandardError.ReadToEndAsync(_stop.Token);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
@@ -277,8 +279,8 @@ internal sealed class AntigravityAgent : IAgentSource
                 var kind = window switch { "5h" => WindowKind.FiveHour, "weekly" => WindowKind.Weekly, _ => WindowKind.Other };
                 var label = kind switch
                 {
-                    WindowKind.FiveHour => "5 horas", WindowKind.Weekly => "Semanal",
-                    _ => bucket.TryGetProperty("displayName", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString()! : window ?? "Limite"
+                    WindowKind.FiveHour => L.T("5 horas", "5 hours"), WindowKind.Weekly => L.T("Semanal", "Weekly"),
+                    _ => bucket.TryGetProperty("displayName", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString()! : window ?? L.T("Limite", "Limit")
                 };
                 DateTimeOffset? reset = bucket.TryGetProperty("resetTime", out var time) ? LimitParsing.Epoch(time) : null;
                 windows.Add(new LimitWindow(label, (1 - remaining) * 100, reset, kind) { Group = groupName });
@@ -289,7 +291,7 @@ internal sealed class AntigravityAgent : IAgentSource
 
     /// <summary>"Gemini Models" → "Gemini", "Claude and GPT models" → "Claude e GPT"; unknown names pass through.</summary>
     private static string GroupName(string name) =>
-        Regex.Replace(Regex.Replace(name.Trim(), @"\s+models$", "", RegexOptions.IgnoreCase), @"\band\b", "e");
+        Regex.Replace(Regex.Replace(name.Trim(), @"\s+models$", "", RegexOptions.IgnoreCase), @"\band\b", L.T("e", "and"));
 
     internal static ActivityState ParseActivity(JsonElement root)
     {

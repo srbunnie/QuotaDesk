@@ -35,7 +35,7 @@ internal static class CodexClient
     {
         const string source = "codex app-server · account/rateLimits/read";
         var exe = ResolveExecutable();
-        if (exe is null) return ProviderSnapshot.Unavailable("Codex", "Codex CLI não encontrado.", source);
+        if (exe is null) return ProviderSnapshot.Unavailable("Codex", L.T("Codex CLI não encontrado.", "Codex CLI not found."), source);
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -87,9 +87,9 @@ internal static class CodexClient
         {
             return ProviderSnapshot.Unavailable("Codex", ex switch
             {
-                System.ComponentModel.Win32Exception => "Não foi possível iniciar o Codex CLI.",
-                OperationCanceledException => "Tempo de consulta esgotado.",
-                _ => "Não foi possível ler os limites do Codex."
+                System.ComponentModel.Win32Exception => L.T("Não foi possível iniciar o Codex CLI.", "Could not start the Codex CLI."),
+                OperationCanceledException => L.T("Tempo de consulta esgotado.", "The check timed out."),
+                _ => L.T("Não foi possível ler os limites do Codex.", "Could not read the Codex limits.")
             }, source);
         }
     }
@@ -118,7 +118,7 @@ internal static class CodexClient
     internal static ProviderSnapshot Parse(JsonElement response, string source)
     {
         if (!response.TryGetProperty("result", out var result))
-            return ProviderSnapshot.Unavailable("Codex", "Resposta sem limites.", source);
+            return ProviderSnapshot.Unavailable("Codex", L.T("Resposta sem limites.", "Response without limits."), source);
         var windows = new List<LimitWindow>();
         if (result.TryGetProperty("rateLimitsByLimitId", out var buckets) && buckets.ValueKind == JsonValueKind.Object)
         {
@@ -131,9 +131,9 @@ internal static class CodexClient
             AddBucket(single, "codex", windows);
         }
         return windows.Count == 0
-            ? ProviderSnapshot.Unavailable("Codex", "Nenhuma janela de cota disponível.", source)
+            ? ProviderSnapshot.Unavailable("Codex", L.T("Nenhuma janela de cota disponível.", "No limit window available."), source)
             : new ProviderSnapshot("Codex", windows, DateTimeOffset.Now, null, source,
-                Note: windows.Any(w => w.Kind == WindowKind.FiveHour) ? null : "O Codex não informa janela de 5 horas para esta conta.")
+                Note: windows.Any(w => w.Kind == WindowKind.FiveHour) ? null : L.T("O Codex não informa janela de 5 horas para esta conta.", "Codex reports no 5-hour window for this account."))
             { Resets = ParseResets(result) };
     }
 

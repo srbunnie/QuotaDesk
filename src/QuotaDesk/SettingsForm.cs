@@ -17,7 +17,7 @@ internal sealed class SettingsForm : Form
         string? Button = null, Action? Click = null, Func<string>? Info = null);
 
     private readonly MonitorForm _owner;
-    private readonly string[] _tabs = ["Geral", "Aparência", "Avisos", "Dados", "Ferramentas"];
+    private readonly string[] _tabs = [L.T("Geral", "General"), L.T("Aparência", "Appearance"), L.T("Avisos", "Alerts"), L.T("Dados", "Data"), L.T("Ferramentas", "Tools")];
     private int _tab;
     private (RectangleF rect, string key, Action action)[] _hits = [];
     private string? _hover;
@@ -81,21 +81,25 @@ internal sealed class SettingsForm : Form
         switch (_tab)
         {
             case 0:
-                yield return new Row("Sempre no topo", "Mantém o painel acima das outras janelas", () => _owner.TopMost,
+                yield return new Row("Idioma / Language", L.T("Reinicia o QuotaDesk", "Restarts QuotaDesk"), Options: L.ChoiceLabels,
+                    Index: () => Math.Max(0, Array.IndexOf(L.Choices, S.Language)),
+                    Pick: i => { if (L.Choices[i] == S.Language) return; Close(); _owner.RequestLanguage(L.Choices[i]); });
+                yield return new Row(L.T("Sempre no topo", "Always on top"), L.T("Mantém o painel acima das outras janelas", "Keeps the panel above other windows"), () => _owner.TopMost,
                     v => { _owner.TopMost = v; S.AlwaysOnTop = v; TopMost = v; Apply(); });
-                yield return new Row("Fixar a posição", "Impede de arrastar o painel", () => S.PositionLocked, v => { S.PositionLocked = v; Apply(); });
-                yield return new Row("Abrir Claude Code ao iniciar", "Terminal minimizado que atualiza a cota", () => S.OpenClaudeTerminalOnStart,
+                yield return new Row(L.T("Fixar a posição", "Lock position"), L.T("Impede de arrastar o painel", "Stops the panel from being dragged"), () => S.PositionLocked, v => { S.PositionLocked = v; Apply(); });
+                yield return new Row(L.T("Abrir Claude Code ao iniciar", "Open Claude Code at startup"), L.T("Terminal minimizado que atualiza a cota", "Minimized terminal that updates the limit"), () => S.OpenClaudeTerminalOnStart,
                     v => { S.OpenClaudeTerminalOnStart = v; Apply(); });
-                yield return new Row("Exibir menu superior", null, () => S.ShowPanelHeader, v => { S.ShowPanelHeader = v; Apply(); });
-                yield return new Row("Minimizar para a bandeja", null, Button: "Minimizar", Click: () => { Close(); _owner.Hide(); });
-                yield return new Row("Desligar o QuotaDesk", null, Button: "Desligar", Click: () => { Close(); _owner.RequestShutdown(); });
-                yield return new Row("Resolução", "F11 alterna", Options: ["Desktop", "Mini monitor 480×320"],
+                yield return new Row(L.T("Exibir menu superior", "Show top menu"), null, () => S.ShowPanelHeader, v => { S.ShowPanelHeader = v; Apply(); });
+                yield return new Row(L.T("Minimizar para a bandeja", "Minimize to tray"), null, Button: L.T("Minimizar", "Minimize"), Click: () => { Close(); _owner.Hide(); });
+                yield return new Row(L.T("Desligar o QuotaDesk", "Quit QuotaDesk"), null, Button: L.T("Desligar", "Quit"), Click: () => { Close(); _owner.RequestShutdown(); });
+                yield return new Row(L.T("Resolução", "Resolution"), L.T("F11 alterna", "F11 toggles"), Options: ["Desktop", "Mini monitor 480×320"],
                     Index: () => S.PanelLayout == "mini" ? 1 : 0, Pick: i => { _owner.SetLayout(i == 1 ? "mini" : "desktop"); Invalidate(); });
                 break;
             case 1:
-                yield return new Row("Visual do painel", "Escritório animado, retrô ou só os cards", Options: MonitorForm.SkinNames,
+                yield return new Row(L.T("Visual do painel", "Panel look"), L.T("Escritório animado, retrô ou só os cards", "Animated office, retro or cards only"), Options: MonitorForm.SkinNames,
                     Index: () => _owner.SkinIndex, Pick: i => { _owner.SetSkin(i); Invalidate(); });
-                yield return new Row("Barra na borda da tela", "Resumo sempre à vista", Options: ["Anéis", "Minimalista", "Desligada"],
+                yield return new Row(L.T("Barra na borda da tela", "Edge bar"), L.T("Resumo sempre à vista", "Summary always in sight"),
+                    Options: [L.T("Anéis", "Rings"), L.T("Minimalista", "Minimal"), L.T("Desligada", "Off")],
                     Index: () => !S.SideDock ? 2 : string.Equals(S.DockStyle, "classic", StringComparison.OrdinalIgnoreCase) ? 0 : 1,
                     Pick: i =>
                     {
@@ -103,27 +107,28 @@ internal sealed class SettingsForm : Form
                         if (i != 2) S.DockStyle = i == 0 ? "classic" : "notch";
                         Apply();
                     });
-                yield return new Row("Manter a barra aberta", "Desligado, ela recolhe e abre ao passar o mouse", () => S.WidgetPinned,
+                yield return new Row(L.T("Manter a barra aberta", "Keep the bar open"), L.T("Desligado, ela recolhe e abre ao passar o mouse", "When off, it collapses and opens on hover"), () => S.WidgetPinned,
                     v => { S.WidgetPinned = v; Apply(); });
                 float[] scales = [0.70f, 0.80f, 1.00f, 1.20f];
-                yield return new Row("Escala", null, Options: ["70%", "80% (padrão)", "100%", "120%"],
+                yield return new Row(L.T("Escala", "Scale"), null, Options: ["70%", L.T("80% (padrão)", "80% (default)"), "100%", "120%"],
                     Index: () => Math.Max(0, Array.FindIndex(scales, s => Math.Abs(s - S.Scale) < 0.01f)),
                     Pick: i => { S.Scale = scales[i]; Apply(); });
-                yield return new Row("Brilho das bordas", null, Options: ["Sem brilho", "Suave", "Normal"],
+                yield return new Row(L.T("Brilho das bordas", "Border glow"), null, Options: [L.T("Sem brilho", "No glow"), L.T("Suave", "Soft"), "Normal"],
                     Index: () => Math.Clamp(S.Glow, 0, 2), Pick: i => { S.Glow = i; Apply(); });
                 break;
             case 2:
-                yield return new Row("Som ao pedir atenção", null, () => S.Sound, v => { S.Sound = v; Apply(); });
-                yield return new Row("Avisar pendências", "Perguntas e permissões aguardando você", () => S.NotifyPending, v => { S.NotifyPending = v; Apply(); });
-                yield return new Row("Falas reais dos agentes", "Balão com a tarefa e a última ação", () => S.AgentSpeech, v => { S.AgentSpeech = v; Apply(); });
-                yield return new Row("Avisar renovação de cota", null, () => S.NotifyRenewals, v => { S.NotifyRenewals = v; Apply(); });
+                yield return new Row(L.T("Som ao pedir atenção", "Sound on attention"), null, () => S.Sound, v => { S.Sound = v; Apply(); });
+                yield return new Row(L.T("Avisar pendências", "Notify pending requests"), L.T("Perguntas e permissões aguardando você", "Questions and permissions waiting for you"), () => S.NotifyPending, v => { S.NotifyPending = v; Apply(); });
+                yield return new Row(L.T("Falas reais dos agentes", "Real agent speech"), L.T("Balão com a tarefa e a última ação", "Bubble with the task and the last action"), () => S.AgentSpeech, v => { S.AgentSpeech = v; Apply(); });
+                yield return new Row(L.T("Avisar renovação de cota", "Notify when the limit resets"), null, () => S.NotifyRenewals, v => { S.NotifyRenewals = v; Apply(); });
                 break;
             case 3:
                 int[] minutes = [0, 1, 5, 15, 30];
-                yield return new Row("Atualização automática", null, Options: ["Manual", "A cada 1 min", "A cada 5 min", "A cada 15 min", "A cada 30 min"],
+                yield return new Row(L.T("Atualização automática", "Auto refresh"), null,
+                    Options: [L.T("Manual", "Manual"), L.T("A cada 1 min", "Every 1 min"), L.T("A cada 5 min", "Every 5 min"), L.T("A cada 15 min", "Every 15 min"), L.T("A cada 30 min", "Every 30 min")],
                     Index: () => Math.Max(0, Array.IndexOf(minutes, S.RefreshMinutes)), Pick: i => { S.RefreshMinutes = minutes[i]; Apply(); });
-                yield return new Row("Atualizar agora", "Atalho: F5", Button: "Atualizar", Click: _owner.RequestRefresh);
-                yield return new Row("Última atualização", Info: () => _owner.LastSync is { } t ? t.LocalDateTime.ToString("HH:mm:ss") : "ainda não");
+                yield return new Row(L.T("Atualizar agora", "Refresh now"), L.T("Atalho: F5", "Shortcut: F5"), Button: L.T("Atualizar", "Refresh"), Click: _owner.RequestRefresh);
+                yield return new Row(L.T("Última atualização", "Last refresh"), Info: () => _owner.LastSync is { } t ? t.LocalDateTime.ToString("HH:mm:ss") : L.T("ainda não", "not yet"));
                 break;
             default:
                 foreach (var agent in _owner.AllAgents)
@@ -152,7 +157,7 @@ internal sealed class SettingsForm : Form
         using (var pen = new Pen(Theme.PanelEdge)) g.DrawPath(pen, path);
 
         // Header: title + close
-        Text(g, "Configurações", Theme.Font("display", 17), Theme.Text, new RectangleF(Pad, 0, 300, HeaderH), left: true);
+        Text(g, L.T("Configurações", "Settings"), Theme.Font("display", 17), Theme.Text, new RectangleF(Pad, 0, 300, HeaderH), left: true);
         var close = new RectangleF(W - 44, 12, 28, 28);
         if (_hover == "close") Fill(g, close, 8, Theme.Mix(Theme.Panel, Theme.Red, 0.35f));
         Text(g, "✕", Theme.Font("body", 13), _hover == "close" ? Theme.Text : Theme.TextDim, close);

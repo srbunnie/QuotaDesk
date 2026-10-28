@@ -14,6 +14,8 @@ internal static class Program
     private static int Main(string[] args)
     {
         AppPaths.Configure(args);
+        // Self-tests check Portuguese wording; everything else follows the saved choice (or Windows).
+        L.Configure(args.Length > 0 && args[0].StartsWith("--selftest", StringComparison.Ordinal) ? "pt" : AppSettings.Load().Language);
         if (args.Length == 2 && args[0] == "--selftest-integrations")
         {
             try { IntegrationChecks.Run(args[1]); return 0; }
@@ -317,24 +319,29 @@ internal static class Preview
         Directory.CreateDirectory(folder);
         var now = DateTimeOffset.Now;
         LimitWindow W(WindowKind k, double used, double hours, bool est = false) =>
-            new(k == WindowKind.FiveHour ? "5 horas" : "Semanal", used, now.AddHours(hours), k, est, est ? "estimativa ±8 min" : null);
+            new(k == WindowKind.FiveHour ? L.T("5 horas", "5 hours") : L.T("Semanal", "Weekly"), used, now.AddHours(hours), k, est,
+                est ? L.T("estimativa ±8 min", "estimate ±8 min") : null);
         ProviderSnapshot Codex(bool five) => new("Codex",
             five ? [W(WindowKind.FiveHour, 34, 2.3), W(WindowKind.Weekly, 77, 90)] : [W(WindowKind.Weekly, 77, 90)],
             now.AddMinutes(-1), null, "codex app-server · account/rateLimits/read",
-            Note: five ? null : "O Codex não informa janela de 5 horas para esta conta.");
+            Note: five ? null : L.T("O Codex não informa janela de 5 horas para esta conta.", "Codex does not report a 5-hour window for this account."));
         var claudeOk = new ProviderSnapshot("Claude Code", [W(WindowKind.FiveHour, 21, 3.8, true), W(WindowKind.Weekly, 5, 150, true)],
-            now.AddMinutes(-6), null, "App Claude · histórico local de uso do plano");
+            now.AddMinutes(-6), null, L.T("App Claude · histórico local de uso do plano", "Claude app · local plan usage history"));
         var claudeHot = claudeOk with { Windows = [W(WindowKind.FiveHour, 93, 0.6, true), W(WindowKind.Weekly, 81, 20, true)] };
-        var claudeStale = claudeOk with { UpdatedAt = now.AddHours(-3), Stale = true, Note = "Dados desatualizados: última amostra há 3h 00min (o app Claude registra enquanto está aberto)." };
-        var claudeMissing = ProviderSnapshot.Unavailable("Claude Code", "Sem dados de cota. Abra o app Claude (desktop) ou use o Claude Code no terminal.");
-        var codexMissing = ProviderSnapshot.Unavailable("Codex", "Codex CLI não encontrado.", "codex app-server · account/rateLimits/read");
+        var claudeStale = claudeOk with { UpdatedAt = now.AddHours(-3), Stale = true, Note = L.T("Dados desatualizados: última amostra há 3h 00min (o app Claude registra enquanto está aberto).",
+            "Outdated data: last sample 3h 00min ago (the Claude app records while it is open).") };
+        var claudeMissing = ProviderSnapshot.Unavailable("Claude Code", L.T("Sem dados de cota. Abra o app Claude (desktop) ou use o Claude Code no terminal.",
+            "No limit data. Open the Claude app (desktop) or use Claude Code in the terminal."));
+        var codexMissing = ProviderSnapshot.Unavailable("Codex", L.T("Codex CLI não encontrado.", "Codex CLI not found."), "codex app-server · account/rateLimits/read");
 
         AgentStatus Cx(ActivityState s, ProviderSnapshot q) => new("codex", "ChatGPT Codex", s, true,
-            s == ActivityState.Working ? "executando tarefa" : s == ActivityState.Waiting ? "tarefa concluída · aguardando você" : "nenhuma tarefa recente",
-            "inferido do log local · há 12 s", q);
+            s == ActivityState.Working ? L.T("executando tarefa", "working on a task") : s == ActivityState.Waiting ? L.T("tarefa concluída · aguardando você", "task done · waiting for you")
+                : L.T("nenhuma tarefa recente", "no recent task"),
+            L.T("inferido do log local · há 12 s", "inferred from the local log · 12 s ago"), q);
         AgentStatus Cl(ActivityState s, ProviderSnapshot q) => new("claude", "Claude Code", s, false,
-            s == ActivityState.Working ? "usando Bash" : s == ActivityState.Waiting ? "resposta concluída · aguardando você" : "nenhuma sessão ativa",
-            "hooks do Claude Code · último evento há 4 s", q);
+            s == ActivityState.Working ? L.T("usando Bash", "using Bash") : s == ActivityState.Waiting ? L.T("resposta concluída · aguardando você", "reply done · waiting for you")
+                : L.T("nenhuma sessão ativa", "no active session"),
+            L.T("hooks do Claude Code · último evento há 4 s", "Claude Code hooks · last event 4 s ago"), q);
 
         var cases = new (string Name, AgentStatus[] Agents)[]
         {
@@ -343,15 +350,16 @@ internal static class Preview
                 Cl(ActivityState.Waiting, claudeHot) with
                 {
                     SessionOpen = true,
-                    Pending = [new("a", "Claude Code", "quotadesk", "Permissão", now.AddMinutes(-3)), new("b", "Claude Code", "meu-site", "Pergunta", now.AddMinutes(-1))]
+                    Pending = [new("a", "Claude Code", "quotadesk", L.T("Permissão", "Permission"), now.AddMinutes(-3)),
+                        new("b", "Claude Code", L.T("meu-site", "my-site"), L.T("Pergunta", "Question"), now.AddMinutes(-1))]
                 }]),
             ("3-idle-stale", [Cx(ActivityState.Idle, Codex(false)), Cl(ActivityState.Waiting, claudeStale)]),
             ("4-missing", [Cx(ActivityState.Unknown, codexMissing), Cl(ActivityState.Idle, claudeMissing)]),
         };
-        AgentStatus Ag(ActivityState state) => new("antigravity", "Antigravity", state, false, "Estado de teste", "Simulação visual",
+        AgentStatus Ag(ActivityState state) => new("antigravity", "Antigravity", state, false, L.T("Estado de teste", "Test state"), L.T("Simulação visual", "Visual simulation"),
             new ProviderSnapshot("Antigravity", [new LimitWindow("Gemini 3.1 Pro (High)", 24, now.AddHours(3))], now));
         for (var i = 0; i < cases.Length; i++) cases[i].Agents = [..cases[i].Agents, Ag(i == 3 ? ActivityState.Unknown : cases[i].Agents[1].State)];
-        var settings = new AppSettings { City = "Cidade de exemplo", Latitude = -23.55, Longitude = -46.63 };
+        var settings = new AppSettings { City = L.T("Cidade de exemplo", "Sample city"), Latitude = -23.55, Longitude = -46.63 };
         (int Hour, int Minute, Weather Weather)[] skies = [(14, 30, Weather.Clear), (18, 5, Weather.PartlyCloudy), (22, 0, Weather.Clear), (12, 0, Weather.Rain)];
         using var form = new MonitorForm();
         for (var c = 0; c < cases.Length; c++)
@@ -363,7 +371,7 @@ internal static class Preview
             for (var frame = 0; frame < 2; frame++)
             {
                 using var bmp = form.Snapshot(frame == 0 ? 3 : 51);
-                Watermark(bmp, "PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS");
+                Watermark(bmp, L.T("PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS", "PREVIEW · SIMULATED DATA"));
                 bmp.Save(Path.Combine(folder, $"{name}-f{frame}.png"), ImageFormat.Png);
             }
         }
@@ -374,7 +382,7 @@ internal static class Preview
         {
             form.ShowData(cases[c].Agents);
             using var bmp = form.Snapshot(3);
-            Watermark(bmp, "PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS");
+            Watermark(bmp, L.T("PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS", "PREVIEW · SIMULATED DATA"));
             bmp.Save(Path.Combine(folder, $"compact-{cases[c].Name}.png"), ImageFormat.Png);
         }
         form.Settings.Compact = false;
@@ -391,7 +399,7 @@ internal static class Preview
             form.SkyProvider = _ => SkyService.Compute(DateTime.Today.AddHours(hour).AddMinutes(minute), settings, null, weather);
             form.ShowData(cases[0].Agents);
             using var bmp = form.Snapshot(40);
-            Watermark(bmp, "PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS");
+            Watermark(bmp, L.T("PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS", "PREVIEW · SIMULATED DATA"));
             bmp.Save(Path.Combine(folder, $"sky-{tag}.png"), ImageFormat.Png);
         }
         // Idle activities (sleep / read / game) for both desks
@@ -402,7 +410,7 @@ internal static class Preview
             ClassicOffice.ForcedIdlePose = new[] { "coffee", "sip", "sleep", "stretch", "coffee" }[cycle];
             form.ShowData([Cx(ActivityState.Idle, Codex(false)), Cl(ActivityState.Idle, claudeOk), Ag(ActivityState.Idle)]);
             using var bmp = form.Snapshot(5);
-            Watermark(bmp, "PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS");
+            Watermark(bmp, L.T("PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS", "PREVIEW · SIMULATED DATA"));
             bmp.Save(Path.Combine(folder, $"idle-{cycle}.png"), ImageFormat.Png);
         }
         PixelOffice.ForcedIdleActivity = null;
@@ -410,7 +418,7 @@ internal static class Preview
         foreach (var catFrame in new[] { 500, 560, 610 })
         {
             using var catPreview = form.Snapshot(catFrame);
-            Watermark(catPreview, "PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS");
+            Watermark(catPreview, L.T("PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS", "PREVIEW · SIMULATED DATA"));
             catPreview.Save(Path.Combine(folder, $"cat-sleep-{catFrame}.png"), ImageFormat.Png);
         }
         // The edge widget (notch), open with a tool hovered and collapsed, on a transparent background.
@@ -517,9 +525,9 @@ internal static class Preview
     /// <summary>Shows one real Windows notification from a temporary tray icon, then exits.</summary>
     public static void NotificationTest()
     {
-        using var icon = new NotifyIcon { Icon = TrayIconRenderer.CreateIcon(16, TrayIconRenderer.Logo), Text = "QuotaDesk (teste)", Visible = true };
+        using var icon = new NotifyIcon { Icon = TrayIconRenderer.CreateIcon(16, TrayIconRenderer.Logo), Text = L.T("QuotaDesk (teste)", "QuotaDesk (test)"), Visible = true };
         var (title, text) = RenewalWatcher.Describe([new RenewalWatcher.Renewal("codex", "Codex", WindowKind.Weekly, true, DateTimeOffset.Now)]);
-        icon.ShowBalloonTip(10_000, title + " (teste)", text, ToolTipIcon.Info);
+        icon.ShowBalloonTip(10_000, title + L.T(" (teste)", " (test)"), text, ToolTipIcon.Info);
         using var timer = new System.Windows.Forms.Timer { Interval = 12_000 };
         timer.Tick += (_, _) => Application.ExitThread();
         timer.Start();

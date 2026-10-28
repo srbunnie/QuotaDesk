@@ -80,7 +80,8 @@ internal static class ClaudeQuota
         if (result.Windows.Count > 0) { _lastGood = result; return result; }
         LastUsageRise = null;
         return _lastGood is null ? result : _lastGood with { Stale = true,
-            Note = "Última leitura preservada: arquivo de uso temporariamente indisponível. " + result.Error };
+            Note = L.T("Última leitura preservada: arquivo de uso temporariamente indisponível. ",
+                "Last reading kept: usage file temporarily unavailable. ") + result.Error };
         }
     }
 
@@ -102,7 +103,8 @@ internal static class ClaudeQuota
             (desktop is null || desktop.Windows.Count == 0 || statusLine.UpdatedAt >= desktop.UpdatedAt ||
              now - statusLine.UpdatedAt < StatusLineFreshFor) ? statusLine : desktop ?? statusLine;
         if (selected is null) return ProviderSnapshot.Unavailable(Name,
-            "Sem dados de cota. Abra o app Claude (desktop) ou use o Claude Code no terminal.");
+            L.T("Sem dados de cota. Abra o app Claude (desktop) ou use o Claude Code no terminal.",
+            "No limit data. Open the Claude desktop app or use Claude Code in a terminal."));
         var usedConfirmed = false;
         var windows = selected.Windows.Select(w =>
         {
@@ -119,14 +121,15 @@ internal static class ClaudeQuota
                 {
                     usedConfirmed = true;
                     return w with { ResetsAt = confirmed, ResetEstimated = false,
-                        ResetHint = repeatWeekly ? "recorrência semanal informada pelo usuário" : "horário informado pelo usuário" };
+                        ResetHint = repeatWeekly ? L.T("recorrência semanal informada pelo usuário", "weekly schedule set by you")
+                            : L.T("horário informado pelo usuário", "time set by you") };
                 }
             }
             return w;
         }).ToArray();
         return selected with { Windows = windows, Note = usedConfirmed
-            ? (selected.Note + (repeatWeekly ? " Renovação semanal recorrente: horário informado pelo usuário."
-                : " Renovação semanal: horário informado pelo usuário para este ciclo.")).Trim()
+            ? (selected.Note + (repeatWeekly ? L.T(" Renovação semanal recorrente: horário informado pelo usuário.", " Weekly reset repeats: time set by you.")
+                : L.T(" Renovação semanal: horário informado pelo usuário para este ciclo.", " Weekly reset: time set by you for this cycle."))).Trim()
             : selected.Note };
     }
 
@@ -168,16 +171,16 @@ internal static class ClaudeQuota
             var updated = root.TryGetProperty("captured_at", out var captured) && captured.ValueKind == JsonValueKind.String &&
                 DateTimeOffset.TryParse(captured.GetString(), out var parsed) ? parsed : File.GetLastWriteTimeUtc(StatusLineCachePath);
             var windows = new List<LimitWindow>();
-            foreach (var (key, label, kind) in new[] { ("five_hour", "5 horas", WindowKind.FiveHour), ("seven_day", "Semanal", WindowKind.Weekly) })
+            foreach (var (key, label, kind) in new[] { ("five_hour", L.T("5 horas", "5 hours"), WindowKind.FiveHour), ("seven_day", L.T("Semanal", "Weekly"), WindowKind.Weekly) })
             {
                 if (!limits.TryGetProperty(key, out var value)) continue;
                 var window = LimitParsing.ParseWindow(value, label, "used_percentage", kind);
                 // A window whose reset already passed no longer describes current usage.
                 if (window is not null && (window.ResetsAt is null || window.ResetsAt > now)) windows.Add(window);
             }
-            return new ProviderSnapshot(Name, windows, updated, windows.Count == 0 ? "Dados do statusLine vencidos." : null,
-                "statusLine do Claude Code (exato)", now - updated > StatusLineFreshFor,
-                now - updated > StatusLineFreshFor ? $"Último dado do statusLine {LimitParsing.Ago(now - updated)}." : null);
+            return new ProviderSnapshot(Name, windows, updated, windows.Count == 0 ? L.T("Dados do statusLine vencidos.", "statusLine data expired.") : null,
+                L.T("statusLine do Claude Code (exato)", "Claude Code statusLine (exact)"), now - updated > StatusLineFreshFor,
+                now - updated > StatusLineFreshFor ? L.T($"Último dado do statusLine {LimitParsing.Ago(now - updated)}.", $"Last statusLine data {LimitParsing.Ago(now - updated)}.") : null);
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return null; }
     }
@@ -204,7 +207,7 @@ internal static class ClaudeQuota
 
     internal static ProviderSnapshot? ReadDesktopHistory(DateTimeOffset now, string? historyPath = null)
     {
-        const string source = "App Claude · histórico local de uso do plano";
+        var source = L.T("App Claude · histórico local de uso do plano", "Claude app · local plan usage history");
         List<Sample> samples;
         try
         {
@@ -241,7 +244,7 @@ internal static class ClaudeQuota
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or ArgumentOutOfRangeException)
         {
-            return ProviderSnapshot.Unavailable(Name, "Não foi possível ler o histórico do app Claude.", source);
+            return ProviderSnapshot.Unavailable(Name, L.T("Não foi possível ler o histórico do app Claude.", "Could not read the Claude app history."), source);
         }
 
         var last = samples[^1];
@@ -249,15 +252,17 @@ internal static class ClaudeQuota
         LastUsageRise = UsageRise(samples, now);
         var windows = new List<LimitWindow>();
         var notes = new List<string>();
-        AddWindow(samples, s => s.FiveHour, FiveHours, "5 horas", WindowKind.FiveHour, now, windows, notes);
-        AddWindow(samples, s => s.SevenDay, SevenDays, "Semanal", WindowKind.Weekly, now, windows, notes);
+        AddWindow(samples, s => s.FiveHour, FiveHours, L.T("5 horas", "5 hours"), WindowKind.FiveHour, now, windows, notes);
+        AddWindow(samples, s => s.SevenDay, SevenDays, L.T("Semanal", "Weekly"), WindowKind.Weekly, now, windows, notes);
         var stale = age > DesktopStaleAfter || samples.Any() &&
             (samples.FindLast(s => s.FiveHour is not null) is var f && f.At != default && now - f.At > DesktopStaleAfter ||
              samples.FindLast(s => s.SevenDay is not null) is var s && s.At != default && now - s.At > DesktopStaleAfter);
-        notes.Add($"Leitura às {last.At.LocalDateTime:HH:mm}; o app Claude publica amostras enquanto sua consulta de uso está ativa.");
-        if (stale) notes.Insert(0, $"Dados desatualizados: última amostra {LimitParsing.Ago(age)} Abra o menu do próprio Claude com o botão direito no ícone da bandeja para retomar a consulta de uso.");
+        notes.Add(L.T($"Leitura às {last.At.LocalDateTime:HH:mm}; o app Claude publica amostras enquanto sua consulta de uso está ativa.",
+            $"Read at {last.At.LocalDateTime:HH:mm}; the Claude app posts samples while its usage view is active."));
+        if (stale) notes.Insert(0, L.T($"Dados desatualizados: última amostra {LimitParsing.Ago(age)} Abra o menu do próprio Claude com o botão direito no ícone da bandeja para retomar a consulta de uso.",
+            $"Outdated data: last sample {LimitParsing.Ago(age)} Right-click Claude's own tray icon and open its menu to resume the usage view."));
         if (windows.Count == 0)
-            return new ProviderSnapshot(Name, [], last.At, "O app Claude ainda não registrou uso do plano.", source, stale,
+            return new ProviderSnapshot(Name, [], last.At, L.T("O app Claude ainda não registrou uso do plano.", "The Claude app has not recorded plan usage yet."), source, stale,
                 notes.Count > 0 ? string.Join(" ", notes) : null);
         return new ProviderSnapshot(Name, windows, last.At, null, source, stale, notes.Count > 0 ? string.Join(" ", notes) : null);
     }
@@ -278,7 +283,7 @@ internal static class ClaudeQuota
         // samples only date that use, not the renewal. Only an official/user-confirmed time can anchor it.
         if (kind == WindowKind.Weekly)
         {
-            windows.Add(new LimitWindow(label, used, null, kind, true, "aguardando horário oficial de renovação"));
+            windows.Add(new LimitWindow(label, used, null, kind, true, L.T("aguardando horário oficial de renovação", "waiting for the official reset time")));
             return;
         }
         // How far apart the two samples around the window start may be and still give a useful estimate.
@@ -286,13 +291,13 @@ internal static class ClaudeQuota
 
         if (now - latest.At > duration)
         {
-            notes.Add($"Janela de {label.ToLowerInvariant()} expirou desde a última amostra.");
-            windows.Add(new LimitWindow(label, used, null, kind, true, "aguardando nova leitura"));
+            notes.Add(L.T($"Janela de {label.ToLowerInvariant()} expirou desde a última amostra.", $"{label} window expired since the last sample."));
+            windows.Add(new LimitWindow(label, used, null, kind, true, L.T("aguardando nova leitura", "waiting for a new reading")));
             return;
         }
         if (used <= 0)
         {
-            windows.Add(new LimitWindow(label, 0, null, kind, true, "janela inicia no próximo uso"));
+            windows.Add(new LimitWindow(label, 0, null, kind, true, L.T("janela inicia no próximo uso", "window starts on next use")));
             return;
         }
 
@@ -313,7 +318,7 @@ internal static class ClaudeQuota
         var boundaryKnown = previous is not null && startLatest - previous.Value.At <= boundaryGap;
         if (!boundaryKnown)
         {
-            windows.Add(new LimitWindow(label, used, null, kind, true, "horário de renovação indisponível"));
+            windows.Add(new LimitWindow(label, used, null, kind, true, L.T("horário de renovação indisponível", "reset time unavailable")));
             return;
         }
         var startEarliest = previous!.Value.At;

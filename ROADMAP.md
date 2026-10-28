@@ -1,5 +1,7 @@
 # Roteiro
 
+**Português** · [English](ROADMAP.en.md)
+
 Hoje o QuotaDesk roda só no Windows. O objetivo das próximas versões é levar o mesmo escritório e os mesmos avisos para o **Linux** e o **macOS**, sem perder nada do que já funciona no Windows.
 
 ## Por que ainda é só Windows
