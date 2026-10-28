@@ -1,0 +1,14 @@
+#!/bin/sh
+# Última barreira antes do GitHub: revisa os arquivos versionados e cada commit que ainda não está no remoto
+# (inclusive tags e branches antigas enviadas por engano com --tags ou --all).
+root=$(git rev-parse --show-toplevel)
+if command -v pwsh >/dev/null 2>&1; then ps=pwsh; else ps=powershell.exe; fi
+zero=0000000000000000000000000000000000000000
+revs=
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" = "$zero" ] && continue
+    revs="$revs${revs:+,}$local_sha"
+done
+"$ps" -NoProfile -ExecutionPolicy Bypass -File "$root/scripts/scan-leaks.ps1" -All || exit 1
+[ -z "$revs" ] && exit 0
+exec "$ps" -NoProfile -ExecutionPolicy Bypass -File "$root/scripts/scan-leaks.ps1" -Revs "$revs"

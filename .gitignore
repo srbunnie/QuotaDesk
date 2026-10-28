@@ -43,10 +43,32 @@ claude-settings.json
 *.pem
 *.key
 *.snk
+*.ppk
+*.kdbx
+*.jks
+*.keystore
+*.publishsettings
+*.pubxml.user
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+.npmrc
+.pypirc
+.netrc
 *token*.json
 *credentials*
 *secret*
 error.log
+
+# Despejos de memória e capturas de rede podem conter tokens em claro
+*.dmp
+*.mdmp
+*.har
+
+# Estado local do Claude Code e de outros agentes
+/.claude/
+/CLAUDE.local.md
 
 # Pacotes gerados por build.ps1 -Package
 /dist/

@@ -142,7 +142,13 @@ QuotaDesk.exe --preview <pasta>      # painel, céus, widget e bandeja com dados
 
 ## Contribuir
 
-Issues e pull requests são bem-vindos. Antes de abrir um PR, rode os autotestes. Nunca anexe `settings.json`, arquivos `*.dat`, o `error.log` ou capturas com dados da sua conta.
+Issues e pull requests são bem-vindos. Antes de abrir um PR, rode os autotestes e ative os hooks que barram chaves e dados pessoais:
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+Nunca anexe `settings.json`, arquivos `*.dat`, o `error.log` ou capturas com dados da sua conta. As regras completas estão em [SECURITY.md](SECURITY.md#regras-do-repositório).
 
 ## Créditos e licença
 

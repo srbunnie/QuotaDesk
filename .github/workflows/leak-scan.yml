@@ -1,0 +1,29 @@
+name: leak-scan
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # actions/checkout v4.2.2, fixado por commit
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Arquivos versionados
+        shell: pwsh
+        env:
+          LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}
+        run: ./scripts/scan-leaks.ps1 -All
+      - name: Histórico
+        shell: pwsh
+        env:
+          LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}
+        run: ./scripts/scan-leaks.ps1 -History
