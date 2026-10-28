@@ -9,7 +9,7 @@ namespace AIUsageMonitor;
 
 /// <summary>
 /// Local HTTP receiver for Claude Code hooks (127.0.0.1 only). Hook bodies are parsed in memory for
-/// session_id, tool_name and notification_type and then discarded; prompts and outputs are never stored.
+/// session_id, tool_name, notification_type and the cwd folder name, then discarded; prompts and outputs are never read.
 /// </summary>
 internal sealed partial class ClaudeIntegration : IAgentSource
 {
@@ -19,7 +19,8 @@ internal sealed partial class ClaudeIntegration : IAgentSource
     private static readonly TimeSpan WaitingTimeout = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan SessionForget = TimeSpan.FromHours(2);
 
-    private sealed record SessionState(ActivityState State, DateTimeOffset At, string Detail, string? PendingKind = null, string? Project = null);
+    private sealed record SessionState(ActivityState State, DateTimeOffset At, string Detail, string? PendingKind = null, string? Project = null,
+        string? Action = null);
 
     private readonly ConcurrentDictionary<string, SessionState> _sessions = new();
     private readonly ConcurrentDictionary<string, (int Count, DateTimeOffset Last)> _eventCounts = new();
@@ -91,10 +92,14 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         // never as the live state.
         if (ClaudeQuota.LastUsageRise is { } rise)
             source += $" · último uso da cota detectado às {rise.LocalDateTime:HH:mm} (chat, Cowork ou Code)";
+        // The bubble follows the session that is working (or, if none, the one waiting for you) and changed last.
+        var latest = _sessions.Values.Where(s => s.Action is not null && s.State != ActivityState.Idle && now - s.At <= WaitingTimeout)
+            .OrderByDescending(s => s.State == ActivityState.Working).ThenByDescending(s => s.At).FirstOrDefault();
         return new AgentStatus(Id, "Claude Code", state, false, detail, source, quota)
         {
             Pending = PendingSessions(now),
-            SessionOpen = !_sessions.IsEmpty
+            SessionOpen = !_sessions.IsEmpty,
+            Activity = latest is null ? null : new AgentActivity(latest.Project, latest.Action!, latest.At)
         };
     }
 
@@ -233,22 +238,24 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         var session = Str("session_id");
         if (string.IsNullOrWhiteSpace(session) || session.Length > 100) return 400;
         var tool = SafeName(Str("tool_name"));
+        var kind = AgentActions.ForClaudeTool(tool);
         SessionState? next = eventName switch
         {
             "SessionStart" => new(ActivityState.Idle, DateTimeOffset.Now, "sessão iniciada"),
-            "UserPromptSubmit" => new(ActivityState.Working, DateTimeOffset.Now, "processando pedido"),
-            "PreToolUse" => new(ActivityState.Working, DateTimeOffset.Now, tool is null ? "usando ferramenta" : $"usando {tool}"),
-            "PostToolUse" => new(ActivityState.Working, DateTimeOffset.Now, "processando resultado"),
-            "PermissionRequest" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua permissão", "Permissão"),
+            "UserPromptSubmit" => new(ActivityState.Working, DateTimeOffset.Now, "processando pedido", Action: AgentActions.Describe(ActionKind.Thinking, false)),
+            "PreToolUse" => new(ActivityState.Working, DateTimeOffset.Now, tool is null ? "usando ferramenta" : $"usando {tool}",
+                Action: AgentActions.Describe(kind, false, tool)),
+            "PostToolUse" => new(ActivityState.Working, DateTimeOffset.Now, "processando resultado", Action: AgentActions.Describe(kind, true, tool)),
+            "PermissionRequest" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua permissão", "Permissão", Action: "Precisa da sua permissão"),
             "Notification" => Str("notification_type") switch
             {
-                "permission_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua permissão", "Permissão"),
-                "elicitation_dialog" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua resposta", "Pergunta"),
-                "idle_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua resposta"),
-                _ => new SessionState(ActivityState.Waiting, DateTimeOffset.Now, "aguardando você")
+                "permission_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua permissão", "Permissão", Action: "Precisa da sua permissão"),
+                "elicitation_dialog" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua resposta", "Pergunta", Action: "Tem uma pergunta para você"),
+                "idle_prompt" => new(ActivityState.Waiting, DateTimeOffset.Now, "aguardando sua resposta", Action: "Esperando sua resposta"),
+                _ => new SessionState(ActivityState.Waiting, DateTimeOffset.Now, "aguardando você", Action: "Esperando você")
             },
-            "Stop" => new(ActivityState.Waiting, DateTimeOffset.Now, "resposta concluída · aguardando você"),
-            "StopFailure" => new(ActivityState.Waiting, DateTimeOffset.Now, "turno interrompido por erro"),
+            "Stop" => new(ActivityState.Waiting, DateTimeOffset.Now, "resposta concluída · aguardando você", Action: "Terminou · sua vez"),
+            "StopFailure" => new(ActivityState.Waiting, DateTimeOffset.Now, "turno interrompido por erro", Action: "Parou por um erro"),
             _ => null
         };
         if (eventName is not ("SessionEnd" or "SessionStart" or "UserPromptSubmit" or "PreToolUse" or "PostToolUse" or

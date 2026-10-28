@@ -70,6 +70,10 @@ internal sealed partial class MonitorForm
         if (fresh.Count > 0) NewPending?.Invoke(fresh);
     }
 
+    /// <summary>Opens the list of every pending item under the bell (or the menu button when the header is hidden).</summary>
+    internal void ShowPendingList() =>
+        ShowPendingMenu(null, Settings.ShowPanelHeader && !MiniLayout ? HeaderButtonRect(1) : PanelMenuRect);
+
     private void ShowPendingMenu(string? agentId, RectangleF anchor)
     {
         var items = _enabledOfficeAgents.Where(a => agentId is null || a.Id == agentId).SelectMany(PendingOf).OrderBy(p => p.Since).ToList();
@@ -134,9 +138,9 @@ internal sealed partial class MonitorForm
 
     private SettingsForm? _settingsWindow;
 
-    internal static readonly string[] SkinNames = ["Padrão", "Voxel", "Minimalista"];
+    internal static readonly string[] SkinNames = ["Escritório", "Retrô", "Só os cards"];
 
-    /// <summary>0 = Padrão (Loft), 1 = Voxel (classic voxel office), 2 = Minimalista (cards only).</summary>
+    /// <summary>0 = Escritório (Loft), 1 = Retrô (classic voxel office), 2 = Só os cards (compact).</summary>
     internal int SkinIndex => Settings.Compact ? 2 : Classic ? 1 : 0;
 
     internal void SetSkin(int skin)
@@ -228,7 +232,7 @@ internal sealed partial class MonitorForm
             }));
         menu.Items.Add(density);
         if (_enabledOfficeAgents.Count > 1)
-            menu.Items.Add("Ocultar este provedor", null, (_, _) =>
+            menu.Items.Add("Ocultar esta ferramenta", null, (_, _) =>
             {
                 Settings.HiddenProviders.Add(agent.Id);
                 ShowData(_allAgents);
@@ -340,7 +344,7 @@ internal sealed partial class MonitorForm
             "minimize" => "Minimizar para a bandeja; reabra pelo ícone do QuotaDesk",
             "shutdown" => "Desligar o QuotaDesk",
             "scene" => CurrentSky().Describe(),
-            _ when Idx(hit, "menu") is not null => "Opções deste provedor",
+            _ when Idx(hit, "menu") is not null => "Opções desta ferramenta",
             _ when Idx(hit, "pager") is { } pg => $"{CardName(_agents[pg])}: trocar de ferramenta (clique à esquerda/direita ou role a roda)",
             _ when Idx(hit, "badge") is { } b => $"{PendingOf(_agents[b]).Count} sessão(ões) aguardando você\nClique para ver",
             _ when Idx(hit, "card") is { } c => Details(_agents[c]),

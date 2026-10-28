@@ -42,6 +42,15 @@ internal static class NotchForecast
         return w.Kind != WindowKind.Other && w.ResetsAt is not null ? ("Previsão após mais uso", Theme.TextFaint) : null;
     }
 
+    /// <summary>The forecast in a few words for the top line ("Esgota em ~1d 14h"), or null when there is none.</summary>
+    public static string? Short(LimitWindow w, DateTimeOffset now, bool stale)
+    {
+        if (stale) return null;
+        if (w.UsedRounded >= 100) return "Esgotada";
+        if (w.Depletion(now) is not { } depletion) return null;
+        return depletion.BeforeReset ? $"Esgota em ~{LimitWindow.Span(depletion.At - now)}" : "Dura até renovar";
+    }
+
     public static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>How far ahead of (or behind) the even pace the window is, in plain words.</summary>
@@ -116,6 +125,14 @@ internal sealed class NotchForm : Form
             if (e.Button != MouseButtons.Left || !_mouseDown) return;
             _mouseDown = false;
             if (_dragging) { _dragging = false; SnapToPointerScreen(); return; }
+            // A click on the bubble swaps "renova em" and "esgota em" on each line; the rail still opens the panel.
+            var point = new PointF(e.X / _scale, e.Y / _scale);
+            if (_lay.Bubble is not null && _lay.BubbleHit.Contains(point) && !RailHit.Contains(point))
+            {
+                _depletionFirst = !_depletionFirst;
+                Render();
+                return;
+            }
             OpenRequested?.Invoke();
         };
         var pin = new ToolStripMenuItem("Fixar barra aberta", null, (_, _) => TogglePinned());
@@ -338,10 +355,12 @@ internal sealed class NotchForm : Form
         if (_lay.Bubble is { } body && _hover >= 0 && _hover < _agents.Count)
         {
             DrawBubbleShape(g, body, _lay.Tip);
-            DrawBubble(g, _agents[_hover], body, DateTimeOffset.Now);
+            DrawBubble(g, _agents[_hover], body, DateTimeOffset.Now, _depletionFirst);
         }
         return bitmap;
     }
+
+    private bool _depletionFirst;
 
     /// <summary>Test hook: open or collapse the rail and hover a tool without a pointer.</summary>
     internal void Preview(bool wide, int hover) { _wide = wide; _hover = hover; }
@@ -476,7 +495,7 @@ internal sealed class NotchForm : Form
         return BubbleInset + 22 + 16 + content + BubbleInset - 2;
     }
 
-    private static void DrawBubble(Graphics g, AgentStatus agent, RectangleF body, DateTimeOffset now)
+    private static void DrawBubble(Graphics g, AgentStatus agent, RectangleF body, DateTimeOffset now, bool depletionFirst = false)
     {
         var x = body.X + BubbleInset;
         var width = body.Width - BubbleInset * 2;
@@ -495,17 +514,22 @@ internal sealed class NotchForm : Form
         }
         foreach (var window in windows)
         {
-            DrawWindow(g, agent, window, new RectangleF(x, y, width, BlockH), now);
+            DrawWindow(g, agent, window, new RectangleF(x, y, width, BlockH), now, depletionFirst);
             y += BlockH + BlockGap;
         }
     }
 
-    private static void DrawWindow(Graphics g, AgentStatus agent, LimitWindow w, RectangleF area, DateTimeOffset now)
+    private static void DrawWindow(Graphics g, AgentStatus agent, LimitWindow w, RectangleF area, DateTimeOffset now, bool depletionFirst)
     {
         var label = Theme.Font("number", 13);
         var small = Theme.Font("number", 12);
+        // Rows 1 and 4 trade places on click: time to renewal on top and the forecast below, or the other way round.
+        var forecast = NotchForecast.For(w, now, agent.Quota.Stale);
+        var renewal = NotchForecast.Capitalize(w.ResetText(now));
+        var swap = depletionFirst && w.Credits is null && forecast is not null;
+        if (swap) forecast = (renewal + (w.ResetClock(now) is { } clock ? $" ({clock})" : ""), Theme.TextDim);
         // Row 1: window name and time to renewal (or the measured credit rate).
-        var reset = w.Credits?.RateText ?? NotchForecast.Capitalize(w.ResetText(now));
+        var reset = w.Credits?.RateText ?? (swap ? NotchForecast.Short(w, now, agent.Quota.Stale) ?? renewal : renewal);
         DrawText(g, w.Label, label, Theme.Text, new RectangleF(area.X, area.Y, area.Width * 0.45f, 18), StringAlignment.Near);
         DrawText(g, reset, small, Theme.Label, new RectangleF(area.X + area.Width * 0.4f, area.Y, area.Width * 0.6f, 18), StringAlignment.Far);
         // Row 2: usage bar.
@@ -525,10 +549,10 @@ internal sealed class NotchForm : Form
         DrawText(g, used, small, Theme.Label, new RectangleF(area.X, area.Y + 36, area.Width * 0.6f, 16), StringAlignment.Near);
         if (!agent.Quota.Stale && NotchForecast.Pace(w, now) is { } pace)
             DrawText(g, pace.Text, small, pace.Color, new RectangleF(area.X + area.Width * 0.5f, area.Y + 36, area.Width * 0.5f, 16), StringAlignment.Far);
-        // Row 4: when it runs out at this rate.
-        if (NotchForecast.For(w, now, agent.Quota.Stale) is not { } forecast) return;
-        using (var dot = new SolidBrush(forecast.Color)) g.FillEllipse(dot, area.X, area.Y + 59, 7, 7);
-        DrawText(g, forecast.Text, Theme.Font("number", 12.5f, FontStyle.Bold), forecast.Color,
+        // Row 4: when it runs out at this rate (or, swapped, when it renews).
+        if (forecast is not { } line) return;
+        using (var dot = new SolidBrush(line.Color)) g.FillEllipse(dot, area.X, area.Y + 59, 7, 7);
+        DrawText(g, line.Text, Theme.Font("number", 12.5f, FontStyle.Bold), line.Color,
             new RectangleF(area.X + 14, area.Y + 54, area.Width - 14, 18), StringAlignment.Near);
     }
 

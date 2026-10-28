@@ -45,6 +45,9 @@ internal sealed partial class MonitorForm
 
     // ---------------------------------------------------------------- title
 
+    // Set by PaintTitle each frame; the header menu writes its own small name only when the big wordmark is not there.
+    private bool _wordmarkShown;
+
     private void PaintTitle(Graphics g)
     {
         var now = DateTime.Now;
@@ -55,6 +58,7 @@ internal sealed partial class MonitorForm
         var free = Settings.ShowPanelHeader ? HeaderButtonRect(0).X - 8 : PanelMenuRect.X - 8;
         if (_officeViewport.HasNavigation && Compact) free = OfficeNavigationRect(-1).X - 8;
 
+        _wordmarkShown = false;
         if (Compact)
         {
             // One line: no room for the wordmark, but the day and the time stay visible.
@@ -73,7 +77,8 @@ internal sealed partial class MonitorForm
         var x = Margin + 68f;
         var quotaWidth = PixelFont.Measure("QUOTA", scale, 4, bold: true);
         var titleWidth = quotaWidth + 5 + PixelFont.Measure("DESK", scale, 4, bold: true);
-        if (x + titleWidth <= free)
+        _wordmarkShown = x + titleWidth <= free;
+        if (_wordmarkShown)
         {
             using (var logo = TrayIconRenderer.Render(48, TrayIconRenderer.Logo)) g.DrawImage(logo, Margin + 4, 20, 48, 48);
             PixelFont.Draw(g, "QUOTADESK", x + 2, 26, scale, Color.FromArgb(0, 0, 0), 4, bold: true);

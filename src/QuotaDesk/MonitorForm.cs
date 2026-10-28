@@ -443,7 +443,7 @@ internal sealed partial class MonitorForm : Form
     {
         if (Settings.ShowPanelHeader)
         {
-            if (HeaderButtonRect(0).X > 230)
+            if (!_wordmarkShown && HeaderButtonRect(0).X > 230)
                 PixelFont.Draw(g, "QuotaDesk", Margin + 2, 20, 2.5f, Theme.Label, 2, bold: true);
             for (var i = 0; i < HeaderActions.Length; i++)
             {
@@ -569,20 +569,31 @@ internal sealed partial class MonitorForm : Form
 
 
     /// <summary>
-    /// Now and then a working character says something short (max. two lines). The two take turns, so bubbles never
-    /// overlap; about 3 s on screen every ~12 s. Purely decorative: it does not reflect what the tool is doing.
+    /// Now and then a character says something short. The characters take turns, so bubbles never overlap; about 3 s on
+    /// screen every ~12 s. When the tool reports what it is doing (<see cref="AgentStatus.Activity"/>), every other bubble
+    /// is the real thing — task title and last action, like "Criar navbar / Executou o comando" — and a session waiting
+    /// for you only says that. The stock lines in between are decorative.
     /// </summary>
     private void PaintSpeech(Graphics g)
     {
         const int period = 96, visible = 26;
+        var now = DateTimeOffset.Now;
         for (var i = 0; i < _agents.Count; i++)
         {
             var agent = _agents[i];
-            if (agent.State != ActivityState.Working || !Chatter.TryGetValue(agent.Id, out var lines)) continue;
-            if (QuotaPause.For(agent, DateTimeOffset.Now).Kind != PauseKind.None) continue; // the seat shows the return sign instead
+            if (QuotaPause.For(agent, now).Kind != PauseKind.None) continue; // the seat shows the return sign instead
             var t = _frame + i * (period / Math.Max(1, _agents.Count));
             if (t % period >= visible) continue;
-            var text = lines[(int)((uint)(t / period * 2654435761u) % (uint)lines.Length)].Split('|');
+            var real = Settings.AgentSpeech && agent.Activity is { } activity && now - activity.At < TimeSpan.FromMinutes(5) &&
+                agent.State is ActivityState.Working or ActivityState.Waiting
+                ? (AgentActions.CleanTitle(agent.Activity.Title, 28) is { } title ? new[] { title, agent.Activity.Action } : [agent.Activity.Action])
+                : null;
+            Chatter.TryGetValue(agent.Id, out var lines);
+            string[] text;
+            if (real is not null && (agent.State == ActivityState.Waiting || lines is null || t / period % 2 == 0)) text = real;
+            else if (agent.State == ActivityState.Working && lines is not null)
+                text = lines[(int)((uint)(t / period * 2654435761u) % (uint)lines.Length)].Split('|');
+            else continue;
             // A real font here: the pixel font at this size falls below one screen pixel per dot and turns to mush.
             var speechFont = Theme.Font("mono", 14f, FontStyle.Bold);
             var textW = text.Max(l => g.MeasureString(l, speechFont, 1000, Typographic).Width);

@@ -105,6 +105,8 @@ internal sealed class AppSettings
     /// <summary>Sound when a session starts waiting for the user.</summary>
     public bool Sound { get; set; }
     public bool NotifyPending { get; set; } = true;
+    /// <summary>Characters also say what their agent is really doing (task title and last action), between the stock lines.</summary>
+    public bool AgentSpeech { get; set; } = true;
     /// <summary>Automatic refresh every N minutes; 0 = manual only (sources still follow their own events).</summary>
     public int RefreshMinutes { get; set; }
     /// <summary>Border glow: 0 none, 1 soft, 2 normal.</summary>

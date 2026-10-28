@@ -1,21 +1,21 @@
 <div align="center">
 
-![QuotaDesk: o Loft com uma sala por ferramenta de IA](docs/assets/loft-banner.jpg)
+![QuotaDesk: o escritório com uma sala para cada IA](docs/assets/loft-banner.jpg)
 
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078D4)
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-green)
 ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.4.0-orange)
 
-**Um app de bandeja para Windows que mostra, num escritório voxel animado, quanto resta da cota de cada ferramenta de IA — e se ela está trabalhando, esperando por você ou parada.**
+**Saiba quanto ainda dá para usar das suas IAs, sem abrir nenhuma. Um escritório animado fica no canto da tela: cada IA tem um personagem, que trabalha quando ela trabalha, chama você quando ela precisa e avisa antes do limite acabar.**
 
 ![Painel do QuotaDesk com Codex, Claude Code e Antigravity trabalhando](docs/assets/screens/panel-working.png)
 
-[Site do projeto](https://srbunnie.github.io/QuotaDesk/) · [Instalar](#instalar) · [Casos de uso](#casos-de-uso) · [Adicionar uma ferramenta](#adicionar-uma-ferramenta)
+[Site do projeto](https://srbunnie.github.io/QuotaDesk/) · [Instalar](#instalar) · [Casos de uso](#casos-de-uso) · [Adicionar uma ferramenta](#adicionar-uma-ferramenta) · [Roteiro](ROADMAP.md)
 
 </div>
 
-Cada ferramenta tem uma sala no Loft e um personagem que digita quando ela trabalha, pensa quando espera por você, toma café ou cochila quando está ociosa e procura sinal no celular quando não há leitura. Os cards mostram a cota de 5 horas e a semanal, o ritmo de gasto, quando a cota acaba nesse ritmo e quando renova.
+Cada IA tem uma sala no escritório e um personagem que digita quando ela trabalha, pensa quando espera por você, toma café ou cochila quando está parada e procura sinal no celular quando não há leitura. Enquanto trabalha, ele conta o que está fazendo, com o título da tarefa e a última ação ("Executou o comando"). Os cards mostram a cota de 5 horas e a semanal, o ritmo de gasto, quando a cota acaba nesse ritmo e quando renova.
 
 > Todas as imagens desta página usam **dados simulados**.
 
@@ -69,15 +69,15 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 
 ![Cota de 5 horas do Codex esgotada, Claude a 93% e uma pendência de permissão](docs/assets/screens/panel-waiting.png)
 
-**Saber quando um agente está esperando por você.** Quando uma sessão do Claude Code pede permissão ou faz uma pergunta, o personagem fica pensando, o card ganha um selo com o número de pendências e o Windows mostra uma notificação. Com vários terminais abertos, você vê qual precisa de você sem procurar.
+**Saber quando um agente está esperando por você.** Quando uma sessão do Claude Code pede permissão ou faz uma pergunta, o personagem fica pensando, o card ganha um selo com o número de pendências e o Windows mostra uma notificação; clique nela para ver a lista. Com vários terminais abertos, você vê qual precisa de você sem procurar.
 
 **Escolher a ferramenta certa para a próxima tarefa.** Codex sem cota de 5 horas, Claude com folga na semanal, Antigravity com o Gemini livre: o painel mostra tudo lado a lado. Uma cota esgotada vira uma placa "PAUSA ATÉ 18:35" na sala; a semanal esgotada deixa a cadeira vazia com "VOLTO SÁB 15:47".
 
 **Acompanhar créditos pré-pagos.** Para Magnific e OpenRouter, o card mostra o saldo, quanto você gasta por dia e quando o saldo acaba nesse ritmo.
 
-**Ver de relance, sem abrir nada.** O widget de borda fica colado em qualquer canto de qualquer monitor; ao passar o mouse, abre um balão com as cotas, o ritmo e a previsão. O ícone da bandeja tem um medidor por ferramenta.
+**Ver de relance, sem abrir nada.** A barra na borda da tela fica colada em qualquer canto de qualquer monitor e fica sempre por cima do painel. Ao passar o mouse, abre um balão com os limites, o ritmo e a previsão; clique no balão para alternar entre "renova em" e "esgota em". O ícone da bandeja tem um medidor por ferramenta.
 
-<p align="center"><img src="docs/assets/screens/notch.png" alt="Widget de borda aberto com as cotas do Claude Code e a previsão de quando acabam" width="382"></p>
+<p align="center"><img src="docs/assets/screens/notch.png" alt="Balão da barra na borda da tela com as cotas do Claude Code e a previsão de quando acabam" width="382"></p>
 
 **Um painel dedicado numa telinha.** Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel permanente, que pagina as ferramentas sozinho.
 
@@ -89,8 +89,8 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 **Deixar o escritório bonito o dia todo.** As janelas mostram o céu real da sua cidade (opcional, via Open-Meteo): amanhecer, sol, chuva, tempestade, lua na fase certa.
 
 <p align="center">
-<img src="docs/assets/screens/sky-sunset.png" alt="Loft ao pôr do sol" width="32%">
-<img src="docs/assets/screens/sky-storm.png" alt="Loft durante tempestade" width="32%">
+<img src="docs/assets/screens/sky-sunset.png" alt="O escritório ao pôr do sol" width="32%">
+<img src="docs/assets/screens/sky-storm.png" alt="O escritório durante uma tempestade" width="32%">
 <img src="docs/assets/screens/idle-sleep.png" alt="Personagens ociosos cochilando à noite" width="32%">
 </p>
 
@@ -120,7 +120,7 @@ Falhas de segurança: veja o [SECURITY.md](SECURITY.md).
 
 Para agentes de código, o roteiro completo, com as regras do projeto e o esqueleto do adaptador, está no **[AGENTS.md](AGENTS.md#tutorial-adicionar-uma-ferramenta)**. Codex, Cursor e outros leem esse arquivo sozinhos; o Claude Code o recebe pelo `CLAUDE.md`.
 
-A skill [`skills/add-provider`](skills/add-provider/SKILL.md) ensina um agente (Claude Code, Codex…) a colocar uma ferramenta nova de ponta a ponta: o adaptador em C#, a sala no Loft e o personagem com 12 poses. Ela traz os prompts de geração, as regras de chroma-key e os scripts que recortam, alinham e validam a arte:
+A skill [`skills/add-provider`](skills/add-provider/SKILL.md) ensina um agente (Claude Code, Codex…) a colocar uma ferramenta nova de ponta a ponta: o adaptador em C#, a sala no escritório e o personagem com 12 poses. Ela traz os prompts de geração, as regras de chroma-key e os scripts que recortam, alinham e validam a arte:
 
 ```bash
 python skills/add-provider/scripts/add_room.py --id cursor --room cursor-room.png --seat 182
@@ -154,7 +154,7 @@ QuotaDesk.exe --selftest-stability <pasta>
 QuotaDesk.exe --selftest-office <pasta>
 QuotaDesk.exe --selftest-office-navigation <pasta>
 QuotaDesk.exe --selftest-claude <arquivo.txt>
-QuotaDesk.exe --preview <pasta>      # painel, céus, widget e bandeja com dados simulados
+QuotaDesk.exe --preview <pasta>      # painel, céus, barra na borda e bandeja com dados simulados
 ```
 
 ### Ambientes
@@ -188,6 +188,6 @@ Nunca anexe `settings.json`, arquivos `*.dat`, o `error.log` ou capturas com dad
 
 - **Autores:** o QuotaDesk é uma parceria entre [@edirsooo](https://github.com/edirsooo), de quem veio a ideia original e que colabora com ideias e código, e [@srbunnie](https://github.com/srbunnie), que deu continuidade ao projeto. O lançamento é dos dois.
 - **Código:** licença [MIT](LICENSE).
-- **Arte:** todas as ilustrações do app — as salas do Loft, os personagens e suas poses — foram geradas com IA no Magnific por [@edirsooo](https://github.com/edirsooo) e são de **livre uso pessoal**.
+- **Arte:** todas as ilustrações do app — as salas do escritório, os personagens e suas poses — foram geradas com IA no Magnific por [@edirsooo](https://github.com/edirsooo) e são de **livre uso pessoal**.
 - **Ícones:** [Lucide](https://lucide.dev) (ISC), em `src/QuotaDesk/assets/lucide`.
 - **Marcas:** os nomes e logos de Claude, Codex/ChatGPT, Antigravity, Figma, Magnific e OpenRouter pertencem a seus donos e aparecem só para identificar cada serviço. O QuotaDesk é independente e não é afiliado a nenhum deles.

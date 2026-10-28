@@ -160,6 +160,63 @@ internal sealed record AgentStatus(string Id, string Name, ActivityState State, 
     public IReadOnlyList<PendingItem> Pending { get; init; } = [];
     /// <summary>A session is open even though nothing is running (shown as "Ativo" instead of "Ocioso").</summary>
     public bool SessionOpen { get; init; }
+    /// <summary>What the agent is doing right now, for the character's speech bubble; null when the tool does not say.</summary>
+    public AgentActivity? Activity { get; init; }
+}
+
+/// <summary>
+/// The latest step of a session in a few words: the task title (Codex thread name, or the project folder) and the action
+/// ("Executou o comando"). Built from event and tool names only; prompts, answers and file contents are never read.
+/// </summary>
+internal sealed record AgentActivity(string? Title, string Action, DateTimeOffset At);
+
+internal enum ActionKind { Thinking, Command, Edit, Read, Search, Web, Delegate, Plan, Connector, Other }
+
+internal static class AgentActions
+{
+    public static string Describe(ActionKind kind, bool done, string? other = null) => (kind, done) switch
+    {
+        (ActionKind.Thinking, _) => "Pensando…",
+        (ActionKind.Command, false) => "Executando um comando",
+        (ActionKind.Command, true) => "Executou o comando",
+        (ActionKind.Edit, false) => "Editando um arquivo",
+        (ActionKind.Edit, true) => "Editou um arquivo",
+        (ActionKind.Read, false) => "Lendo um arquivo",
+        (ActionKind.Read, true) => "Leu um arquivo",
+        (ActionKind.Search, false) => "Procurando no código",
+        (ActionKind.Search, true) => "Procurou no código",
+        (ActionKind.Web, false) => "Pesquisando na web",
+        (ActionKind.Web, true) => "Pesquisou na web",
+        (ActionKind.Delegate, false) => "Delegando a um subagente",
+        (ActionKind.Delegate, true) => "Subagente terminou",
+        (ActionKind.Plan, _) => "Atualizou o plano",
+        (ActionKind.Connector, false) => "Usando um conector",
+        (ActionKind.Connector, true) => "Usou um conector",
+        (_, false) => other is null ? "Usando uma ferramenta" : $"Usando {other}",
+        _ => other is null ? "Usou uma ferramenta" : $"Usou {other}"
+    };
+
+    /// <summary>Claude Code tool names (already reduced to [A-Za-z0-9_]; MCP tools arrive as "MCP").</summary>
+    public static ActionKind ForClaudeTool(string? tool) => tool switch
+    {
+        "Bash" or "PowerShell" or "BashOutput" or "KillShell" => ActionKind.Command,
+        "Edit" or "Write" or "MultiEdit" or "NotebookEdit" => ActionKind.Edit,
+        "Read" or "NotebookRead" => ActionKind.Read,
+        "Grep" or "Glob" or "LS" => ActionKind.Search,
+        "WebFetch" or "WebSearch" => ActionKind.Web,
+        "Task" or "Agent" => ActionKind.Delegate,
+        "TodoWrite" => ActionKind.Plan,
+        "MCP" => ActionKind.Connector,
+        _ => ActionKind.Other
+    };
+
+    /// <summary>A title for the bubble: control characters removed and cut to a length that fits two short lines.</summary>
+    public static string? CleanTitle(string? text, int max = 40)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var clean = new string(text.Where(c => !char.IsControl(c)).ToArray()).Trim();
+        return clean.Length == 0 ? null : clean.Length <= max ? clean : clean[..(max - 1)].TrimEnd() + "…";
+    }
 }
 
 /// <summary>One session that cannot continue until the user answers. Key identifies it so it is announced and dismissed once.</summary>

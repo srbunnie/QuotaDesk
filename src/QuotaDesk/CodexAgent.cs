@@ -19,7 +19,9 @@ internal sealed class CodexAgent : IAgentSource
     private readonly System.Threading.Timer _debounce;
     private readonly object _gate = new();
     private readonly HashSet<string> _dirtyFiles = [];
-    private readonly Dictionary<string, (ActivityState State, DateTimeOffset At, string Detail)> _files = [];
+    private readonly Dictionary<string, (ActivityState State, DateTimeOffset At, string Detail, string? Action)> _files = [];
+    private Dictionary<string, string> _titles = [];
+    private DateTime _titlesRead;
     private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Codex", "Consultando...", "codex app-server");
     private DateTimeOffset _lastRefresh = DateTimeOffset.MinValue;
     private int _refreshing;
@@ -93,7 +95,17 @@ internal sealed class CodexAgent : IAgentSource
         if (completed) _ = RefreshQuotaAsync(false);
     }
 
-    private static (ActivityState State, DateTimeOffset At, string Detail)? InspectTail(string path)
+    // Completed items in the log, newest wins; only the type name is matched, never the item's content.
+    private static readonly (string Marker, ActionKind Kind)[] ActionMarkers =
+    [
+        ("\"type\":\"CommandExecution\"", ActionKind.Command),
+        ("\"type\":\"FileChange\"", ActionKind.Edit),
+        ("\"type\":\"McpToolCall\"", ActionKind.Connector),
+        ("\"type\":\"web_search_call\"", ActionKind.Web),
+        ("\"type\":\"Reasoning\"", ActionKind.Thinking)
+    ];
+
+    private static (ActivityState State, DateTimeOffset At, string Detail, string? Action)? InspectTail(string path)
     {
         try
         {
@@ -111,11 +123,15 @@ internal sealed class CodexAgent : IAgentSource
             var aborted = Last("\"type\":\"turn_aborted\"");
             var approval = Math.Max(Last("_approval_request\""), Last("\"type\":\"request_user_input\""));
             var end = Math.Max(complete, aborted);
-            if (approval > started && approval > end) return (ActivityState.Waiting, lastWrite, "aguardando sua aprovação");
-            if (started > end) return (ActivityState.Working, lastWrite, "executando tarefa");
-            if (end >= 0) return (ActivityState.Waiting, lastWrite, complete > aborted ? "tarefa concluída · aguardando você" : "tarefa interrompida");
+            var step = ActionMarkers.Select(m => (At: Last(m.Marker), m.Kind)).MaxBy(m => m.At);
+            var action = step.At >= 0 ? AgentActions.Describe(step.Kind, true) : "Trabalhando…";
+            if (approval > started && approval > end) return (ActivityState.Waiting, lastWrite, "aguardando sua aprovação", "Precisa da sua aprovação");
+            if (started > end) return (ActivityState.Working, lastWrite, "executando tarefa", action);
+            if (end >= 0) return complete > aborted
+                ? (ActivityState.Waiting, lastWrite, "tarefa concluída · aguardando você", "Terminou · sua vez")
+                : (ActivityState.Waiting, lastWrite, "tarefa interrompida", "Tarefa interrompida");
             // Tail without markers (very long turn): recent writes still mean work in progress.
-            return (ActivityState.Working, lastWrite, "executando tarefa");
+            return (ActivityState.Working, lastWrite, "executando tarefa", action);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
     }
@@ -134,27 +150,69 @@ internal sealed class CodexAgent : IAgentSource
 
     public AgentStatus GetStatus(DateTimeOffset now)
     {
-        (ActivityState State, DateTimeOffset At, string Detail)? best = null;
+        (ActivityState State, DateTimeOffset At, string Detail, string? Action)? best = null;
+        string? bestFile = null;
         lock (_gate)
         {
             foreach (var key in _files.Keys.ToList())
             {
                 var entry = _files[key];
                 if (entry.State == ActivityState.Working && now - entry.At > WorkingSilence)
-                    entry = (ActivityState.Idle, entry.At, "sem atividade recente");
+                    entry = (ActivityState.Idle, entry.At, "sem atividade recente", null);
                 else if (entry.State == ActivityState.Waiting && now - entry.At > WaitingTimeout)
-                    entry = (ActivityState.Idle, entry.At, "sessão parada");
+                    entry = (ActivityState.Idle, entry.At, "sessão parada", null);
                 if (entry.State == ActivityState.Idle && now - entry.At > TimeSpan.FromHours(2)) { _files.Remove(key); continue; }
                 if (best is null || entry.State > best.Value.State || (entry.State == best.Value.State && entry.At > best.Value.At))
-                    best = entry;
+                    (best, bestFile) = (entry, key);
             }
         }
+        var activity = best is { Action: { } action } && bestFile is not null
+            ? new AgentActivity(ThreadTitle(bestFile), action, best.Value.At) : null;
         var state = best?.State ?? ActivityState.Idle;
         var detail = best?.Detail ?? "nenhuma tarefa recente";
         var source = _watcher is null ? "pasta de sessões do Codex não encontrada"
             : best is null ? "inferido do log local de sessões" : $"inferido do log local · {LimitParsing.Ago(now - best.Value.At)}";
         // The same quota is spent by Codex and by the Work space (only plain chat does not count).
-        return new AgentStatus(Id, "ChatGPT Codex", state, true, detail, source, _quota);
+        return new AgentStatus(Id, "ChatGPT Codex", state, true, detail, source, _quota) { Activity = activity };
+    }
+
+    /// <summary>
+    /// The conversation title Codex shows in its own list (session_index.jsonl: id → thread_name), matched by the id at the
+    /// end of the log file name. Re-read only when the index changes; the title is shown, never stored.
+    /// </summary>
+    private string? ThreadTitle(string logPath)
+    {
+        var name = Path.GetFileNameWithoutExtension(logPath);
+        if (name.Length < 36) return null;
+        var id = name[^36..];
+        var index = Path.Combine(Path.GetDirectoryName(SessionsDirectory)!, "session_index.jsonl");
+        try
+        {
+            var stamp = File.GetLastWriteTimeUtc(index);
+            if (stamp != _titlesRead && File.Exists(index))
+            {
+                var titles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                using var stream = new FileStream(index, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                if (stream.Length > 8 * 1024 * 1024) return null;
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                while (reader.ReadLine() is { } line)
+                {
+                    try
+                    {
+                        using var json = System.Text.Json.JsonDocument.Parse(line);
+                        var root = json.RootElement;
+                        if (root.TryGetProperty("id", out var i) && i.ValueKind == System.Text.Json.JsonValueKind.String &&
+                            root.TryGetProperty("thread_name", out var t) && t.ValueKind == System.Text.Json.JsonValueKind.String &&
+                            AgentActions.CleanTitle(t.GetString()) is { } title)
+                            titles[i.GetString()!] = title; // later lines are renames: the last one wins
+                    }
+                    catch (System.Text.Json.JsonException) { }
+                }
+                (_titles, _titlesRead) = (titles, stamp);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return _titles.GetValueOrDefault(id);
     }
 
     public async Task RefreshQuotaAsync(bool force)

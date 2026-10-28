@@ -17,7 +17,7 @@ internal sealed class SettingsForm : Form
         string? Button = null, Action? Click = null, Func<string>? Info = null);
 
     private readonly MonitorForm _owner;
-    private readonly string[] _tabs = ["Geral", "Aparência", "Avisos", "Dados", "Provedores"];
+    private readonly string[] _tabs = ["Geral", "Aparência", "Avisos", "Dados", "Ferramentas"];
     private int _tab;
     private (RectangleF rect, string key, Action action)[] _hits = [];
     private string? _hover;
@@ -93,9 +93,9 @@ internal sealed class SettingsForm : Form
                     Index: () => S.PanelLayout == "mini" ? 1 : 0, Pick: i => { _owner.SetLayout(i == 1 ? "mini" : "desktop"); Invalidate(); });
                 break;
             case 1:
-                yield return new Row("Skin do painel", "Minimalista mostra só os cards", Options: MonitorForm.SkinNames,
+                yield return new Row("Visual do painel", "Escritório animado, retrô ou só os cards", Options: MonitorForm.SkinNames,
                     Index: () => _owner.SkinIndex, Pick: i => { _owner.SetSkin(i); Invalidate(); });
-                yield return new Row("Skin do mini exibidor", "A barra na borda da tela", Options: ["Anéis", "Notch minimalista", "Oculto"],
+                yield return new Row("Barra na borda da tela", "Resumo sempre à vista", Options: ["Anéis", "Balão com previsão", "Desligada"],
                     Index: () => !S.SideDock ? 2 : string.Equals(S.DockStyle, "classic", StringComparison.OrdinalIgnoreCase) ? 0 : 1,
                     Pick: i =>
                     {
@@ -113,6 +113,7 @@ internal sealed class SettingsForm : Form
             case 2:
                 yield return new Row("Som ao pedir atenção", null, () => S.Sound, v => { S.Sound = v; Apply(); });
                 yield return new Row("Avisar pendências", "Perguntas e permissões aguardando você", () => S.NotifyPending, v => { S.NotifyPending = v; Apply(); });
+                yield return new Row("Falas reais dos agentes", "Balão com a tarefa e a última ação", () => S.AgentSpeech, v => { S.AgentSpeech = v; Apply(); });
                 yield return new Row("Avisar renovação de cota", null, () => S.NotifyRenewals, v => { S.NotifyRenewals = v; Apply(); });
                 break;
             case 3:

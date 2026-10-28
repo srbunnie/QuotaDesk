@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QuotaDesk — cotas das ferramentas de IA num escritório voxel</title>
-<meta name="description" content="App de bandeja para Windows que mostra, num escritório voxel animado, quanto resta da cota do Codex, Claude Code, Antigravity, OpenRouter, Magnific e Figma — e se cada um está trabalhando ou esperando por você.">
+<title>QuotaDesk — saiba quanto ainda dá para usar das suas IAs</title>
+<meta name="description" content="QuotaDesk mostra quanto ainda dá para usar do Codex, Claude Code, Antigravity, OpenRouter, Magnific e Figma, avisa antes de acabar e conta quando um agente está esperando por você. Grátis, de código aberto e sem enviar nada para fora do seu computador.">
 <meta property="og:title" content="QuotaDesk">
-<meta property="og:description" content="As cotas das suas ferramentas de IA num escritório voxel animado, na bandeja do Windows.">
+<meta property="og:description" content="Saiba quanto ainda dá para usar das suas IAs, sem abrir nenhuma delas. Um escritório animado na bandeja do Windows.">
 <meta property="og:image" content="https://srbunnie.github.io/QuotaDesk/assets/screens/panel-working.png">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/screens/tray.png">
@@ -101,6 +101,22 @@
   .pair { display: flex; gap: 14px; align-items: flex-start; justify-content: center; }
   .notch-bg { background: linear-gradient(135deg, #2a2f52, #1a1d38); border-radius: var(--radius); padding: 24px; display: flex; justify-content: flex-end; box-shadow: 0 0 0 1px var(--edge); }
 
+  /* Three devices drawn in CSS around the real screenshots: a desk monitor, a 3.5" USB screen and a portrait screen. */
+  .devices { display: grid; grid-template-columns: 2.3fr 1.25fr .85fr; gap: 34px; align-items: end; }
+  .devices > * { min-width: 0; }
+  .device { margin: 0; display: flex; flex-direction: column; align-items: center; }
+  .device .screen { background: #05060c; border: 1px solid #343a63; box-shadow: 0 24px 60px rgba(0,0,0,.55), inset 0 0 0 2px #0b0d1a; }
+  .device .screen img { border-radius: 4px; width: 100%; }
+  .device.desktop .screen { width: 100%; padding: 12px 12px 18px; border-radius: 14px; }
+  .device.desktop .stand { width: 22%; height: 34px; background: linear-gradient(#2a2f52, #1a1d38); clip-path: polygon(30% 0, 70% 0, 82% 100%, 18% 100%); }
+  .device.desktop .stand::after { content: ""; display: block; }
+  .device.mini .screen { width: 100%; padding: 9px; border-radius: 10px; border-color: #4a4f78; }
+  .device.portrait .screen { width: 100%; padding: 8px; border-radius: 12px; border-color: #4a4f78; }
+  .device .foot { width: 46%; height: 10px; margin-top: 6px; border-radius: 0 0 8px 8px; background: #23284a; }
+  .device.desktop .foot { display: none; }
+  .device figcaption { margin-top: 16px; text-align: center; color: var(--muted); font-size: 15px; max-width: 320px; }
+  .device figcaption strong { display: block; color: var(--text); font-size: 17px; margin-bottom: 2px; }
+
   .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .gallery figure { margin: 0; }
   .gallery figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
@@ -136,6 +152,8 @@
 
   @media (max-width: 900px) {
     .hero .grid, .usecase, .install, .skill, .credits { grid-template-columns: 1fr; }
+    .devices { grid-template-columns: 1fr 1fr; }
+    .device.desktop { grid-column: 1 / -1; }
     .usecase.flip .text { order: 0; }
     .cards, .gallery { grid-template-columns: 1fr; }
     .top .gh { margin-left: 0; }
@@ -150,10 +168,10 @@
     <a class="logo" href="#">QUOTA<b>DESK</b></a>
     <nav aria-label="Principal">
       <ul>
-        <li><a href="#recursos">Recursos</a></li>
-        <li><a href="#casos">Casos de uso</a></li>
+        <li><a href="#recursos">Como funciona</a></li>
+        <li><a href="#telas">Onde usar</a></li>
+        <li><a href="#casos">Para quê</a></li>
         <li><a href="#instalar">Instalar</a></li>
-        <li><a href="#provedor">Criar provedor</a></li>
         <li><a href="#privacidade">Privacidade</a></li>
       </ul>
     </nav>
@@ -166,16 +184,17 @@
     <div class="wrap">
       <div class="grid">
         <div>
-          <p class="eyebrow">Monitor de IA · local · Windows</p>
-          <h1>As cotas das suas IAs num <em>escritório voxel</em> que vive na bandeja.</h1>
-          <p class="lead">O QuotaDesk mostra quanto resta da cota do Codex, Claude Code, Antigravity, OpenRouter, Magnific e Figma — e se cada um está trabalhando, esperando por você ou parado.</p>
+          <p class="eyebrow">Para quem usa várias IAs</p>
+          <h1>Saiba quanto ainda dá para usar das suas IAs. <em>Sem abrir nenhuma.</em></h1>
+          <p class="lead">Um escritório animado fica no canto da tela. Cada IA tem um personagem: ele trabalha quando ela trabalha, chama você quando ela precisa e avisa antes do limite acabar.</p>
           <ul class="badges" aria-label="Destaques">
-            <li>Windows 10/11</li><li>.NET 10</li><li>Código aberto (MIT)</li><li>Tudo local</li>
+            <li>Grátis</li><li>Código aberto</li><li>Nada sai do seu computador</li><li>Windows 10 e 11</li>
           </ul>
           <div class="ctas">
-            <a class="btn primary" href="#instalar">Instalar em um clique</a>
-            <a class="btn ghost" href="https://github.com/srbunnie/QuotaDesk" target="_blank" rel="noopener">Ver no GitHub</a>
+            <a class="btn primary" href="#instalar">Instalar grátis</a>
+            <a class="btn ghost" href="#telas">Ver em ação</a>
           </div>
+          <p class="note" style="text-align:left">Funciona com Codex, Claude Code, Antigravity, OpenRouter, Magnific e Figma.</p>
         </div>
         <figure style="margin:0">
           <img class="shot" src="assets/screens/panel-working.png" width="711" height="400"
@@ -185,48 +204,78 @@
       </div>
       <div class="banner">
         <img src="assets/loft-banner.jpg" width="1800" height="185" loading="lazy"
-             alt="O Loft completo: seis salas lado a lado, uma para cada ferramenta, com janelas, mesas e monitores.">
+             alt="O escritório completo: seis salas lado a lado, uma para cada IA, com janelas, mesas e monitores.">
       </div>
     </div>
   </div>
 
   <section id="recursos">
     <div class="wrap">
-      <h2>O que ele acompanha</h2>
-      <p class="sub">Cada ferramenta tem uma sala e um personagem. Os cards mostram a cota de 5 horas e a semanal, o ritmo de gasto, a previsão de quando acaba e a hora da renovação.</p>
-      <div class="table-scroll">
+      <h2>Como funciona</h2>
+      <p class="sub">Você instala, abre suas IAs como sempre e o QuotaDesk acompanha sozinho. Cada IA ganha uma sala, um personagem e um card com o que importa.</p>
+      <div class="cards">
+        <div class="card"><span class="tag">Quanto resta</span><p>Quanto ainda dá para usar nas próximas 5 horas e na semana, e quando o limite volta. Para Magnific e OpenRouter, o saldo de créditos.</p></div>
+        <div class="card"><span class="tag">Quando acaba</span><p>Pelo seu ritmo de uso, o QuotaDesk calcula quando o limite acaba e avisa se for antes de renovar. Dá tempo de trocar de IA.</p></div>
+        <div class="card"><span class="tag">Quem precisa de você</span><p>Quando um agente pede permissão ou faz uma pergunta, o personagem chama você e o Windows mostra um aviso. Um clique abre a lista.</p></div>
+      </div>
+      <h3 style="margin-top:40px">O que aparece de cada IA</h3>
+      <div class="table-scroll" style="margin-top:12px">
         <table>
-          <caption class="sr-only">Ferramentas suportadas e de onde vêm os dados</caption>
-          <thead><tr><th scope="col">Ferramenta</th><th scope="col">Dados</th><th scope="col">De onde vem</th></tr></thead>
+          <caption class="sr-only">IAs suportadas, o que aparece e o que você precisa fazer</caption>
+          <thead><tr><th scope="col">IA</th><th scope="col">O que aparece</th><th scope="col">O que você faz</th></tr></thead>
           <tbody>
-            <tr><td>Codex</td><td>cotas de 5 horas e semanal, estado</td><td><code>codex app-server</code> e logs locais de sessão</td></tr>
-            <tr><td>Claude Code</td><td>cotas de 5 horas e semanal, estado em tempo real, pedidos de permissão</td><td>statusLine, histórico do app Claude e hooks locais</td></tr>
-            <tr><td>Antigravity</td><td>cotas por grupo de modelos</td><td>servidor local do próprio Antigravity</td></tr>
-            <tr><td>Magnific</td><td>saldo de créditos e ritmo de gasto</td><td>MCP oficial, com login no navegador</td></tr>
-            <tr><td>OpenRouter</td><td>saldo de créditos e ritmo de gasto</td><td>MCP oficial, com login no navegador</td></tr>
-            <tr><td>Figma</td><td>disponibilidade global do serviço</td><td>página pública de status</td></tr>
+            <tr><td>Codex</td><td>limite de 5 horas e semanal, o que está fazendo agora</td><td>nada, se já usa o Codex</td></tr>
+            <tr><td>Claude Code</td><td>limite de 5 horas e semanal, o que está fazendo, pedidos de permissão</td><td>uma configuração de 5 minutos</td></tr>
+            <tr><td>Antigravity</td><td>limite por grupo de modelos</td><td>nada, basta deixar aberto</td></tr>
+            <tr><td>Magnific</td><td>saldo de créditos e gasto por dia</td><td>entrar na conta uma vez</td></tr>
+            <tr><td>OpenRouter</td><td>saldo em dólar e gasto por dia</td><td>entrar na conta uma vez</td></tr>
+            <tr><td>Figma</td><td>se o serviço está no ar</td><td>nada</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="cards" style="margin-top:22px">
-        <div class="card"><span class="tag">Honesto</span><p><code>~</code> marca estimativas, leituras antigas aparecem como desatualizadas e uma fonte que muda vira "sem sinal". Nenhum número é inventado.</p></div>
-        <div class="card"><span class="tag">Vivo</span><p>Digita quando trabalha, pensa quando espera, cochila quando para. As janelas mostram o céu e o clima reais da sua cidade.</p></div>
-        <div class="card"><span class="tag">Em todo lugar</span><p>Painel, widget de borda, ícone da bandeja, notificações e mini monitor USB de 3,5".</p></div>
-      </div>
+      <p style="margin-top:14px;color:var(--muted)">Quando um número é estimado, ele aparece com <code>~</code>. Se uma IA não responde, o card diz "sem sinal". O QuotaDesk nunca inventa um número.</p>
     </div>
   </section>
 
-  <section id="casos" class="alt">
+  <section id="telas" class="alt">
     <div class="wrap">
-      <h2>Casos de uso</h2>
-      <p class="sub">Para quem trabalha com vários agentes de IA ao mesmo tempo e não quer descobrir o limite no meio da tarefa.</p>
+      <h2>Em qualquer tela</h2>
+      <p class="sub">Use no monitor principal, numa telinha USB ao lado do teclado ou numa tela em pé. O QuotaDesk se ajusta sozinho.</p>
+      <div class="devices">
+        <figure class="device desktop">
+          <div class="screen"><img src="assets/screens/panel-working.png" width="711" height="400" loading="lazy"
+               alt="Monitor de mesa com o painel completo: três salas com personagens trabalhando e os cards de cada IA."></div>
+          <div class="stand" aria-hidden="true"></div>
+          <figcaption><strong>No computador</strong>O painel completo, perto do relógio. Fica por cima das outras janelas se você quiser.</figcaption>
+        </figure>
+        <figure class="device mini">
+          <div class="screen"><img src="assets/screens/mini-landscape.png" width="480" height="320" loading="lazy"
+               alt="Telinha USB de 3,5 polegadas deitada, mostrando Codex, Claude e Antigravity."></div>
+          <div class="foot" aria-hidden="true"></div>
+          <figcaption><strong>Telinha de 3,5"</strong>Uma tela USB-C barata vira um painel fixo, que troca de IA sozinho.</figcaption>
+        </figure>
+        <figure class="device portrait">
+          <div class="screen"><img src="assets/screens/mini-portrait.png" width="320" height="480" loading="lazy"
+               alt="Tela em pé, no formato retrato, com os cards de cada IA um embaixo do outro."></div>
+          <div class="foot" aria-hidden="true"></div>
+          <figcaption><strong>Em pé</strong>Gire a tela e o painel vira uma coluna, ótima ao lado do monitor.</figcaption>
+        </figure>
+      </div>
+      <p class="note">Imagens com dados de exemplo.</p>
+    </div>
+  </section>
+
+  <section id="casos">
+    <div class="wrap">
+      <h2>Para que serve</h2>
+      <p class="sub">Para quem usa várias IAs no dia a dia e não quer descobrir o limite no meio de uma tarefa.</p>
 
       <div class="usecase">
         <div class="text">
           <span class="num">01</span>
-          <h3>Não estourar a cota no meio de uma tarefa</h3>
-          <p>A barra de cada card tem uma marca de ritmo. Se você está gastando mais rápido do que a janela permite, o QuotaDesk avisa quando a cota acaba nesse ritmo — antes de renovar.</p>
-          <p>Uma cota de 5 horas esgotada vira a placa <strong>PAUSA ATÉ 18:35</strong>; a semanal esgotada deixa a cadeira vazia com <strong>VOLTO SÁB</strong>.</p>
+          <h3>Não ficar sem IA no meio do trabalho</h3>
+          <p>Se você está gastando mais rápido do que o limite aguenta, o card avisa: "nesse ritmo, acaba às 16:08, antes de renovar". Dá tempo de terminar com calma ou trocar de IA.</p>
+          <p>Quando o limite acaba, o personagem sai para um intervalo e deixa uma placa: <strong>PAUSA ATÉ 18:35</strong>.</p>
         </div>
         <figure>
           <img class="shot" src="assets/screens/panel-waiting.png" width="711" height="400" loading="lazy"
@@ -238,35 +287,36 @@
       <div class="usecase flip">
         <div class="text">
           <span class="num">02</span>
-          <h3>Saber quando um agente está esperando por você</h3>
-          <p>Quando uma sessão do Claude Code pede permissão ou faz uma pergunta, o personagem fica pensando, o card ganha um selo com o número de pendências e o Windows mostra uma notificação.</p>
-          <p>Com vários terminais abertos, você vê qual precisa de você sem procurar.</p>
+          <h3>Saber na hora quando uma IA precisa de você</h3>
+          <p>Pediu permissão? Fez uma pergunta? O personagem para e fica pensando, o card mostra quantos pedidos estão esperando e o Windows avisa. Clique no aviso e veja a lista.</p>
+          <p>Enquanto trabalham, os personagens contam o que estão fazendo: "Executou o comando", "Editando um arquivo".</p>
         </div>
         <figure>
           <div class="notch-bg"><img src="assets/screens/notch.png" width="382" height="286" loading="lazy"
-               alt="Widget de borda aberto: Claude Code com 93% da cota de 5 horas usada, 5 pontos acima do ritmo e previsão de esgotar em cerca de 20 minutos."></div>
-          <figcaption>O widget de borda, com a previsão de quando a cota acaba.</figcaption>
+               alt="Balão na borda da tela: Claude Code com 93% do limite de 5 horas usado e previsão de acabar em cerca de 20 minutos."></div>
+          <figcaption>O balão na borda da tela. Clique nele para alternar entre "renova em" e "esgota em".</figcaption>
         </figure>
       </div>
 
       <div class="usecase">
         <div class="text">
           <span class="num">03</span>
-          <h3>Escolher a ferramenta certa para a próxima tarefa</h3>
-          <p>Codex sem cota de 5 horas, Claude com folga na semanal, Antigravity com o Gemini livre: tudo lado a lado, com a hora exata de cada renovação. Para Magnific e OpenRouter, o card mostra o saldo, o gasto por dia e quando o saldo acaba.</p>
+          <h3>Escolher a melhor IA para a próxima tarefa</h3>
+          <p>Codex parado até as 18h, Claude com folga na semana, Gemini livre no Antigravity: tudo lado a lado, com a hora em que cada limite volta.</p>
+          <p>Para Magnific e OpenRouter, você vê o saldo, quanto gasta por dia e até quando ele dura.</p>
         </div>
         <figure>
           <img class="shot" src="assets/screens/panel-compact.png" width="711" height="208" loading="lazy"
-               alt="Modo compacto: só os três cards, sem a cena.">
-          <figcaption>O modo compacto, só com os cards.</figcaption>
+               alt="Visual Só os cards: os três cards lado a lado, sem o escritório.">
+          <figcaption>O visual "Só os cards", para quem quer o painel discreto.</figcaption>
         </figure>
       </div>
 
       <div class="usecase flip">
         <div class="text">
           <span class="num">04</span>
-          <h3>Um painel permanente numa telinha</h3>
-          <p>Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel que pagina as ferramentas sozinho, em paisagem ou retrato.</p>
+          <h3>Um painel fixo numa telinha</h3>
+          <p>Ligue uma tela USB-C de 3,5" (como a Turing Smart Screen) ou um monitor pequeno. O QuotaDesk encontra a tela e mostra uma IA de cada vez, deitada ou em pé.</p>
         </div>
         <figure>
           <div class="pair">
@@ -275,76 +325,76 @@
             <img class="shot" src="assets/screens/mini-portrait.png" width="320" height="480" loading="lazy" style="width:30%"
                  alt="Mini monitor 320 por 480 em retrato.">
           </div>
-          <figcaption>Mini monitor em paisagem e retrato.</figcaption>
+          <figcaption>A telinha deitada e em pé.</figcaption>
         </figure>
       </div>
     </div>
   </section>
 
-  <section>
+  <section class="alt">
     <div class="wrap">
-      <h2>O escritório ao longo do dia</h2>
-      <p class="sub">Com a cidade configurada, as janelas seguem o céu real: amanhecer, sol, chuva, tempestade e a lua na fase certa. O clima vem do Open-Meteo, que recebe só a latitude e a longitude.</p>
+      <h2>Um escritório que acompanha o seu dia</h2>
+      <p class="sub">Escolha sua cidade e as janelas mostram o céu de verdade: amanhecer, sol, chuva, tempestade e a lua na fase certa. Quando as IAs param, os personagens cochilam.</p>
       <div class="gallery">
-        <figure><img class="shot" src="assets/screens/sky-sunset.png" width="711" height="400" loading="lazy" alt="Loft ao pôr do sol."><figcaption>Pôr do sol</figcaption></figure>
-        <figure><img class="shot" src="assets/screens/sky-storm.png" width="711" height="400" loading="lazy" alt="Loft com chuva e relâmpagos."><figcaption>Tempestade</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/sky-sunset.png" width="711" height="400" loading="lazy" alt="O escritório ao pôr do sol."><figcaption>Pôr do sol</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/sky-storm.png" width="711" height="400" loading="lazy" alt="O escritório com chuva e relâmpagos."><figcaption>Tempestade</figcaption></figure>
         <figure><img class="shot" src="assets/screens/idle-sleep.png" width="711" height="400" loading="lazy" alt="Personagens ociosos cochilando à noite."><figcaption>Fim de expediente</figcaption></figure>
-        <figure><img class="shot" src="assets/screens/sky-night.png" width="711" height="400" loading="lazy" alt="Loft à noite com a lua."><figcaption>Noite</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/sky-night.png" width="711" height="400" loading="lazy" alt="O escritório à noite, com a lua."><figcaption>Noite</figcaption></figure>
         <figure><img class="shot" src="assets/screens/panel-no-signal.png" width="711" height="354" loading="lazy" alt="Ferramentas sem sinal, com personagens procurando sinal no celular."><figcaption>Sem sinal</figcaption></figure>
-        <figure><img class="shot" src="assets/screens/settings.png" width="440" height="432" loading="lazy" alt="Janela de configurações com as abas Geral, Aparência, Avisos, Dados e Provedores."><figcaption>Configurações</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/settings.png" width="440" height="432" loading="lazy" alt="Janela de configurações com as abas Geral, Aparência, Avisos, Dados e Ferramentas."><figcaption>Configurações</figcaption></figure>
       </div>
     </div>
   </section>
 
-  <section id="instalar" class="alt">
+  <section id="instalar">
     <div class="wrap">
-      <h2>Instalar em um clique</h2>
-      <p class="sub">Sem administrador. Tudo vai para a sua pasta de usuário.</p>
+      <h2>Instale em um minuto</h2>
+      <p class="sub">Não precisa ser administrador nem instalar mais nada. Escolha um dos dois jeitos.</p>
       <div class="install">
         <div class="term">
-          <div class="bar"><span>PowerShell · versão pronta</span><button class="copy" type="button" data-copy="irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex">Copiar</button></div>
+          <div class="bar"><span>Mais rápido: cole no PowerShell</span><button class="copy" type="button" data-copy="irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex">Copiar</button></div>
           <pre><code>irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex</code></pre>
           <div class="after">
-            <p><span class="ok">✓</span> baixa a última versão publicada</p>
-            <p><span class="ok">✓</span> instala em <code>%LOCALAPPDATA%\Programs\QuotaDesk</code></p>
-            <p><span class="ok">✓</span> cria atalhos e abre o painel — sem precisar do .NET</p>
+            <p><span class="ok">✓</span> baixa a versão mais recente</p>
+            <p><span class="ok">✓</span> cria atalhos no Menu Iniciar e na Área de Trabalho</p>
+            <p><span class="ok">✓</span> abre o QuotaDesk</p>
           </div>
         </div>
         <div class="term">
-          <div class="bar"><span>Com o repositório</span><button class="copy" type="button" data-copy="git clone https://github.com/srbunnie/QuotaDesk.git">Copiar</button></div>
+          <div class="bar"><span>Para quem baixa o código</span><button class="copy" type="button" data-copy="git clone https://github.com/srbunnie/QuotaDesk.git">Copiar</button></div>
           <pre><code>git clone https://github.com/srbunnie/QuotaDesk.git
 <span style="color:#a3a8c9"># depois, dois cliques em</span> QuotaDesk.cmd</code></pre>
           <div class="after">
-            <p><span class="ok">✓</span> abre o seu QuotaDesk ou instala a última versão publicada</p>
-            <p><span class="ok">✓</span> atualiza só quando há versão nova, sem mexer nos seus dados</p>
-            <p><span class="ok">✓</span> ou compila o código atual: na versão pessoal, em desenvolvimento ou em homologação</p>
+            <p><span class="ok">✓</span> abre o QuotaDesk, ou instala se ainda não tiver</p>
+            <p><span class="ok">✓</span> atualiza quando sai versão nova, sem perder suas configurações</p>
+            <p><span class="ok">✓</span> quem desenvolve também testa as próprias mudanças por ali</p>
           </div>
         </div>
       </div>
       <p style="margin-top:18px"><a href="https://github.com/srbunnie/QuotaDesk/releases/latest/download/QuotaDesk-win-x64.zip">Baixar o .zip</a> · <a href="https://github.com/srbunnie/QuotaDesk/archive/refs/heads/main.zip">Baixar o código</a></p>
-      <div class="warn"><strong>Primeira execução:</strong> o executável não é assinado, então o Windows pode mostrar "O Windows protegeu o computador". Clique em <strong>Mais informações › Executar assim mesmo</strong>.</div>
+      <div class="warn"><strong>Na primeira vez</strong> o Windows pode mostrar "O Windows protegeu o computador". Isso acontece com programas novos que ainda não têm assinatura digital. Clique em <strong>Mais informações › Executar assim mesmo</strong>.</div>
 
       <h3 style="margin-top:44px">Depois de instalar</h3>
       <ol class="steps" style="margin-top:14px">
-        <li><h3>Codex e Antigravity</h3><p>Funcionam sozinhos se a ferramenta estiver instalada e logada (o Antigravity, enquanto estiver aberto).</p></li>
-        <li><h3>Claude Code</h3><p>Mescle <code>claude-settings-additions.template.json</code> no seu <code>~/.claude/settings.json</code> para ligar o statusLine e os hooks do estado em tempo real.</p></li>
-        <li><h3>Magnific e OpenRouter</h3><p>Escolha <strong>Conectar</strong> no menu da bandeja e faça o login no navegador.</p></li>
+        <li><h3>Codex e Antigravity aparecem sozinhos</h3><p>Basta estar com eles instalados e com a conta conectada. O Antigravity precisa estar aberto.</p></li>
+        <li><h3>Conecte o Claude Code</h3><p>Uma configuração de 5 minutos mostra o limite exato e avisa quando ele pede sua permissão.</p></li>
+        <li><h3>Entre na Magnific e na OpenRouter</h3><p>Clique em <strong>Conectar</strong> no ícone do QuotaDesk, perto do relógio, e entre na sua conta.</p></li>
       </ol>
-      <p style="margin-top:14px"><a href="https://github.com/srbunnie/QuotaDesk/blob/main/tutoriais/conectar-ferramentas.md">Tutorial completo: conectar cada ferramenta</a>, com o passo a passo e o que fazer quando algo não aparece.</p>
+      <p style="margin-top:14px"><a href="https://github.com/srbunnie/QuotaDesk/blob/main/tutoriais/conectar-ferramentas.md">Passo a passo de cada IA</a>, com o que fazer se algo não aparecer.</p>
     </div>
   </section>
 
-  <section id="provedor">
+  <section id="provedor" class="alt">
     <div class="wrap">
       <div class="skill">
         <div>
-          <h2>Coloque a sua ferramenta no Loft</h2>
+          <h2>Falta a sua IA? Peça ao seu agente</h2>
           <p class="sub" style="margin-bottom:18px">A skill <a href="https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md"><code>add-provider</code></a> ensina um agente (Claude Code, Codex…) a adicionar uma ferramenta de ponta a ponta. O roteiro, as regras do projeto e o esqueleto do adaptador estão no <a href="https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta"><code>AGENTS.md</code></a>.</p>
           <ul>
-            <li><strong>Adaptador</strong> em C# que lê a cota sem inventar números.</li>
-            <li><strong>Sala</strong> gerada por IA com o mesmo enquadramento das outras; vidros em chroma-key viram céu e tela ao vivo.</li>
-            <li><strong>Personagem</strong> com 12 poses, recortadas e alinhadas pela roda da cadeira.</li>
-            <li>Scripts que validam a arte e a ordem do código antes do PR.</li>
+            <li><strong>A leitura do limite</strong>, sempre com números de verdade.</li>
+            <li><strong>Uma sala nova</strong> no escritório, no mesmo estilo das outras, com céu e tela animados.</li>
+            <li><strong>Um personagem</strong> com 12 poses: digitando, pensando, tomando café, cochilando.</li>
+            <li>Verificações automáticas antes de enviar a contribuição.</li>
           </ul>
           <div class="term" style="margin-top:18px">
             <div class="bar"><span>Peça ao seu agente</span><button class="copy" type="button" data-copy="Use a skill skills/add-provider para adicionar o Cursor ao QuotaDesk.">Copiar</button></div>
@@ -353,22 +403,35 @@
         </div>
         <div class="cast">
           <img src="assets/characters.png" width="1428" height="250" loading="lazy"
-               alt="O elenco: seis personagens voxel sentados em cadeiras gamer, um para cada ferramenta.">
+               alt="O elenco: seis personagens em blocos 3D sentados em cadeiras gamer, um para cada IA.">
         </div>
       </div>
     </div>
   </section>
 
-  <section id="privacidade" class="alt">
+  <section id="privacidade">
     <div class="wrap">
-      <h2>Privacidade e segurança</h2>
-      <p class="sub">Tudo roda na sua máquina.</p>
+      <h2>Suas conversas ficam com você</h2>
+      <p class="sub">O QuotaDesk roda inteiro no seu computador e só olha o necessário para mostrar limites e estados.</p>
       <div class="cards">
-        <div class="card"><span class="tag">Nada sai</span><p>Não envia prompts, não chama modelos e não lê credenciais do Claude nem do Codex.</p></div>
-        <div class="card"><span class="tag">Logins protegidos</span><p>Os logins da Magnific e da OpenRouter ficam criptografados com DPAPI; o token do Antigravity, só em memória.</p></div>
-        <div class="card"><span class="tag">Porta fechada</span><p>O receptor dos hooks escuta só em <code>127.0.0.1</code> e recusa requisições vindas de páginas web.</p></div>
+        <div class="card"><span class="tag">Não lê suas conversas</span><p>Não lê nem envia o que você pede às IAs nem o que elas respondem. As falas dos personagens vêm só do tipo de ação, como "executou um comando".</p></div>
+        <div class="card"><span class="tag">Logins protegidos</span><p>Os logins da Magnific e da OpenRouter ficam criptografados pelo Windows. Só a sua conta, neste computador, consegue abri-los.</p></div>
+        <div class="card"><span class="tag">Sem portas abertas</span><p>A conexão com o Claude Code só aceita chamadas do próprio computador. Sites não conseguem falar com ela.</p></div>
       </div>
-      <p style="margin-top:20px;color:var(--muted)">A rede é usada só para os MCPs da Magnific e da OpenRouter, a página de status do Figma e o clima opcional. Encontrou uma falha? Veja o <a href="https://github.com/srbunnie/QuotaDesk/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+      <p style="margin-top:20px;color:var(--muted)">A internet é usada só para ler o saldo da Magnific e da OpenRouter, ver se o Figma está no ar e buscar o clima, se você ligar. Encontrou uma falha? Veja como avisar em <a href="https://github.com/srbunnie/QuotaDesk/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+    </div>
+  </section>
+
+  <section id="roteiro" class="alt">
+    <div class="wrap">
+      <h2>O que vem por aí</h2>
+      <p class="sub">Hoje o QuotaDesk é para Windows. As próximas versões levam o mesmo escritório para o Linux e o macOS.</p>
+      <div class="cards">
+        <div class="card"><span class="tag">Agora</span><p>Windows 10 e 11, com painel, barra na borda da tela, ícone na bandeja e telinha USB.</p></div>
+        <div class="card"><span class="tag">Próximo</span><p>Linux: painel e ícone na bandeja nos principais ambientes de desktop.</p></div>
+        <div class="card"><span class="tag">Depois</span><p>macOS: ícone na barra de menus e painel, em Macs Intel e Apple Silicon.</p></div>
+      </div>
+      <p style="margin-top:14px;color:var(--muted)">Quer ajudar ou acompanhar? Veja o <a href="https://github.com/srbunnie/QuotaDesk/blob/main/ROADMAP.md">roteiro completo</a>.</p>
     </div>
   </section>
 
@@ -377,7 +440,7 @@
       <h2>Créditos</h2>
       <div class="credits" style="margin-top:22px">
         <div class="card"><span class="tag">Autores</span><p>Uma parceria entre <a href="https://github.com/edirsooo">@edirsooo</a>, de quem veio a ideia original e que colabora com ideias e código, e <a href="https://github.com/srbunnie">@srbunnie</a>, que deu continuidade ao projeto. O lançamento é dos dois.</p></div>
-        <div class="card"><span class="tag">Arte</span><p>Todas as ilustrações — as salas do Loft, os personagens e suas poses — foram geradas com IA no Magnific por <a href="https://github.com/edirsooo">@edirsooo</a> e são de <strong>livre uso pessoal</strong>.</p></div>
+        <div class="card"><span class="tag">Arte</span><p>Todas as ilustrações — as salas do escritório, os personagens e suas poses — foram geradas com IA no Magnific por <a href="https://github.com/edirsooo">@edirsooo</a> e são de <strong>livre uso pessoal</strong>.</p></div>
         <div class="card"><span class="tag">Código</span><p>Licença <a href="https://github.com/srbunnie/QuotaDesk/blob/main/LICENSE">MIT</a>. Ícones do <a href="https://lucide.dev">Lucide</a> (ISC). Contribuições são bem-vindas.</p></div>
       </div>
     </div>

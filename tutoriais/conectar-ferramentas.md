@@ -11,7 +11,7 @@ O QuotaDesk lê o que cada ferramenta já guarda ou expõe na sua máquina. Ele 
 | [OpenRouter](#openrouter) | **Conectar OpenRouter** e fazer login no navegador | 1 min |
 | [Figma](#figma) | Nada | — |
 
-Para esconder uma ferramenta que você não usa: **Configurações › Provedores**, desmarque o nome.
+Para esconder uma ferramenta que você não usa: **Configurações › Ferramentas**, desmarque o nome.
 
 Onde ficam as ações citadas abaixo:
 
@@ -30,7 +30,7 @@ Onde ficam as ações citadas abaixo:
 2. Faça login com a sua conta do ChatGPT (`codex login` no terminal, ou pelo app).
 3. Abra o QuotaDesk. O card do Codex aparece sozinho.
 
-**De onde vem:** o QuotaDesk inicia `codex app-server` em segundo plano e pede só os limites da conta. A atividade vem dos logs de sessão em `%USERPROFILE%\.codex\sessions`. Nada é enviado ao modelo.
+**De onde vem:** o QuotaDesk inicia `codex app-server` em segundo plano e pede só os limites da conta. A atividade vem dos tipos de evento nos logs de sessão em `%USERPROFILE%\.codex\sessions` (comando, edição, raciocínio), e o título que aparece no balão do personagem é o nome da conversa no índice do próprio Codex. O conteúdo das mensagens não é lido, e nada é enviado ao modelo.
 
 **Se não aparecer:**
 
@@ -96,7 +96,7 @@ A aba *Code* do app Claude e o chat não rodam o statusLine. Para a cota exata s
 | *Porta local 32871 ocupada* | Outro programa usa a porta dos hooks, ou há duas cópias do QuotaDesk instaladas. Feche a outra e reabra. |
 | Estado nunca muda (*nenhum evento recebido ainda*) | Os hooks não estão no `settings.json` certo ou o Claude Code foi aberto antes da edição. Reabra o Claude Code. |
 
-**Privacidade:** dos hooks o QuotaDesk usa só o id da sessão, o nome da ferramenta, o tipo de notificação e o nome da pasta. Prompts e respostas não são lidos nem gravados.
+**Privacidade:** dos hooks o QuotaDesk usa só o id da sessão, o nome da ferramenta, o tipo de notificação e o nome da pasta. Prompts e respostas não são lidos nem gravados. As falas reais do personagem ("Editando um arquivo") saem só do nome da ferramenta; desligue em **Configurações › Avisos › Falas reais dos agentes**.
 
 ---
 

@@ -141,7 +141,7 @@ internal sealed class LauncherForm : Form
         reorder.Controls.Add(Button("Mover para baixo", Color.FromArgb(34, 42, 64), () => MoveSelected(1)));
         Controls.Add(reorder);
 
-        Controls.Add(SectionLabel("Widget compacto", 22, 516));
+        Controls.Add(SectionLabel("Barra na borda da tela", 22, 516));
         var displayLabel = new Label { Text = "Monitor", Location = new Point(22, 548), Size = new Size(90, 28), ForeColor = Theme.TextDim };
         _display.Location = new Point(112, 544);
         _display.Size = new Size(294, 30);
@@ -178,7 +178,7 @@ internal sealed class LauncherForm : Form
             _settings.WidgetPinned = _widgetPinned.Checked;
             SettingsChanged?.Invoke();
         };
-        _widgetNotch.Text = "Estilo notch com previsão";
+        _widgetNotch.Text = "Balão com previsão";
         _widgetNotch.Location = new Point(352, 578);
         _widgetNotch.AutoSize = true;
         _widgetNotch.ForeColor = Theme.Text;
@@ -270,7 +270,7 @@ internal sealed class LauncherForm : Form
         _list.DefaultCellStyle.SelectionBackColor = Color.FromArgb(24, 44, 66);
         _list.DefaultCellStyle.SelectionForeColor = Theme.Text;
         _list.Columns.Add(new DataGridViewCheckBoxColumn { Name = "visible", HeaderText = "Visível", Width = 64 });
-        _list.Columns.Add(new DataGridViewTextBoxColumn { Name = "provider", HeaderText = "Provedor", Width = 258, ReadOnly = true });
+        _list.Columns.Add(new DataGridViewTextBoxColumn { Name = "provider", HeaderText = "Ferramenta", Width = 258, ReadOnly = true });
         var density = new DataGridViewComboBoxColumn { Name = "density", HeaderText = "Nível visual", Width = 230, FlatStyle = FlatStyle.Flat };
         density.Items.AddRange("Só ícone", "Ícone + estado", "Dados completos");
         _list.Columns.Add(density);

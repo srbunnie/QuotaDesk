@@ -127,7 +127,7 @@ internal sealed class MonitorContext : ApplicationContext
         }) { Checked = _settings.SideDock };
         menu.Items.Add(dockItem);
         ToolStripMenuItem? notchItem = null;
-        notchItem = new ToolStripMenuItem("Barra minimalista (notch com previsão)", null, (_, _) => SwitchDockStyle())
+        notchItem = new ToolStripMenuItem("Barra com balão e previsão", null, (_, _) => SwitchDockStyle())
         { Checked = UseNotch };
         menu.Items.Add(notchItem);
         var miniItem = new ToolStripMenuItem("Mini monitor (tela secundária)");
@@ -176,7 +176,15 @@ internal sealed class MonitorContext : ApplicationContext
         _icon = new NotifyIcon { Text = AppPaths.Title, ContextMenuStrip = menu, Visible = true };
         _icon.DoubleClick += (_, _) => Open();
         _icon.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left && _form.Visible) _form.Activate(); };
-        _icon.BalloonTipClicked += (_, _) => Open();
+        _icon.BalloonTipClicked += (_, _) =>
+        {
+            Open();
+            // A "waiting for you" balloon opens straight onto the list of pending items.
+            if (_balloonIsPending) _form.BeginInvoke(_form.ShowPendingList);
+        };
+        _icon.BalloonTipClosed += (_, _) => _balloonIsPending = false;
+        // The panel and the edge widget can both be topmost; the widget stays above the panel it summarizes.
+        _form.Activated += (_, _) => RaiseEdgeWidgets();
 
         // Countdown texts and state timeouts only need a slow tick.
         _clockTimer = new System.Windows.Forms.Timer { Interval = 5_000 };
@@ -406,7 +414,21 @@ internal sealed class MonitorContext : ApplicationContext
         if (_settings.Sound) System.Media.SystemSounds.Exclamation.Play();
         var first = items[0];
         var text = items.Count == 1 ? $"{first.Provider}: {first.Project} — {first.Kind.ToLowerInvariant()}" : $"{items.Count} sessões aguardando você";
-        _icon.ShowBalloonTip(8_000, "Aguardando você", text, ToolTipIcon.Warning);
+        _balloonIsPending = true;
+        _icon.ShowBalloonTip(8_000, "Aguardando você", text + "\nClique para ver a lista.", ToolTipIcon.Warning);
+    }
+
+    private bool _balloonIsPending;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
+
+    private void RaiseEdgeWidgets()
+    {
+        const uint noSize = 0x0001, noMove = 0x0002, noActivate = 0x0010;
+        foreach (Form widget in new Form[] { _dock, _notch })
+            if (widget.Visible && widget.IsHandleCreated)
+                SetWindowPos(widget.Handle, new IntPtr(-1) /* HWND_TOPMOST */, 0, 0, 0, 0, noSize | noMove | noActivate);
     }
 
     /// <summary>Coalesces bursts of hook/file events into at most ~4 UI updates per second.</summary>
@@ -438,7 +460,7 @@ internal sealed class MonitorContext : ApplicationContext
             }
             catch
             {
-                byId[module.Id] = new UnavailableAgentSource(module.Id, module.DisplayName, "Falha ao ler o estado do provedor.").GetStatus(now);
+                byId[module.Id] = new UnavailableAgentSource(module.Id, module.DisplayName, "Falha ao ler o estado da ferramenta.").GetStatus(now);
             }
         }
 
@@ -469,6 +491,7 @@ internal sealed class MonitorContext : ApplicationContext
         if (renewals.Any(r => r.AtExactTime)) _ = RefreshAllAsync(true);
         if (!_settings.NotifyRenewals) return;
         var (title, text) = RenewalWatcher.Describe(renewals);
+        _balloonIsPending = false;
         _icon.ShowBalloonTip(10_000, title, text, ToolTipIcon.Info);
     }
 
@@ -523,6 +546,7 @@ internal sealed class MonitorContext : ApplicationContext
     {
         UpdateDisplay();
         _form.ShowNearTray();
+        RaiseEdgeWidgets();
     }
 
     private LauncherForm? _launcher;
