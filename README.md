@@ -97,7 +97,7 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 - O receptor de hooks escuta só em `127.0.0.1:32871` e recusa requisições vindas de páginas web. Do corpo dos hooks usa apenas o id da sessão, o nome da ferramenta, o tipo de notificação e o nome da pasta; nada é gravado.
 - O token de sessão do Antigravity fica só em memória. Os logins da Magnific e da OpenRouter são guardados com DPAPI (só o seu usuário do Windows consegue lê-los).
 - A rede é usada apenas para os MCPs da Magnific e da OpenRouter, a página de status do Figma e o clima opcional do Open-Meteo (que recebe só latitude e longitude).
-- Preferências, caches e o log de erros ficam em `%LOCALAPPDATA%\AIUsageMonitor`. O log mascara tokens, códigos OAuth e a pasta do usuário.
+- Preferências, caches e o log de erros ficam em `%LOCALAPPDATA%\AIUsageMonitor` (ou na pasta do ambiente, veja [Ambientes](#ambientes)). O log mascara tokens, códigos OAuth e a pasta do usuário.
 
 Falhas de segurança: veja o [SECURITY.md](SECURITY.md).
 
@@ -119,7 +119,7 @@ Tudo fica em `src/QuotaDesk` (projeto `AIUsageMonitor.csproj`, assembly `QuotaDe
 
 | Arquivos | Papel |
 |---|---|
-| `Program.cs`, `MonitorContext.cs` | entrada, instância única, bandeja, timers e ciclo de vida |
+| `Program.cs`, `MonitorContext.cs`, `AppPaths.cs` | entrada, instância única, pasta de dados de cada ambiente, bandeja, timers e ciclo de vida |
 | `Models.cs`, `ProviderModule.cs`, `ProviderCategories.cs`, `ProviderPresentation.cs` | contrato `IAgentSource` / `AgentStatus`, catálogo de provedores, ordem e visibilidade |
 | `*Agent.cs`, `CodexClient.cs`, `ClaudeIntegration.cs`, `ClaudeQuota.cs`, `OpenRouterMcpClient.cs`, `OpenRouterTokenCache.cs`, `CreditUsage.cs` | leitura de cada ferramenta |
 | `RenewalWatcher.cs` | avisos de renovação e `AppSettings` (`settings.json`) |
@@ -139,6 +139,23 @@ QuotaDesk.exe --selftest-office-navigation <pasta>
 QuotaDesk.exe --selftest-claude <arquivo.txt>
 QuotaDesk.exe --preview <pasta>      # painel, céus, widget e bandeja com dados simulados
 ```
+
+### Ambientes
+
+O app instalado é o seu QuotaDesk de uso diário: `%LOCALAPPDATA%\Programs\QuotaDesk`, com dados em `%LOCALAPPDATA%\AIUsageMonitor`. Para desenvolver sem arriscar esses dados, abra o código atual num ambiente isolado, que roda ao lado dele:
+
+```powershell
+scripts\env.ps1 dev                  # dados vazios, nada real
+scripts\env.ps1 homolog              # cópia dos seus dados reais (sem os logins), para testar a versão candidata
+scripts\env.ps1 homolog -FreshData   # recopia os dados pessoais
+scripts\env.ps1 dev -Stop            # fecha o ambiente
+```
+
+Cada ambiente tem programa, pasta de dados (`AIUsageMonitor-dev`, `AIUsageMonitor-homolog`) e trava de instância única próprios, e aparece na bandeja como `QuotaDesk [dev]` ou `QuotaDesk [homolog]`. Eles nunca alteram a inicialização com o Windows. A cota do Claude vem do mesmo cache do statusLine, só para leitura. O estado ao vivo dos hooks continua com a versão instalada.
+
+Para qualquer build, `QUOTADESK_DATA_DIR=<pasta>` escolhe a pasta de dados, e `--test-instance` sozinho usa `AIUsageMonitor-Test`.
+
+Fluxo sugerido: `feature/*` → `scripts\env.ps1 dev` → branch `release/x.y` → alguns dias em `homolog` → merge na `main`, tag e Release → a versão pessoal se atualiza pelo `install.ps1`. Branches de trabalho ficam locais. O que for particular (notas, rascunhos de arte) vai para um repositório privado, nunca para uma branch deste: uma branch enviada aqui fica pública.
 
 ## Contribuir
 

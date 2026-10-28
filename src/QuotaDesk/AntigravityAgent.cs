@@ -26,7 +26,7 @@ internal sealed class AntigravityAgent : IAgentSource
     private string _failedCandidates = "";
     private DateTimeOffset _failedAt;
     private bool _foreground;
-    private static string CachePath => Path.Combine(ClaudeIntegration.DataDirectory, "antigravity-limits.json");
+    private static string CachePath => Path.Combine(AppPaths.DataDirectory, "antigravity-limits.json");
 
     public AntigravityAgent()
     {

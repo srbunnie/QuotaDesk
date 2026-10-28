@@ -14,7 +14,6 @@ namespace AIUsageMonitor;
 internal sealed partial class ClaudeIntegration : IAgentSource
 {
     public const int Port = 32871;
-    public static string DataDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AIUsageMonitor");
 
     private static readonly TimeSpan WorkingTimeout = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan WaitingTimeout = TimeSpan.FromMinutes(15);
@@ -39,8 +38,9 @@ internal sealed partial class ClaudeIntegration : IAgentSource
 
     public ClaudeIntegration()
     {
-        Directory.CreateDirectory(DataDirectory);
-        _cacheWatcher = Watch(DataDirectory, Path.GetFileName(ClaudeQuota.StatusLineCachePath));
+        Directory.CreateDirectory(AppPaths.DataDirectory);
+        Directory.CreateDirectory(AppPaths.ClaudeStatusLineDirectory);
+        _cacheWatcher = Watch(AppPaths.ClaudeStatusLineDirectory, Path.GetFileName(ClaudeQuota.StatusLineCachePath));
         var desktopDir = Path.GetDirectoryName(ClaudeQuota.DesktopHistoryPath)!;
         if (Directory.Exists(desktopDir)) _desktopWatcher = Watch(desktopDir, Path.GetFileName(ClaudeQuota.DesktopHistoryPath));
         try
@@ -135,8 +135,8 @@ internal sealed partial class ClaudeIntegration : IAgentSource
         return JsonSerializer.Serialize(new
         {
             state = state.ToString(), detail, sessions = _sessions.Count,
-            quotaConfiguration = new { directory = DataDirectory,
-                userResetFileExists = File.Exists(Path.Combine(DataDirectory, "claude-renewal.json")),
+            quotaConfiguration = new { directory = AppPaths.DataDirectory,
+                userResetFileExists = File.Exists(Path.Combine(AppPaths.DataDirectory, "claude-renewal.json")),
                 portableResetFileExists = File.Exists(Path.Combine(AppContext.BaseDirectory, "claude-renewal.json")) },
             providers = ProviderDiagnostics?.Invoke(),
             quota = new { quota.UpdatedAt, quota.Stale, quota.Error, quota.Note,

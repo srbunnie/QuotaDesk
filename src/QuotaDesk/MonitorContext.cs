@@ -173,7 +173,7 @@ internal sealed class MonitorContext : ApplicationContext
             _cityItem.Text = $"Cidade do clima: {_settings.City ?? "definir…"}";
         };
 
-        _icon = new NotifyIcon { Text = "QuotaDesk", ContextMenuStrip = menu, Visible = true };
+        _icon = new NotifyIcon { Text = AppPaths.Title, ContextMenuStrip = menu, Visible = true };
         _icon.DoubleClick += (_, _) => Open();
         _icon.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left && _form.Visible) _form.Activate(); };
         _icon.BalloonTipClicked += (_, _) => Open();
@@ -515,7 +515,7 @@ internal sealed class MonitorContext : ApplicationContext
             return $"{name}: {quota} · {StateText.Label(a).ToLowerInvariant()}";
         }
         var lines = agents.Select(Short).Where(line => line.Length > 0).ToList();
-        var tooltip = lines.Count == 0 ? "QuotaDesk" : "QuotaDesk (% restante)\n" + string.Join("\n", lines);
+        var tooltip = lines.Count == 0 ? AppPaths.Title : AppPaths.Title + " (% restante)\n" + string.Join("\n", lines);
         _icon.Text = tooltip.Length <= 127 ? tooltip : tooltip[..127];
     }
 
@@ -614,6 +614,8 @@ internal static class Startup
 
     public static void Set(bool enabled)
     {
+        // A dev or staging build must not replace (or remove) the installed app's startup entry.
+        if (AppPaths.Isolated) return;
         using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(Key);
         if (enabled) key.SetValue(Name, $"\"{Environment.ProcessPath}\" --open");
         else key.DeleteValue(Name, false);

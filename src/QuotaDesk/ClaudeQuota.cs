@@ -15,7 +15,7 @@ namespace AIUsageMonitor;
 /// </summary>
 internal static class ClaudeQuota
 {
-    public static string StatusLineCachePath => Path.Combine(ClaudeIntegration.DataDirectory, "claude-limits.json");
+    public static string StatusLineCachePath => Path.Combine(AppPaths.ClaudeStatusLineDirectory, "claude-limits.json");
     public static string DesktopHistoryPath
     {
         get
@@ -140,7 +140,7 @@ internal static class ClaudeQuota
     {
         try
         {
-            var path = Path.Combine(ClaudeIntegration.DataDirectory, "claude-renewal.json");
+            var path = Path.Combine(AppPaths.DataDirectory, "claude-renewal.json");
             if (!File.Exists(path)) path = Path.Combine(AppContext.BaseDirectory, "claude-renewal.json");
             if (!File.Exists(path)) return (null, false);
             using var doc = JsonDocument.Parse(File.ReadAllText(path));

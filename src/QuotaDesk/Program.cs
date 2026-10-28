@@ -13,6 +13,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        AppPaths.Configure(args);
         if (args.Length == 2 && args[0] == "--selftest-integrations")
         {
             try { IntegrationChecks.Run(args[1]); return 0; }
@@ -170,12 +171,14 @@ internal static class Program
         // closing or updating would take QuotaDesk down with it. Relaunch outside the group when Windows allows it.
         if (!args.Contains("--detached") && Detach.TryRelaunchOutsideJob(args)) return 0;
 
-        // --test-instance: a review build can run next to the installed one (own lock and show signal; the hook
-        // port stays with the installed instance, so the test one reports Claude's state as unavailable).
-        var test = args.Contains("--test-instance");
-        using var mutex = new Mutex(true, "Local\\AIUsageMonitor.SingleInstance" + (test ? ".Test" : ""), out var created);
-        using var showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, MonitorContext.ShowSignalName + (test ? ".Test" : ""));
-        using var launcherSignal = new EventWaitHandle(false, EventResetMode.AutoReset, MonitorContext.ShowLauncherSignalName + (test ? ".Test" : ""));
+        // --test-instance: a review build can run next to the installed one (own lock, show signal and data folder;
+        // the hook port stays with the installed instance, so the test one reports Claude's state as unavailable).
+        // Each named environment (QUOTADESK_ENV: dev, homolog) gets its own lock, so dev and staging can run together.
+        var test = args.Contains("--test-instance") || AppPaths.Isolated;
+        var suffix = !test ? "" : AppPaths.EnvironmentName is { } env ? ".Test." + env : ".Test";
+        using var mutex = new Mutex(true, "Local\\AIUsageMonitor.SingleInstance" + suffix, out var created);
+        using var showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, MonitorContext.ShowSignalName + suffix);
+        using var launcherSignal = new EventWaitHandle(false, EventResetMode.AutoReset, MonitorContext.ShowLauncherSignalName + suffix);
         if (!created)
         {
             // A second launch routes to the existing process and preserves the requested destination.
@@ -205,7 +208,7 @@ internal static class Program
             mutex.Dispose();
             try
             {
-                Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--launcher")
+                Process.Start(new ProcessStartInfo(Environment.ProcessPath!, test ? "--launcher --test-instance" : "--launcher")
                 {
                     UseShellExecute = true,
                     WorkingDirectory = AppContext.BaseDirectory
@@ -270,15 +273,15 @@ internal static partial class Detach
     }
 }
 
-/// <summary>Appends exception type, message and stack to %LOCALAPPDATA%\AIUsageMonitor\error.log (no data, no secrets).</summary>
+/// <summary>Appends exception type, message and stack to error.log in the data folder (no data, no secrets).</summary>
 internal static partial class ErrorLog
 {
     public static void Write(string kind, Exception? ex)
     {
         try
         {
-            var path = Path.Combine(ClaudeIntegration.DataDirectory, "error.log");
-            Directory.CreateDirectory(ClaudeIntegration.DataDirectory);
+            var path = Path.Combine(AppPaths.DataDirectory, "error.log");
+            Directory.CreateDirectory(AppPaths.DataDirectory);
             if (File.Exists(path) && new FileInfo(path).Length > 512 * 1024) File.Delete(path);
             File.AppendAllText(path, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {kind}: {Redact(ex?.ToString() ?? "")}{Environment.NewLine}{Environment.NewLine}");
         }

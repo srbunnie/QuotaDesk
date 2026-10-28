@@ -69,7 +69,7 @@ internal sealed class RenewalWatcher
 internal enum ProviderDensity { IconOnly, IconAndState, Full }
 internal enum WidgetEdge { Left, Right, Top, Bottom }
 
-/// <summary>Small persisted preferences in %LOCALAPPDATA%\AIUsageMonitor\settings.json.</summary>
+/// <summary>Small persisted preferences in settings.json in the data folder (see <see cref="AppPaths"/>).</summary>
 internal sealed class AppSettings
 {
     public bool NotifyRenewals { get; set; } = true;
@@ -139,7 +139,7 @@ internal sealed class AppSettings
     public int AttentionAt { get; set; } = 70;
     public int CriticalAt { get; set; } = 90;
 
-    private static string PathOnDisk => Path.Combine(ClaudeIntegration.DataDirectory, "settings.json");
+    private static string PathOnDisk => Path.Combine(AppPaths.DataDirectory, "settings.json");
 
     private static readonly object SettingsLock = new();
 
