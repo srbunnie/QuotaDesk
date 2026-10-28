@@ -96,8 +96,10 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 
 ## Configurar cada ferramenta
 
+O passo a passo de cada uma, com o que fazer quando algo não aparece, está em **[tutoriais/conectar-ferramentas.md](tutoriais/conectar-ferramentas.md)**. Em resumo:
+
 - **Codex:** basta ter o Codex CLI ou o app desktop instalado e logado. O executável é procurado em `AI_MONITOR_CODEX_EXE`, no `PATH` e na pasta do app.
-- **Claude Code:** a cota exata vem do statusLine, que só roda no Claude Code de terminal. Mescle `src/QuotaDesk/claude-settings-additions.template.json` no seu `%USERPROFILE%\.claude\settings.json` (faça backup e troque `{{PASTA_DO_PROJETO}}` pelo caminho de `src/QuotaDesk`). Isso liga o statusLine e os hooks do estado em tempo real. Para manter a cota atualizada mesmo usando o app Claude, ative **Configurações › Geral › Abrir Claude Code ao iniciar**.
+- **Claude Code:** a cota exata vem do statusLine, que só roda no Claude Code de terminal. Mescle `claude-settings-additions.template.json` no seu `%USERPROFILE%\.claude\settings.json` (faça backup e troque `{{PASTA_DO_PROJETO}}` pela pasta onde está o `claude-statusline.ps1`: a do app instalado ou `src/QuotaDesk`). Isso liga o statusLine e os hooks do estado em tempo real. Para manter a cota atualizada mesmo usando o app Claude, ative **Configurações › Geral › Abrir Claude Code ao iniciar**.
 - **Antigravity:** abra o Antigravity; a cota aparece sozinha enquanto ele está aberto.
 - **Magnific e OpenRouter:** **Conectar** no menu da bandeja ou na central, e faça o login no navegador. **Trocar conta…** no card esquece o login atual.
 - **Clima (opcional):** menu da bandeja › Cidade do clima.
@@ -115,6 +117,8 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 Falhas de segurança: veja o [SECURITY.md](SECURITY.md).
 
 ## Adicionar uma ferramenta
+
+Para agentes de código, o roteiro completo, com as regras do projeto e o esqueleto do adaptador, está no **[AGENTS.md](AGENTS.md#tutorial-adicionar-uma-ferramenta)**. Codex, Cursor e outros leem esse arquivo sozinhos; o Claude Code o recebe pelo `CLAUDE.md`.
 
 A skill [`skills/add-provider`](skills/add-provider/SKILL.md) ensina um agente (Claude Code, Codex…) a colocar uma ferramenta nova de ponta a ponta: o adaptador em C#, a sala no Loft e o personagem com 12 poses. Ela traz os prompts de geração, as regras de chroma-key e os scripts que recortam, alinham e validam a arte:
 

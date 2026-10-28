@@ -56,7 +56,7 @@ Run from the repository root. Python needs `pillow numpy scipy`; the app needs t
 Follow `references/code-touchpoints.md`. In short: create `src/QuotaDesk/<Name>Agent.cs` implementing `IAgentSource`, register it with `Module("<id>", ...)` in `ProviderModuleCatalog`, add the logo, and teach the scene its screen animation. Honesty rules for the adapter:
 
 - Never invent a number. A failed read returns the last reading marked `Stale`, or `ProviderSnapshot.Unavailable` with a short reason.
-- Read-only. No prompts sent, no models called, no credentials of other tools read, nothing written outside `%LOCALAPPDATA%\AIUsageMonitor`.
+- Read-only. No prompts sent, no models called, no credentials of other tools read, nothing written outside `AppPaths.DataDirectory` (the data folder of the running environment; never hard-code `%LOCALAPPDATA%\AIUsageMonitor`).
 - Secrets stay in memory or behind DPAPI (`OpenRouterTokenCache` shows the pattern). OAuth opens the browser only from an explicit user action.
 - Every network call has a timeout and a cancellation token; refreshes do not overlap (`SemaphoreSlim` gate).
 
