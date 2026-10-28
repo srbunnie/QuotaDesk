@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install · QuotaDesk Docs</title>
+<meta name="description" content="Install with one PowerShell command: nothing to build, no admin rights and no .NET needed.">
+<link rel="canonical" href="https://srbunnie.github.io/QuotaDesk/en/docs/install.html">
+<link rel="alternate" hreflang="pt-BR" href="https://srbunnie.github.io/QuotaDesk/docs/install.html">
+<link rel="alternate" hreflang="en" href="https://srbunnie.github.io/QuotaDesk/en/docs/install.html">
+<link rel="alternate" hreflang="x-default" href="https://srbunnie.github.io/QuotaDesk/docs/install.html">
+<link rel="alternate" type="text/markdown" href="md/install.md">
+<meta property="og:title" content="Install · QuotaDesk Docs">
+<meta property="og:description" content="Install with one PowerShell command: nothing to build, no admin rights and no .NET needed.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://srbunnie.github.io/QuotaDesk/en/docs/install.html">
+<meta property="og:image" content="https://srbunnie.github.io/QuotaDesk/assets/screens/panel-working.png">
+<link rel="icon" href="../../assets/screens/tray.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../docs/assets/docs.css">
+<script src="../../docs/assets/docs.js" defer></script>
+</head>
+<body data-title="Install" data-url="https://srbunnie.github.io/QuotaDesk/en/docs/install.html" data-no-results="No results">
+<a class="skip" href="#conteudo">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <button type="button" class="icon-btn nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="sidebar"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg><span class="sr-only">Docs menu</span></button>
+    <a class="logo" href="../">QUOTA<b>DESK</b></a>
+    <a class="docs-home" href="index.html">Docs</a>
+    <div class="search" role="search">
+      <label class="sr-only" for="doc-search">Search</label>
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="doc-search" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="sidebar">
+    </div>
+    <p class="lang" role="group" aria-label="Language / Idioma"><a href="../../docs/install.html" lang="pt-BR" hreflang="pt-BR">PT<span class="sr-only"> (Português)</span></a><span class="sep" aria-hidden="true">|</span><span aria-current="true" lang="en">EN<span class="sr-only"> (English)</span></span></p>
+    <a class="icon-btn gh" href="https://github.com/srbunnie/QuotaDesk" target="_blank" rel="noopener"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg><span class="sr-only">GitHub (opens in a new tab)</span></a>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+<div class="nav-group"><h2 class="nav-title" id="grp-start">Get started</h2><ul aria-labelledby="grp-start"><li><a href="index.html">Overview</a></li><li><a href="install.html" aria-current="page">Install</a></li></ul></div>
+<div class="nav-group"><h2 class="nav-title" id="grp-connect">Connect</h2><ul aria-labelledby="grp-connect"><li><a href="connect-codex.html">Connect Codex</a></li><li><a href="connect-claude.html">Connect Claude Code</a></li><li><a href="connect-antigravity.html">Connect Antigravity</a></li><li><a href="connect-magnific.html">Connect Magnific</a></li><li><a href="connect-openrouter.html">Connect OpenRouter</a></li><li><a href="connect-figma.html">Connect Figma</a></li></ul></div>
+<div class="nav-group"><h2 class="nav-title" id="grp-use">Use</h2><ul aria-labelledby="grp-use"><li><a href="use.html">Use the panel</a></li><li><a href="settings.html">Settings</a></li></ul></div>
+<div class="nav-group"><h2 class="nav-title" id="grp-more">More</h2><ul aria-labelledby="grp-more"><li><a href="privacy.html">Privacy and security</a></li><li><a href="develop.html">Develop</a></li></ul></div>
+    <p class="nav-empty" hidden>No results</p>
+  </nav>
+
+  <main id="conteudo" class="content" tabindex="-1">
+    <article>
+      <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Docs</a></li><li>Get started</li><li><span aria-current="page">Install</span></li></ol></nav>
+      <h1>Install</h1>
+      <p class="lead">Install with one PowerShell command: nothing to build, no admin rights and no .NET needed.</p>
+      <div class="page-actions" role="group" aria-label="Page actions">
+  <div class="ask">
+    <button type="button" class="action" id="ask-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ask-menu"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>Ask about this page</span><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+    <ul class="ask-menu" id="ask-menu" role="menu" aria-label="Ask an AI" hidden>
+      <li role="none"><a role="menuitem" href="https://claude.ai/new?q=Read%20the%20QuotaDesk%20docs%20at%20https%3A%2F%2Fsrbunnie.github.io%2FQuotaDesk%2Fen%2Fdocs%2Fmd%2Finstall.md%20and%20help%20me%20with%3A%20" target="_blank" rel="noopener">Ask Claude<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/></svg><span class="sr-only"> (opens in a new tab)</span></a></li>
+      <li role="none"><a role="menuitem" href="https://chatgpt.com/?q=Read%20the%20QuotaDesk%20docs%20at%20https%3A%2F%2Fsrbunnie.github.io%2FQuotaDesk%2Fen%2Fdocs%2Fmd%2Finstall.md%20and%20help%20me%20with%3A%20" target="_blank" rel="noopener">Ask ChatGPT<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/></svg><span class="sr-only"> (opens in a new tab)</span></a></li>
+    </ul>
+  </div>
+  <button type="button" class="action" id="copy-btn" data-md="md/install.md" data-label="Copy for AI" data-done="Copied" data-fail="Could not copy"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Copy for AI</span></button>
+  <a class="action" href="md/install.md" target="_blank" rel="noopener"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>View as Markdown</span><span class="sr-only"> (opens in a new tab)</span></a>
+  <a class="action" href="https://github.com/srbunnie/QuotaDesk/edit/main/docs/en/docs/md/install.md" target="_blank" rel="noopener"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg><span>Edit on GitHub</span><span class="sr-only"> (opens in a new tab)</span></a>
+  <span class="sr-only" id="copy-status" role="status" aria-live="polite"></span>
+</div>
+      <div class="prose">
+<h2 id="one-click-install">One-click install<a class="anchor" href="#one-click-install" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>Open PowerShell and paste:</p>
+<pre data-lang="powershell"><code class="language-powershell">irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex</code></pre>
+<p>The installer:</p>
+<ol><li>downloads the latest version from <a href="https://github.com/srbunnie/QuotaDesk/releases/latest" target="_blank" rel="noopener">Releases</a>;</li><li>installs it in <code>%LOCALAPPDATA%&#92;Programs&#92;QuotaDesk</code>;</li><li>adds shortcuts to the Start menu and the desktop;</li><li>opens the panel.</li></ol>
+<p>Prefer a manual install? Download <a href="https://github.com/srbunnie/QuotaDesk/releases/latest/download/QuotaDesk-win-x64.zip" target="_blank" rel="noopener"><code>QuotaDesk-win-x64.zip</code></a>, extract it and open <code>QuotaDesk.exe</code>.</p>
+<h2 id="from-the-repository">From the repository<a class="anchor" href="#from-the-repository" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>Download the repository (<a href="https://github.com/srbunnie/QuotaDesk/archive/refs/heads/main.zip" target="_blank" rel="noopener">ZIP</a> or <code>git clone</code>) and double-click <strong><code>QuotaDesk.cmd</code></strong>. A menu opens. If you don&#x27;t pick anything within 8 seconds, it opens your QuotaDesk.</p>
+<div class="table-scroll" tabindex="0"><table><thead><tr><th scope="col">Option</th><th scope="col">Command line</th><th scope="col">What it does</th></tr></thead><tbody><tr><td>1</td><td><code>QuotaDesk.cmd abrir</code></td><td>Opens the installed app. If there is none yet, installs the latest release, without building.</td></tr><tr><td>2</td><td><code>QuotaDesk.cmd atualizar</code></td><td>Checks the latest Release and installs it if it&#x27;s newer (<code>reinstalar</code> installs it anyway).</td></tr><tr><td>3</td><td><code>QuotaDesk.cmd dev</code></td><td>Builds the current code and opens the <a href="develop.html#environments">development environment</a>.</td></tr><tr><td>4</td><td><code>QuotaDesk.cmd homolog</code></td><td>Builds the current code and opens <a href="develop.html#environments">staging</a>.</td></tr><tr><td>5</td><td><code>QuotaDesk.cmd codigo</code></td><td>Builds this code and installs it as your personal version.</td></tr><tr><td>6</td><td><code>QuotaDesk.cmd parar</code></td><td>Closes development and staging.</td></tr></tbody></table></div>
+<p>The command names are in Portuguese: <em>abrir</em> means open, <em>atualizar</em> update, <em>reinstalar</em> reinstall, <em>codigo</em> code and <em>parar</em> stop.</p>
+<p>Option 5 (also <code>QuotaDesk.cmd -NoInstall</code> or <code>-Package</code>):</p>
+<ol><li>looks for the .NET 10 SDK and, if it&#x27;s missing, downloads Microsoft&#x27;s official installer, checks its digital signature and installs it for your user only;</li><li>builds, checks that Windows allows the new binary to run, keeps the previous install and installs;</li><li>creates the shortcuts and opens the panel.</li></ol>
+<h2 id="update">Update<a class="anchor" href="#update" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>Run the same install command again, or <code>QuotaDesk.cmd atualizar</code>. Updating or reinstalling only replaces the program folder: your preferences, logins and history stay in <code>%LOCALAPPDATA%&#92;AIUsageMonitor</code>.</p>
+<h2 id="windows-protected-your-pc">&quot;Windows protected your PC&quot;<a class="anchor" href="#windows-protected-your-pc" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>The executable is not digitally signed. On first run Windows may show <em>Windows protected your PC</em>: click <strong>More info › Run anyway</strong>.</p>
+<p>Antivirus and Smart App Control may block new builds. If so, the installer stops and leaves the installed version untouched.</p>
+<h2 id="start-with-windows">Start with Windows<a class="anchor" href="#start-with-windows" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>Turn on <strong>Settings › General › Start with Windows</strong>, or use the tray menu. The development and staging environments never change this setting.</p>
+<h2 id="uninstall">Uninstall<a class="anchor" href="#uninstall" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>There&#x27;s no uninstaller: the install is just a folder and a few shortcuts.</p>
+<ol><li>Turn off <strong>Settings › General › Start with Windows</strong> and close QuotaDesk (<strong>Settings › General › Quit QuotaDesk</strong>).</li><li>Delete the <code>%LOCALAPPDATA%&#92;Programs&#92;QuotaDesk</code> folder and the shortcuts.</li><li>To also delete preferences, logins and history, delete <code>%LOCALAPPDATA%&#92;AIUsageMonitor</code>. To revoke Magnific and OpenRouter access on the service side, remove the authorization on each site.</li></ol>
+<h2 id="next-step">Next step<a class="anchor" href="#next-step" aria-hidden="true" tabindex="-1">#</a></h2>
+<p><a href="connect-codex.html">Connect your first tool</a>. Codex, Antigravity and Figma work on their own; Claude Code needs a one-time setup.</p>
+      </div>
+      <nav class="pager" aria-label="Page navigation"><a class="pager-prev" href="index.html" rel="prev"><span class="pager-label"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Previous</span><span class="pager-title">Overview</span></a><a class="pager-next" href="connect-codex.html" rel="next"><span class="pager-label">Next <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span class="pager-title">Connect Codex</span></a></nav>
+    </article>
+  </main>
+
+  <aside class="toc" aria-labelledby="toc-title"><div class="toc-inner"><p class="toc-title" id="toc-title">On this page</p><ul><li class="toc-l2"><a href="#one-click-install">One-click install</a></li><li class="toc-l2"><a href="#from-the-repository">From the repository</a></li><li class="toc-l2"><a href="#update">Update</a></li><li class="toc-l2"><a href="#windows-protected-your-pc">&quot;Windows protected your PC&quot;</a></li><li class="toc-l2"><a href="#start-with-windows">Start with Windows</a></li><li class="toc-l2"><a href="#uninstall">Uninstall</a></li><li class="toc-l2"><a href="#next-step">Next step</a></li></ul></div></aside>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p><strong>QuotaDesk</strong> · by <a href="https://github.com/edirsooo">@edirsooo</a> and <a href="https://github.com/srbunnie">@srbunnie</a> · <a href="https://github.com/srbunnie/QuotaDesk/blob/main/README.en.md">GitHub</a> · <a href="https://github.com/srbunnie/QuotaDesk/blob/main/LICENSE">MIT</a></p>
+    <p>Independent project. Claude, Codex, Antigravity, Figma, Magnific and OpenRouter are trademarks of their owners; QuotaDesk isn&#x27;t affiliated with any of them.</p>
+  </div>
+</footer>
+</body>
+</html>

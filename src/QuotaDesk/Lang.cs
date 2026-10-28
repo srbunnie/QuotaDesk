@@ -32,6 +32,17 @@ internal static class L
 
     public static string T(string pt, string en) => En ? en : pt;
 
+    /// <summary>A page of the online documentation in the interface language (docs/docs and docs/en/docs on GitHub Pages).</summary>
+    public static string DocsUrl(string page = "index") =>
+        $"https://srbunnie.github.io/QuotaDesk/{(En ? "en/" : "")}docs/{page}.html";
+
+    /// <summary>Opens a documentation page in the default browser; a failure (no browser) is ignored.</summary>
+    public static void OpenDocs(string page = "index")
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DocsUrl(page)) { UseShellExecute = true }); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { }
+    }
+
     /// <summary>Short day and month: 28/10 in Portuguese, 10/28 in English.</summary>
     public static string DayMonth => En ? "MM/dd" : "dd/MM";
 }

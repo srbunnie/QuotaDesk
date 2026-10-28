@@ -123,6 +123,41 @@ internal static class StabilityChecks
             using var image = panel.Snapshot(3);
             image.Save(Path.Combine(folder, "names-mixed-density.png"));
         });
+        Case("renova/esgota", () =>
+        {
+            // A real click (button down and up on the same card) and a wheel notch must each trade the two times.
+            var window = new LimitWindow("5 horas", 40, now.AddHours(2), WindowKind.FiveHour);
+            var withQuota = agents.Select(a => a.Id == "claude" ? a with { Quota = new ProviderSnapshot("claude", [window], now) } : a).ToArray();
+            using var panel = new MonitorForm { Opacity = 0, Settings = new AppSettings { QuotaTemplate = "loft" } };
+            panel.ShowData(withQuota);
+            panel.Show();
+            var index = (int)Call(panel, "CardIndexOf", "claude")!;
+            var card = (RectangleF)Call(panel, "CardRect", index)!;
+            var scale = Field<float>(panel, "_scale");
+            var point = new Point((int)((card.X + card.Width / 2) * scale), (int)((card.Bottom - 24) * scale));
+            Check(Call(panel, "HitTest", point) as string == $"card{index}", "o ponto testado cai na área de cotas do card");
+            using var before = panel.Snapshot(1);
+            Call(panel, "OnMouseDown", new MouseEventArgs(MouseButtons.Left, 1, point.X, point.Y, 0));
+            Call(panel, "OnMouseUp", new MouseEventArgs(MouseButtons.Left, 1, point.X, point.Y, 0));
+            Check(panel.ShowsDepletionFirst("claude"), "clique no card troca para \"esgota em\"");
+            using var after = panel.Snapshot(1);
+            // The snapshot may be drawn at another scale than the window: compare the whole image, within its own bounds.
+            var changed = before.Size == after.Size;
+            if (changed)
+            {
+                changed = false;
+                for (var y = 0; y < after.Height && !changed; y += 2)
+                    for (var x = 0; x < after.Width && !changed; x += 2)
+                        changed = before.GetPixel(x, y) != after.GetPixel(x, y);
+            }
+            Check(changed, "o card desenha outro texto depois do clique");
+            Call(panel, "OnMouseWheel", new MouseEventArgs(MouseButtons.None, 0, point.X, point.Y, -120));
+            Check(!panel.ShowsDepletionFirst("claude"), "roda do mouse no card volta para \"renova em\"");
+            Call(panel, "OnMouseWheel", new MouseEventArgs(MouseButtons.None, 0, point.X, point.Y, 120));
+            Check(panel.ShowsDepletionFirst("claude"), "roda do mouse alterna de novo");
+            after.Save(Path.Combine(folder, "card-esgota-em.png"));
+            panel.Hide();
+        });
         Case("tela USB serial", () =>
         {
             var hello = UsbScreenProtocol.HelloPacket();

@@ -53,6 +53,9 @@ internal static class NotchForecast
 
     public static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
+    /// <summary>First letter in lower case, for the lower-case lines of the Office cards ("esgota em ~2h").</summary>
+    public static string Lower(string text) => text.Length == 0 ? text : char.ToLowerInvariant(text[0]) + text[1..];
+
     /// <summary>How far ahead of (or behind) the even pace the window is, in plain words.</summary>
     public static (string Text, Color Color)? Pace(LimitWindow w, DateTimeOffset now) => w.PaceDelta(now) is { } delta
         ? (delta > 3 ? L.T($"{delta:0} pts acima do ritmo", $"{delta:0} pts over pace") : delta < -3 ? L.T($"{-delta:0} pts de folga", $"{-delta:0} pts under pace") : L.T("no ritmo", "on pace"), Theme.PaceColor(delta))

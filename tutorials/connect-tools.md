@@ -87,14 +87,14 @@ Claude Code accepts a single `statusLine`. If you already use another one, pick 
 
 ### Keep the limit up to date without opening the terminal
 
-The *Code* tab of the Claude app and the chat don't run the statusLine. To keep the exact limit fresh, turn on **Settings › General › Open Claude Code at startup**: QuotaDesk opens a minimized Claude Code that refreshes the limit. The card menu also has **Open Claude Code in the terminal**.
+The *Code* tab of the Claude app and the chat don't run the statusLine. When you want the exact limit, use the Claude card menu › **Open Claude Code in the terminal**: any message refreshes it.
 
 **If it doesn't show up:**
 
 | Symptom | What to do |
 |---|---|
 | *No quota data. Open the Claude app (desktop) or use Claude Code in the terminal.* | Use Claude Code in the terminal once (statusLine) or open the Claude app (estimated history). |
-| Limits with `~` and *statusLine data expired.* | The statusLine hasn't run for more than 30 min. Open Claude Code in the terminal or turn on *Open Claude Code at startup*. |
+| Limits with `~` and *statusLine data expired.* | The statusLine hasn't run for more than 30 min. Open Claude Code in the terminal (card menu › *Open Claude Code in the terminal*). |
 | *Local port 32871 busy* | Another program is using the hooks port, or there are two copies of QuotaDesk installed. Close the other one and reopen. |
 | Status never changes (*no events received yet*) | The hooks aren't in the right `settings.json`, or Claude Code was opened before the edit. Reopen Claude Code. |
 

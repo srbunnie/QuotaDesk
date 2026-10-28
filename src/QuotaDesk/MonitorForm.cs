@@ -988,13 +988,15 @@ internal sealed partial class MonitorForm : Form
         Invalidate();
     }
 
-    // Mouse wheel over the Antigravity card walks through its models.
+    // Mouse wheel over a card: pages a category's tools, walks the Antigravity models, otherwise trades
+    // "renova em" and "esgota em" like a click does.
     protected override void OnMouseWheel(MouseEventArgs e)
     {
         base.OnMouseWheel(e);
         if (HitTest(e.Location) is not { } hit || CardIndex(hit) is not { } i) return;
         if (ProviderCategories.Position(_agents[i].Id, _presentable).Count > 1) StepCategory(i, e.Delta > 0 ? -1 : 1);
-        else if (_agents[i].Id == "antigravity") StepModel(e.Delta > 0 ? -1 : 1);
+        else if (_agents[i].Id == "antigravity" && ModelChoice.Options.Count > 1) StepModel(e.Delta > 0 ? -1 : 1);
+        else if (!Classic) ToggleResetView(i);
     }
 
 

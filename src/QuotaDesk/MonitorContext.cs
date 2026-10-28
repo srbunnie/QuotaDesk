@@ -64,7 +64,6 @@ internal sealed class MonitorContext : ApplicationContext
         _form.ShutdownRequested += Exit;
         _form.LanguageChangeRequested += ChangeLanguage;
         _form.Settings = _settings;
-        if (_settings.OpenClaudeTerminalOnStart) ClaudeQuota.OpenTerminal(onlyIfStale: true);
         _form.TopMost = _settings.AlwaysOnTop;
         Theme.AttentionAt = Math.Clamp(_settings.AttentionAt, 1, 99);
         Theme.CriticalAt = Math.Clamp(_settings.CriticalAt, Theme.AttentionAt + 1, 100);
@@ -166,6 +165,7 @@ internal sealed class MonitorContext : ApplicationContext
             });
         }
         menu.Items.Add(languageItem);
+        menu.Items.Add(L.T("Ajuda e documentação", "Help and documentation"), null, (_, _) => L.OpenDocs());
         menu.Items.Add(new ToolStripSeparator());
         var powerImage = LucideIcons.Create("power", 20, Color.FromArgb(255, 172, 188));
         var power = new ToolStripMenuItem("", powerImage, (_, _) => Exit())

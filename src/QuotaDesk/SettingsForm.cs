@@ -87,8 +87,8 @@ internal sealed class SettingsForm : Form
                 yield return new Row(L.T("Sempre no topo", "Always on top"), L.T("Mantém o painel acima das outras janelas", "Keeps the panel above other windows"), () => _owner.TopMost,
                     v => { _owner.TopMost = v; S.AlwaysOnTop = v; TopMost = v; Apply(); });
                 yield return new Row(L.T("Fixar a posição", "Lock position"), L.T("Impede de arrastar o painel", "Stops the panel from being dragged"), () => S.PositionLocked, v => { S.PositionLocked = v; Apply(); });
-                yield return new Row(L.T("Abrir Claude Code ao iniciar", "Open Claude Code at startup"), L.T("Terminal minimizado que atualiza a cota", "Minimized terminal that updates the limit"), () => S.OpenClaudeTerminalOnStart,
-                    v => { S.OpenClaudeTerminalOnStart = v; Apply(); });
+                yield return new Row(L.T("Iniciar com o Windows", "Start with Windows"), L.T("Abre o QuotaDesk quando você entra no Windows", "Opens QuotaDesk when you sign in to Windows"),
+                    () => Startup.IsEnabled, v => { Startup.Set(v); Invalidate(); });
                 yield return new Row(L.T("Exibir menu superior", "Show top menu"), null, () => S.ShowPanelHeader, v => { S.ShowPanelHeader = v; Apply(); });
                 yield return new Row(L.T("Minimizar para a bandeja", "Minimize to tray"), null, Button: L.T("Minimizar", "Minimize"), Click: () => { Close(); _owner.Hide(); });
                 yield return new Row(L.T("Desligar o QuotaDesk", "Quit QuotaDesk"), null, Button: L.T("Desligar", "Quit"), Click: () => { Close(); _owner.RequestShutdown(); });

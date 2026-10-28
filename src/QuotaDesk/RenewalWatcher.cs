@@ -75,9 +75,6 @@ internal sealed class AppSettings
 {
     public bool NotifyRenewals { get; set; } = true;
 
-    /// <summary>Open Claude Code in a minimized terminal when QuotaDesk starts, so its statusLine refreshes the quota.</summary>
-    public bool OpenClaudeTerminalOnStart { get; set; }
-
     /// <summary>Thin dock on the right edge of the screen that expands on hover.</summary>
     public bool SideDock { get; set; } = true;
 

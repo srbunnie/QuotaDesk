@@ -212,6 +212,13 @@ internal sealed partial class MonitorForm
         else if (AccountHint(agent.Id) is { } hint)
             // Local tools read the account already signed in on this PC: switching happens in the tool itself.
             menu.Items.Add(new ToolStripMenuItem(L.T("Trocar conta…", "Switch account…")) { Enabled = false, ToolTipText = hint });
+        // No reading yet (not installed, not signed in, or an error): offer the step-by-step page for this tool.
+        if (agent.Quota.UpdatedAt is null || agent.Quota.Error is not null)
+            menu.Items.Add(new ToolStripMenuItem(L.T($"Como conectar: {agent.Name}…", $"How to connect {agent.Name}…"), null,
+                (_, _) => L.OpenDocs("connect-" + agent.Id))
+            {
+                ToolTipText = L.T("Abre o passo a passo no navegador", "Opens the step-by-step guide in the browser")
+            });
         var count = PendingOf(agent).Count;
         menu.Items.Add(new ToolStripMenuItem(count > 0 ? L.T($"Ver pendências ({count})", $"See pending ({count})") : L.T("Nenhuma pendência", "Nothing pending"), null, (_, _) =>
         {
@@ -327,8 +334,20 @@ internal sealed partial class MonitorForm
              hit.StartsWith("pager", StringComparison.Ordinal)
     };
 
-    // Cards whose rows show "esgota em" first (toggled by clicking the card).
+    // Cards whose rows show "esgota em" first (toggled by a click or the mouse wheel on the card).
     private readonly HashSet<string> _depletionFirst = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Trades "renova em" and "esgota em" on a card's quota rows; the next call trades them back.</summary>
+    internal void ToggleResetView(int index)
+    {
+        if (index < 0 || index >= _agents.Count) return;
+        var id = _agents[index].Id;
+        if (!_depletionFirst.Remove(id)) _depletionFirst.Add(id);
+        _lastTip = null;
+        Invalidate();
+    }
+
+    internal bool ShowsDepletionFirst(string id) => _depletionFirst.Contains(id);
 
     private int? Idx(string? hit, string prefix) =>
         hit is not null && hit.StartsWith(prefix, StringComparison.Ordinal) && int.TryParse(hit.AsSpan(prefix.Length), out var i) && i < _agents.Count ? i : null;
@@ -421,14 +440,7 @@ internal sealed partial class MonitorForm
                          QuotaRows(_agents[c]).All(w => w.Kind == WindowKind.Other))
                     // Per-model quotas: left half goes back, right half goes forward (groups change with the wheel).
                     StepModel(e.X / _scale < CardRect(c).X + CardRect(c).Width / 2 ? -1 : 1);
-                else if (Idx(hit, "card") is { } t)
-                {
-                    // Each click on a card trades "renova em" and "esgota em" on its quota rows.
-                    var id = _agents[t].Id;
-                    if (!_depletionFirst.Remove(id)) _depletionFirst.Add(id);
-                    _lastTip = null;
-                    Invalidate();
-                }
+                else if (Idx(hit, "card") is { } t) ToggleResetView(t);
                 break;
         }
     }
@@ -814,7 +826,7 @@ internal sealed partial class MonitorForm
     /// Loft card row: label and "usado N%" (the widget shows the remaining share, so the measure is spelled out), a bar
     /// with the even-pace tick, then remaining on the left and time to renewal on the right.
     /// </summary>
-    private static void PaintLoftQuotaRow(Graphics g, AgentStatus agent, LimitWindow? w, RectangleF area, DateTimeOffset now)
+    private static void PaintLoftQuotaRow(Graphics g, AgentStatus agent, LimitWindow? w, RectangleF area, DateTimeOffset now, bool depletionFirst)
     {
         var expired = w?.ResetsAt is { } reset && reset <= now && !w.ResetEstimated;
         var known = w is not null && !expired;
@@ -873,7 +885,17 @@ internal sealed partial class MonitorForm
         if (!known) return;
 
         string rightLong, rightShort;
+        var rightColor = Theme.TextDim;
         if (w!.Renewed) rightLong = rightShort = L.T("renovada", "reset");
+        // Clicked (or wheel): the time the limit runs out at this pace takes the place of the renewal.
+        else if (depletionFirst && w.Credits is null)
+        {
+            var forecast = NotchForecast.Short(w, now, stale);
+            rightLong = forecast is null ? L.T("esgota: sem previsão ainda", "runs out: no forecast yet") : NotchForecast.Lower(forecast);
+            rightShort = forecast is null ? L.T("sem previsão", "no forecast") : NotchForecast.Lower(forecast)
+                .Replace(L.T("esgota em ", "runs out in "), L.T("esgota ", "out in "), StringComparison.Ordinal);
+            if (forecast is not null && w.Depletion(now) is { BeforeReset: true }) rightColor = Theme.Red;
+        }
         else if (w.Countdown(now) is { } countdown)
         {
             var tilde = w.ResetEstimated ? "~" : "";
@@ -885,7 +907,7 @@ internal sealed partial class MonitorForm
         else rightLong = rightShort = w.ResetHint ?? "";
         var room = Math.Max(20, area.Width - g.MeasureString(leftText, leftFont).Width - 4);
         var rightText = g.MeasureString(rightLong, mono).Width <= room ? rightLong : rightShort;
-        using var brushRight = new SolidBrush(Theme.TextDim);
+        using var brushRight = new SolidBrush(rightColor);
         using var format = new StringFormat { Alignment = StringAlignment.Far, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
         g.DrawString(rightText, mono, brushRight, new RectangleF(area.Right - room, ly, room + 2, 18), format);
     }
@@ -895,7 +917,7 @@ internal sealed partial class MonitorForm
     {
         if (LoftCards)
         {
-            PaintLoftQuotaRow(g, agent, w, area, now);
+            PaintLoftQuotaRow(g, agent, w, area, now, _depletionFirst.Contains(agent.Id));
             return;
         }
         var x = area.X;
@@ -960,7 +982,7 @@ internal sealed partial class MonitorForm
 
         // A click on the card swaps the two times: "Esgota em" on the right and the renewal on the line below.
         var depletionTop = noData || expired || unknown ? null : NotchForecast.Short(w!, now, stale);
-        var swapped = _depletionFirst.Contains(agent.Id) && w is { Renewed: false, Credits: null };
+        var swapped = _depletionFirst.Contains(agent.Id) && !noData && !expired && !unknown && w is { Renewed: false, Credits: null };
         // Longest wording that still fits next to the left text; the short one drops "Renova".
         string rightLong, rightShort;
         if (noData) rightLong = rightShort = "";
@@ -968,6 +990,9 @@ internal sealed partial class MonitorForm
         else if (w!.Renewed) rightLong = rightShort = L.T("Renovada", "Reset");
         else if (swapped && depletionTop is { } top)
             (rightLong, rightShort) = (top, top.Replace(L.T("Esgota em ", "Runs out in "), L.T("esgota ", "out in "), StringComparison.Ordinal));
+        // Swapped without a forecast yet (too little use, or an old reading): say so, so the click visibly does something.
+        else if (swapped)
+            (rightLong, rightShort) = (L.T("Esgota: sem previsão ainda", "Runs out: no forecast yet"), L.T("sem previsão", "no forecast"));
         else if (w.Countdown(now) is { } countdown)
         {
             var tilde = w.ResetEstimated ? "~" : "";
@@ -983,15 +1008,16 @@ internal sealed partial class MonitorForm
         using (var format = new StringFormat { Alignment = StringAlignment.Far, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap })
             g.DrawString(rightText, mono, brush, new RectangleF(right - room, ly, room, 18), format);
 
-        // Forecast from the average rate so far: when the quota runs out, or that it lasts until the renewal.
-        if (unknown || stale || w!.Depletion(now) is not { } depletion) return;
         var forecastFont = Theme.Font("mono", 12.5f, FontStyle.Bold);
-        if (swapped && depletionTop is not null)
+        if (swapped)
         {
-            var renewal = NotchForecast.Capitalize(w.ResetText(now)) + (w.ResetClock(now) is { } clock ? $" ({clock})" : "");
+            // Swapped: the renewal moves to the line below, where the forecast usually is.
+            var renewal = NotchForecast.Capitalize(w!.ResetText(now)) + (w.ResetClock(now) is { } clock ? $" ({clock})" : "");
             TextOut(g, renewal, forecastFont, Theme.Label, x, ly + 19);
             return;
         }
+        // Forecast from the average rate so far: when the quota runs out, or that it lasts until the renewal.
+        if (unknown || stale || w!.Depletion(now) is not { } depletion) return;
         if (depletion.BeforeReset)
         {
             var left = depletion.At - now;

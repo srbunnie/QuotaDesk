@@ -101,7 +101,7 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 O passo a passo de cada uma, com o que fazer quando algo não aparece, está em **[tutoriais/conectar-ferramentas.md](tutoriais/conectar-ferramentas.md)**. Em resumo:
 
 - **Codex:** basta ter o Codex CLI ou o app desktop instalado e logado. O executável é procurado em `AI_MONITOR_CODEX_EXE`, no `PATH` e na pasta do app.
-- **Claude Code:** a cota exata vem do statusLine, que só roda no Claude Code de terminal. Mescle `claude-settings-additions.template.json` no seu `%USERPROFILE%\.claude\settings.json` (faça backup e troque `{{PASTA_DO_PROJETO}}` pela pasta onde está o `claude-statusline.ps1`: a do app instalado ou `src/QuotaDesk`). Isso liga o statusLine e os hooks do estado em tempo real. Para manter a cota atualizada mesmo usando o app Claude, ative **Configurações › Geral › Abrir Claude Code ao iniciar**.
+- **Claude Code:** a cota exata vem do statusLine, que só roda no Claude Code de terminal. Mescle `claude-settings-additions.template.json` no seu `%USERPROFILE%\.claude\settings.json` (faça backup e troque `{{PASTA_DO_PROJETO}}` pela pasta onde está o `claude-statusline.ps1`: a do app instalado ou `src/QuotaDesk`). Isso liga o statusLine e os hooks do estado em tempo real. Para atualizar a cota quando você só usa o app Claude, abra o menu do card do Claude › **Abrir Claude Code no terminal**.
 - **Antigravity:** abra o Antigravity; a cota aparece sozinha enquanto ele está aberto.
 - **Magnific e OpenRouter:** **Conectar** no menu da bandeja ou na central, e faça o login no navegador. **Trocar conta…** no card esquece o login atual.
 - **Clima (opcional):** menu da bandeja › Cidade do clima.

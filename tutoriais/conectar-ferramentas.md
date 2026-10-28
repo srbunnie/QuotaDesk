@@ -87,14 +87,14 @@ O Claude Code aceita um único `statusLine`. Se você já usa outro, escolha um 
 
 ### Manter a cota atualizada sem abrir o terminal
 
-A aba *Code* do app Claude e o chat não rodam o statusLine. Para a cota exata se manter fresca, ative **Configurações › Geral › Abrir Claude Code ao iniciar**: o QuotaDesk abre um Claude Code minimizado que atualiza a cota. O menu do card também tem **Abrir Claude Code no terminal**.
+A aba *Code* do app Claude e o chat não rodam o statusLine. Quando quiser a cota exata, use o menu do card do Claude › **Abrir Claude Code no terminal**: uma mensagem qualquer já atualiza a cota.
 
 **Se não aparecer:**
 
 | Sintoma | O que fazer |
 |---|---|
 | *Sem dados de cota.* | Use o Claude Code no terminal uma vez (statusLine) ou abra o app Claude (histórico estimado). |
-| Cotas com `~` e *Dados do statusLine vencidos.* | O statusLine não roda há mais de 30 min. Abra o Claude Code no terminal ou ligue *Abrir Claude Code ao iniciar*. |
+| Cotas com `~` e *Dados do statusLine vencidos.* | O statusLine não roda há mais de 30 min. Abra o Claude Code no terminal (menu do card › *Abrir Claude Code no terminal*). |
 | *Porta local 32871 ocupada* | Outro programa usa a porta dos hooks, ou há duas cópias do QuotaDesk instaladas. Feche a outra e reabra. |
 | Estado nunca muda (*nenhum evento recebido ainda*) | Os hooks não estão no `settings.json` certo ou o Claude Code foi aberto antes da edição. Reabra o Claude Code. |
 
