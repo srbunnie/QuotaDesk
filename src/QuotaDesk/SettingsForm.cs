@@ -95,7 +95,7 @@ internal sealed class SettingsForm : Form
             case 1:
                 yield return new Row("Visual do painel", "Escritório animado, retrô ou só os cards", Options: MonitorForm.SkinNames,
                     Index: () => _owner.SkinIndex, Pick: i => { _owner.SetSkin(i); Invalidate(); });
-                yield return new Row("Barra na borda da tela", "Resumo sempre à vista", Options: ["Anéis", "Balão com previsão", "Desligada"],
+                yield return new Row("Barra na borda da tela", "Resumo sempre à vista", Options: ["Anéis", "Minimalista", "Desligada"],
                     Index: () => !S.SideDock ? 2 : string.Equals(S.DockStyle, "classic", StringComparison.OrdinalIgnoreCase) ? 0 : 1,
                     Pick: i =>
                     {
@@ -103,6 +103,8 @@ internal sealed class SettingsForm : Form
                         if (i != 2) S.DockStyle = i == 0 ? "classic" : "notch";
                         Apply();
                     });
+                yield return new Row("Manter a barra aberta", "Desligado, ela recolhe e abre ao passar o mouse", () => S.WidgetPinned,
+                    v => { S.WidgetPinned = v; Apply(); });
                 float[] scales = [0.70f, 0.80f, 1.00f, 1.20f];
                 yield return new Row("Escala", null, Options: ["70%", "80% (padrão)", "100%", "120%"],
                     Index: () => Math.Max(0, Array.FindIndex(scales, s => Math.Abs(s - S.Scale) < 0.01f)),

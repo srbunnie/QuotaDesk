@@ -178,7 +178,7 @@ internal sealed class LauncherForm : Form
             _settings.WidgetPinned = _widgetPinned.Checked;
             SettingsChanged?.Invoke();
         };
-        _widgetNotch.Text = "Balão com previsão";
+        _widgetNotch.Text = "Minimalista";
         _widgetNotch.Location = new Point(352, 578);
         _widgetNotch.AutoSize = true;
         _widgetNotch.ForeColor = Theme.Text;

@@ -127,7 +127,7 @@ internal sealed class MonitorContext : ApplicationContext
         }) { Checked = _settings.SideDock };
         menu.Items.Add(dockItem);
         ToolStripMenuItem? notchItem = null;
-        notchItem = new ToolStripMenuItem("Barra com balão e previsão", null, (_, _) => SwitchDockStyle())
+        notchItem = new ToolStripMenuItem("Barra minimalista", null, (_, _) => SwitchDockStyle())
         { Checked = UseNotch };
         menu.Items.Add(notchItem);
         var miniItem = new ToolStripMenuItem("Mini monitor (tela secundária)");

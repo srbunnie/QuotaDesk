@@ -135,10 +135,10 @@ internal sealed class NotchForm : Form
             }
             OpenRequested?.Invoke();
         };
-        var pin = new ToolStripMenuItem("Fixar barra aberta", null, (_, _) => TogglePinned());
+        var pin = new ToolStripMenuItem("Manter a barra aberta", null, (_, _) => TogglePinned());
         _menu.Items.Add(pin);
         _menu.Items.Add("Abrir painel", null, (_, _) => OpenRequested?.Invoke());
-        _menu.Items.Add("Usar barra clássica", null, (_, _) => StyleSwitchRequested?.Invoke());
+        _menu.Items.Add("Usar barra de anéis", null, (_, _) => StyleSwitchRequested?.Invoke());
         _menu.Opening += (_, _) => pin.Checked = Pinned;
         _menu.Closed += (_, _) => Evaluate();
         ContextMenuStrip = _menu;
