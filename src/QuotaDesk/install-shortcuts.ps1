@@ -1,4 +1,4 @@
-# Cria (ou atualiza) os atalhos do QuotaDesk no Menu Iniciar (aparece na pesquisa do Windows) e na Área de Trabalho.
+﻿# Cria (ou atualiza) os atalhos do QuotaDesk no Menu Iniciar (aparece na pesquisa do Windows) e na Área de Trabalho.
 # Uso:  powershell -NoProfile -ExecutionPolicy Bypass -File .\install-shortcuts.ps1 [-NoDesktop]
 param([switch]$NoDesktop, [string]$InstallDirectory = (Join-Path $env:LOCALAPPDATA 'Programs\QuotaDesk'))
 $ErrorActionPreference = 'Stop'

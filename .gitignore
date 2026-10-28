@@ -17,7 +17,7 @@
 
 # Pipelines de arte locais (fora do repositório)
 /tools/
-/docs/
+
 
 # Estado local dos editores e agentes
 /.superpowers/

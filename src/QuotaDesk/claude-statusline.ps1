@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 try {
     $inputJson = [Console]::In.ReadToEnd() | ConvertFrom-Json
     $limits = $inputJson.rate_limits

@@ -410,6 +410,16 @@ internal static class Preview
             Watermark(catPreview, "PRÉ-VISUALIZAÇÃO · DADOS SIMULADOS");
             catPreview.Save(Path.Combine(folder, $"cat-sleep-{catFrame}.png"), ImageFormat.Png);
         }
+        // The edge widget (notch), open with a tool hovered and collapsed, on a transparent background.
+        using (var notch = new NotchForm())
+        {
+            notch.ShowData(cases[1].Agents);
+            notch.Place(Screen.PrimaryScreen!, WidgetEdge.Right);
+            notch.Preview(wide: true, hover: 1);
+            using (var open = notch.Snapshot()) open.Save(Path.Combine(folder, "notch-open.png"), ImageFormat.Png);
+            notch.Preview(wide: false, hover: -1);
+            using (var slim = notch.Snapshot()) slim.Save(Path.Combine(folder, "notch-slim.png"), ImageFormat.Png);
+        }
         for (var size = 16; size <= 32; size += 8)
         {
             using var icon = TrayIconRenderer.Render(size, [new(Theme.Blue, 23, false), new(Theme.Orange, 79, true)]);

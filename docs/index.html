@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuotaDesk — cotas das ferramentas de IA num escritório voxel</title>
+<meta name="description" content="App de bandeja para Windows que mostra, num escritório voxel animado, quanto resta da cota do Codex, Claude Code, Antigravity, OpenRouter, Magnific e Figma — e se cada um está trabalhando ou esperando por você.">
+<meta property="og:title" content="QuotaDesk">
+<meta property="og:description" content="As cotas das suas ferramentas de IA num escritório voxel animado, na bandeja do Windows.">
+<meta property="og:image" content="https://srbunnie.github.io/QuotaDesk/assets/screens/panel-working.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/screens/tray.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d1a;
+    --bg-2: #11142a;
+    --card: #161a33;
+    --edge: #262b52;
+    --text: #e7e9f6;
+    --muted: #a3a8c9;
+    --cyan: #4fd8ff;
+    --orange: #ff8a3d;
+    --violet: #a774ff;
+    --green: #3ee6a1;
+    --radius: 14px;
+    --max: 1120px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.65 Inter, system-ui, "Segoe UI", sans-serif;
+  }
+  a { color: var(--cyan); }
+  a:hover { color: #9ae9ff; }
+  :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; border-radius: 6px; }
+  img { max-width: 100%; height: auto; display: block; }
+  code, pre { font-family: "JetBrains Mono", Consolas, monospace; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
+  .skip { position: absolute; left: -999px; top: 8px; background: var(--orange); color: #000; padding: 8px 14px; border-radius: 8px; z-index: 10; }
+  .skip:focus { left: 12px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  header.top { position: sticky; top: 0; z-index: 5; background: rgba(11,13,26,.88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--edge); }
+  .top .wrap { display: flex; align-items: center; gap: 24px; min-height: 64px; flex-wrap: wrap; }
+  .logo { font-family: Silkscreen, monospace; font-size: 22px; color: var(--text); text-decoration: none; letter-spacing: 1px; }
+  .logo b { color: var(--orange); font-weight: 400; }
+  nav ul { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+  nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 15px; }
+  nav a:hover { color: var(--text); }
+  .top .gh { margin-left: auto; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid transparent; }
+  .btn.primary { background: var(--orange); color: #1a0d03; }
+  .btn.primary:hover { background: #ffa463; color: #1a0d03; }
+  .btn.ghost { border-color: var(--edge); color: var(--text); background: var(--bg-2); }
+  .btn.ghost:hover { border-color: var(--cyan); color: var(--text); }
+
+  .hero { padding: 64px 0 40px; background: radial-gradient(1200px 500px at 50% -10%, #23205a 0%, transparent 70%); }
+  .hero .grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 44px; align-items: center; }
+  .eyebrow { font-family: Silkscreen, monospace; color: var(--cyan); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
+  h1 { font-size: clamp(32px, 4.6vw, 52px); line-height: 1.1; margin: 0 0 18px; letter-spacing: -.5px; }
+  h1 em { font-style: normal; color: var(--orange); }
+  .lead { font-size: 19px; color: var(--muted); margin: 0 0 22px; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 26px; padding: 0; list-style: none; }
+  .badges li { font-size: 13px; padding: 4px 10px; border: 1px solid var(--edge); border-radius: 999px; color: var(--muted); background: var(--bg-2); }
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .shot { border-radius: var(--radius); box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px var(--edge); }
+  .note { font-size: 13px; color: var(--muted); margin-top: 10px; text-align: center; }
+  .banner { margin-top: 48px; border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 0 1px var(--edge); }
+
+  section { padding: 72px 0; }
+  section.alt { background: var(--bg-2); border-block: 1px solid var(--edge); }
+  h2 { font-size: clamp(26px, 3.2vw, 36px); margin: 0 0 10px; letter-spacing: -.3px; }
+  h2 + .sub { color: var(--muted); margin: 0 0 36px; max-width: 720px; font-size: 17px; }
+  h3 { margin: 0 0 8px; font-size: 19px; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius); padding: 22px; }
+  .card p { margin: 0; color: var(--muted); }
+  .card .tag { font-family: Silkscreen, monospace; font-size: 12px; color: var(--cyan); display: block; margin-bottom: 8px; letter-spacing: .5px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--edge); }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--edge); vertical-align: top; }
+  th { background: #1c2142; font-size: 14px; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  .table-scroll { overflow-x: auto; }
+
+  .usecase { display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center; margin-bottom: 64px; }
+  .usecase:last-child { margin-bottom: 0; }
+  .usecase.flip .text { order: 2; }
+  .usecase .text p { color: var(--muted); margin: 0 0 12px; }
+  .usecase .num { font-family: Silkscreen, monospace; color: var(--orange); font-size: 14px; display: block; margin-bottom: 6px; }
+  .usecase figure { margin: 0; }
+  .usecase figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; text-align: center; }
+  .pair { display: flex; gap: 14px; align-items: flex-start; justify-content: center; }
+  .notch-bg { background: linear-gradient(135deg, #2a2f52, #1a1d38); border-radius: var(--radius); padding: 24px; display: flex; justify-content: flex-end; box-shadow: 0 0 0 1px var(--edge); }
+
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .gallery figure { margin: 0; }
+  .gallery figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  .steps { counter-reset: s; display: grid; gap: 16px; padding: 0; list-style: none; margin: 0; }
+  .steps li { counter-increment: s; background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius); padding: 20px 22px 20px 72px; position: relative; }
+  .steps li::before { content: counter(s); position: absolute; left: 22px; top: 18px; width: 34px; height: 34px; border-radius: 9px; background: var(--orange); color: #1a0d03; font-family: Silkscreen, monospace; display: grid; place-items: center; font-size: 18px; }
+  .steps p { margin: 4px 0 0; color: var(--muted); }
+
+  .install { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .term { background: #070912; border: 1px solid var(--edge); border-radius: var(--radius); overflow: hidden; }
+  .term .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--edge); background: #0f1224; font-size: 13px; color: var(--muted); }
+  .term pre { margin: 0; padding: 18px; overflow-x: auto; color: #d6f6ff; font-size: 14px; line-height: 1.6; }
+  .copy { font: 600 13px Inter, sans-serif; background: var(--bg-2); color: var(--text); border: 1px solid var(--edge); border-radius: 7px; padding: 5px 12px; cursor: pointer; }
+  .copy:hover { border-color: var(--cyan); }
+  .term .after { padding: 0 18px 16px; color: var(--muted); font-size: 14px; }
+  .term .after p { margin: 0 0 6px; }
+  .ok { color: var(--green); }
+  .warn { background: rgba(255,138,61,.08); border: 1px solid rgba(255,138,61,.35); border-radius: var(--radius); padding: 14px 18px; color: var(--muted); margin-top: 20px; }
+  .warn strong { color: var(--text); }
+
+  .skill { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: center; }
+  .skill ul { color: var(--muted); padding-left: 20px; }
+  .cast { background: radial-gradient(600px 220px at 50% 80%, #2b2366, transparent 70%); border-radius: var(--radius); padding: 18px; }
+
+  .credits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  /* Grid items default to min-width:auto, so a long code line would widen the column past the screen. */
+  .hero .grid > *, .usecase > *, .install > *, .skill > *, .credits > *, .cards > * { min-width: 0; }
+
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--edge); color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer p { margin: 0; }
+
+  @media (max-width: 900px) {
+    .hero .grid, .usecase, .install, .skill, .credits { grid-template-columns: 1fr; }
+    .usecase.flip .text { order: 0; }
+    .cards, .gallery { grid-template-columns: 1fr; }
+    .top .gh { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#">QUOTA<b>DESK</b></a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="#recursos">Recursos</a></li>
+        <li><a href="#casos">Casos de uso</a></li>
+        <li><a href="#instalar">Instalar</a></li>
+        <li><a href="#provedor">Criar provedor</a></li>
+        <li><a href="#privacidade">Privacidade</a></li>
+      </ul>
+    </nav>
+    <a class="btn ghost gh" href="https://github.com/srbunnie/QuotaDesk" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span><span class="sr-only">(abre em nova aba)</span></a>
+  </div>
+</header>
+
+<main id="conteudo">
+  <div class="hero">
+    <div class="wrap">
+      <div class="grid">
+        <div>
+          <p class="eyebrow">Monitor de IA · local · Windows</p>
+          <h1>As cotas das suas IAs num <em>escritório voxel</em> que vive na bandeja.</h1>
+          <p class="lead">O QuotaDesk mostra quanto resta da cota do Codex, Claude Code, Antigravity, OpenRouter, Magnific e Figma — e se cada um está trabalhando, esperando por você ou parado.</p>
+          <ul class="badges" aria-label="Destaques">
+            <li>Windows 10/11</li><li>.NET 10</li><li>Código aberto (MIT)</li><li>Tudo local</li>
+          </ul>
+          <div class="ctas">
+            <a class="btn primary" href="#instalar">Instalar em um clique</a>
+            <a class="btn ghost" href="https://github.com/srbunnie/QuotaDesk" target="_blank" rel="noopener">Ver no GitHub</a>
+          </div>
+        </div>
+        <figure style="margin:0">
+          <img class="shot" src="assets/screens/panel-working.png" width="711" height="400"
+               alt="Painel do QuotaDesk: três salas com personagens digitando e, abaixo, os cards do Codex (77% da semanal usada), Claude Code (21% das 5 horas) e Antigravity (24%).">
+          <figcaption class="note">Dados simulados.</figcaption>
+        </figure>
+      </div>
+      <div class="banner">
+        <img src="assets/loft-banner.jpg" width="1800" height="185" loading="lazy"
+             alt="O Loft completo: seis salas lado a lado, uma para cada ferramenta, com janelas, mesas e monitores.">
+      </div>
+    </div>
+  </div>
+
+  <section id="recursos">
+    <div class="wrap">
+      <h2>O que ele acompanha</h2>
+      <p class="sub">Cada ferramenta tem uma sala e um personagem. Os cards mostram a cota de 5 horas e a semanal, o ritmo de gasto, a previsão de quando acaba e a hora da renovação.</p>
+      <div class="table-scroll">
+        <table>
+          <caption class="sr-only">Ferramentas suportadas e de onde vêm os dados</caption>
+          <thead><tr><th scope="col">Ferramenta</th><th scope="col">Dados</th><th scope="col">De onde vem</th></tr></thead>
+          <tbody>
+            <tr><td>Codex</td><td>cotas de 5 horas e semanal, estado</td><td><code>codex app-server</code> e logs locais de sessão</td></tr>
+            <tr><td>Claude Code</td><td>cotas de 5 horas e semanal, estado em tempo real, pedidos de permissão</td><td>statusLine, histórico do app Claude e hooks locais</td></tr>
+            <tr><td>Antigravity</td><td>cotas por grupo de modelos</td><td>servidor local do próprio Antigravity</td></tr>
+            <tr><td>Magnific</td><td>saldo de créditos e ritmo de gasto</td><td>MCP oficial, com login no navegador</td></tr>
+            <tr><td>OpenRouter</td><td>saldo de créditos e ritmo de gasto</td><td>MCP oficial, com login no navegador</td></tr>
+            <tr><td>Figma</td><td>disponibilidade global do serviço</td><td>página pública de status</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cards" style="margin-top:22px">
+        <div class="card"><span class="tag">Honesto</span><p><code>~</code> marca estimativas, leituras antigas aparecem como desatualizadas e uma fonte que muda vira "sem sinal". Nenhum número é inventado.</p></div>
+        <div class="card"><span class="tag">Vivo</span><p>Digita quando trabalha, pensa quando espera, cochila quando para. As janelas mostram o céu e o clima reais da sua cidade.</p></div>
+        <div class="card"><span class="tag">Em todo lugar</span><p>Painel, widget de borda, ícone da bandeja, notificações e mini monitor USB de 3,5".</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="casos" class="alt">
+    <div class="wrap">
+      <h2>Casos de uso</h2>
+      <p class="sub">Para quem trabalha com vários agentes de IA ao mesmo tempo e não quer descobrir o limite no meio da tarefa.</p>
+
+      <div class="usecase">
+        <div class="text">
+          <span class="num">01</span>
+          <h3>Não estourar a cota no meio de uma tarefa</h3>
+          <p>A barra de cada card tem uma marca de ritmo. Se você está gastando mais rápido do que a janela permite, o QuotaDesk avisa quando a cota acaba nesse ritmo — antes de renovar.</p>
+          <p>Uma cota de 5 horas esgotada vira a placa <strong>PAUSA ATÉ 18:35</strong>; a semanal esgotada deixa a cadeira vazia com <strong>VOLTO SÁB</strong>.</p>
+        </div>
+        <figure>
+          <img class="shot" src="assets/screens/panel-waiting.png" width="711" height="400" loading="lazy"
+               alt="Codex com a cota de 5 horas esgotada e placa de pausa, Claude Code com 93% usado e um selo com 2 pendências.">
+          <figcaption>Codex em pausa, Claude a 93% e aguardando você.</figcaption>
+        </figure>
+      </div>
+
+      <div class="usecase flip">
+        <div class="text">
+          <span class="num">02</span>
+          <h3>Saber quando um agente está esperando por você</h3>
+          <p>Quando uma sessão do Claude Code pede permissão ou faz uma pergunta, o personagem fica pensando, o card ganha um selo com o número de pendências e o Windows mostra uma notificação.</p>
+          <p>Com vários terminais abertos, você vê qual precisa de você sem procurar.</p>
+        </div>
+        <figure>
+          <div class="notch-bg"><img src="assets/screens/notch.png" width="382" height="286" loading="lazy"
+               alt="Widget de borda aberto: Claude Code com 93% da cota de 5 horas usada, 5 pontos acima do ritmo e previsão de esgotar em cerca de 20 minutos."></div>
+          <figcaption>O widget de borda, com a previsão de quando a cota acaba.</figcaption>
+        </figure>
+      </div>
+
+      <div class="usecase">
+        <div class="text">
+          <span class="num">03</span>
+          <h3>Escolher a ferramenta certa para a próxima tarefa</h3>
+          <p>Codex sem cota de 5 horas, Claude com folga na semanal, Antigravity com o Gemini livre: tudo lado a lado, com a hora exata de cada renovação. Para Magnific e OpenRouter, o card mostra o saldo, o gasto por dia e quando o saldo acaba.</p>
+        </div>
+        <figure>
+          <img class="shot" src="assets/screens/panel-compact.png" width="711" height="208" loading="lazy"
+               alt="Modo compacto: só os três cards, sem a cena.">
+          <figcaption>O modo compacto, só com os cards.</figcaption>
+        </figure>
+      </div>
+
+      <div class="usecase flip">
+        <div class="text">
+          <span class="num">04</span>
+          <h3>Um painel permanente numa telinha</h3>
+          <p>Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel que pagina as ferramentas sozinho, em paisagem ou retrato.</p>
+        </div>
+        <figure>
+          <div class="pair">
+            <img class="shot" src="assets/screens/mini-landscape.png" width="480" height="320" loading="lazy" style="width:62%"
+                 alt="Mini monitor 480 por 320 com Codex, Claude e Antigravity.">
+            <img class="shot" src="assets/screens/mini-portrait.png" width="320" height="480" loading="lazy" style="width:30%"
+                 alt="Mini monitor 320 por 480 em retrato.">
+          </div>
+          <figcaption>Mini monitor em paisagem e retrato.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>O escritório ao longo do dia</h2>
+      <p class="sub">Com a cidade configurada, as janelas seguem o céu real: amanhecer, sol, chuva, tempestade e a lua na fase certa. O clima vem do Open-Meteo, que recebe só a latitude e a longitude.</p>
+      <div class="gallery">
+        <figure><img class="shot" src="assets/screens/sky-sunset.png" width="711" height="400" loading="lazy" alt="Loft ao pôr do sol."><figcaption>Pôr do sol</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/sky-storm.png" width="711" height="400" loading="lazy" alt="Loft com chuva e relâmpagos."><figcaption>Tempestade</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/idle-sleep.png" width="711" height="400" loading="lazy" alt="Personagens ociosos cochilando à noite."><figcaption>Fim de expediente</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/sky-night.png" width="711" height="400" loading="lazy" alt="Loft à noite com a lua."><figcaption>Noite</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/panel-no-signal.png" width="711" height="354" loading="lazy" alt="Ferramentas sem sinal, com personagens procurando sinal no celular."><figcaption>Sem sinal</figcaption></figure>
+        <figure><img class="shot" src="assets/screens/settings.png" width="440" height="432" loading="lazy" alt="Janela de configurações com as abas Geral, Aparência, Avisos, Dados e Provedores."><figcaption>Configurações</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="instalar" class="alt">
+    <div class="wrap">
+      <h2>Instalar em um clique</h2>
+      <p class="sub">Sem administrador. Tudo vai para a sua pasta de usuário.</p>
+      <div class="install">
+        <div class="term">
+          <div class="bar"><span>PowerShell · versão pronta</span><button class="copy" type="button" data-copy="irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex">Copiar</button></div>
+          <pre><code>irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex</code></pre>
+          <div class="after">
+            <p><span class="ok">✓</span> baixa a última versão publicada</p>
+            <p><span class="ok">✓</span> instala em <code>%LOCALAPPDATA%\Programs\QuotaDesk</code></p>
+            <p><span class="ok">✓</span> cria atalhos e abre o painel — sem precisar do .NET</p>
+          </div>
+        </div>
+        <div class="term">
+          <div class="bar"><span>A partir do código</span><button class="copy" type="button" data-copy="git clone https://github.com/srbunnie/QuotaDesk.git">Copiar</button></div>
+          <pre><code>git clone https://github.com/srbunnie/QuotaDesk.git
+<span style="color:#a3a8c9"># depois, dois cliques em</span> QuotaDesk.cmd</code></pre>
+          <div class="after">
+            <p><span class="ok">✓</span> instala o SDK do .NET 10 se faltar (assinatura conferida)</p>
+            <p><span class="ok">✓</span> compila, testa e guarda a versão anterior</p>
+            <p><span class="ok">✓</span> instala, cria atalhos e abre</p>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:18px"><a href="https://github.com/srbunnie/QuotaDesk/releases/latest/download/QuotaDesk-win-x64.zip">Baixar o .zip</a> · <a href="https://github.com/srbunnie/QuotaDesk/archive/refs/heads/main.zip">Baixar o código</a></p>
+      <div class="warn"><strong>Primeira execução:</strong> o executável não é assinado, então o Windows pode mostrar "O Windows protegeu o computador". Clique em <strong>Mais informações › Executar assim mesmo</strong>.</div>
+
+      <h3 style="margin-top:44px">Depois de instalar</h3>
+      <ol class="steps" style="margin-top:14px">
+        <li><h3>Codex e Antigravity</h3><p>Funcionam sozinhos se a ferramenta estiver instalada e logada (o Antigravity, enquanto estiver aberto).</p></li>
+        <li><h3>Claude Code</h3><p>Mescle <code>claude-settings-additions.template.json</code> no seu <code>~/.claude/settings.json</code> para ligar o statusLine e os hooks do estado em tempo real.</p></li>
+        <li><h3>Magnific e OpenRouter</h3><p>Escolha <strong>Conectar</strong> no menu da bandeja e faça o login no navegador.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="provedor">
+    <div class="wrap">
+      <div class="skill">
+        <div>
+          <h2>Coloque a sua ferramenta no Loft</h2>
+          <p class="sub" style="margin-bottom:18px">A skill <a href="https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md"><code>add-provider</code></a> ensina um agente (Claude Code, Codex…) a adicionar uma ferramenta de ponta a ponta.</p>
+          <ul>
+            <li><strong>Adaptador</strong> em C# que lê a cota sem inventar números.</li>
+            <li><strong>Sala</strong> gerada por IA com o mesmo enquadramento das outras; vidros em chroma-key viram céu e tela ao vivo.</li>
+            <li><strong>Personagem</strong> com 12 poses, recortadas e alinhadas pela roda da cadeira.</li>
+            <li>Scripts que validam a arte e a ordem do código antes do PR.</li>
+          </ul>
+          <div class="term" style="margin-top:18px">
+            <div class="bar"><span>Peça ao seu agente</span><button class="copy" type="button" data-copy="Use a skill skills/add-provider para adicionar o Cursor ao QuotaDesk.">Copiar</button></div>
+            <pre><code>Use a skill skills/add-provider para adicionar o Cursor ao QuotaDesk.</code></pre>
+          </div>
+        </div>
+        <div class="cast">
+          <img src="assets/characters.png" width="1428" height="250" loading="lazy"
+               alt="O elenco: seis personagens voxel sentados em cadeiras gamer, um para cada ferramenta.">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacidade" class="alt">
+    <div class="wrap">
+      <h2>Privacidade e segurança</h2>
+      <p class="sub">Tudo roda na sua máquina.</p>
+      <div class="cards">
+        <div class="card"><span class="tag">Nada sai</span><p>Não envia prompts, não chama modelos e não lê credenciais do Claude nem do Codex.</p></div>
+        <div class="card"><span class="tag">Logins protegidos</span><p>Os logins da Magnific e da OpenRouter ficam criptografados com DPAPI; o token do Antigravity, só em memória.</p></div>
+        <div class="card"><span class="tag">Porta fechada</span><p>O receptor dos hooks escuta só em <code>127.0.0.1</code> e recusa requisições vindas de páginas web.</p></div>
+      </div>
+      <p style="margin-top:20px;color:var(--muted)">A rede é usada só para os MCPs da Magnific e da OpenRouter, a página de status do Figma e o clima opcional. Encontrou uma falha? Veja o <a href="https://github.com/srbunnie/QuotaDesk/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+    </div>
+  </section>
+
+  <section id="creditos">
+    <div class="wrap">
+      <h2>Créditos</h2>
+      <div class="credits" style="margin-top:22px">
+        <div class="card"><span class="tag">Arte</span><p>Todas as ilustrações — as salas do Loft, os personagens e suas poses — foram geradas com IA no Magnific por <a href="https://github.com/edirsooo">@edirsooo</a> e são de <strong>livre uso pessoal</strong>.</p></div>
+        <div class="card"><span class="tag">Código</span><p>Licença <a href="https://github.com/srbunnie/QuotaDesk/blob/main/LICENSE">MIT</a>. Ícones do <a href="https://lucide.dev">Lucide</a> (ISC). Contribuições são bem-vindas.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><strong>QuotaDesk</strong> 0.4.0 · <a href="https://github.com/srbunnie/QuotaDesk">GitHub</a> · <a href="https://github.com/srbunnie/QuotaDesk/blob/main/LICENSE">MIT</a></p>
+    <p>Projeto independente. Claude, Codex, Antigravity, Figma, Magnific e OpenRouter são marcas de seus donos; o QuotaDesk não é afiliado a nenhum deles.</p>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var text = button.getAttribute('data-copy');
+      var done = function () {
+        button.textContent = 'Copiado';
+        setTimeout(function () { button.textContent = 'Copiar'; }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+  });
+</script>
+</body>
+</html>

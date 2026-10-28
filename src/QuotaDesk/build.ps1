@@ -1,4 +1,4 @@
-# Compila o QuotaDesk e mantém uma instalação estável por usuário.
+﻿# Compila o QuotaDesk e mantém uma instalação estável por usuário.
 # Uso:  powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 [-NoInstall] [-Package] [-Dotnet <caminho do dotnet.exe>]
 #       -Package também grava dist\QuotaDesk-<versão>-win-x64.zip, pronto para copiar para outra máquina.
 param([switch]$NoInstall, [switch]$Package, [string]$Dotnet = '')
@@ -28,6 +28,8 @@ if ($Package) {
     $zip = Join-Path $dist "QuotaDesk-$version-win-x64.zip"
     if (Test-Path $zip) { Remove-Item -LiteralPath $zip }
     Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $zip
+    # Same file under a fixed name: the release asset that releases/latest/download/ and install.ps1 point to.
+    Copy-Item -LiteralPath $zip -Destination (Join-Path $dist 'QuotaDesk-win-x64.zip') -Force
     "Pacote: $zip"
 }
 if ($NoInstall) { "Compilado e testado em $staging"; return }
