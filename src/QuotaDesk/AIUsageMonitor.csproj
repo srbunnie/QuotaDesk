@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>QuotaDesk</AssemblyName>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon Condition="Exists('assets\quotadesk.ico')">assets\quotadesk.ico</ApplicationIcon>
+    <Version>0.4.0</Version>
+    <Product>QuotaDesk</Product>
+    <Description>QuotaDesk - AI Usage Monitor (local)</Description>
+    <!-- Server GC off and concurrent GC off keep the idle tray footprint small. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+    <!-- Keep the build machine's folders (and so the Windows user name) out of the binaries, the PDB and stack traces. -->
+    <!-- ContinuousIntegrationBuild maps every source root (PDB, SourceLink map) to /_/. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.3.0" />
+    <EmbeddedResource Include="assets\antigravity-logo.png" />
+    <EmbeddedResource Include="assets\codex-logo.png" />
+    <EmbeddedResource Include="assets\claude-logo.png" />
+    <EmbeddedResource Include="assets\magnific-logo.png" />
+    <EmbeddedResource Include="assets\figma-logo.png" />
+    <EmbeddedResource Include="assets\openrouter-logo.png" />
+    <EmbeddedResource Include="assets\voxel-*.png" />
+    <EmbeddedResource Include="assets\providers\**\*.png" />
+    <EmbeddedResource Include="assets\office\**\*.png" />
+    <EmbeddedResource Include="assets\office\*.json" />
+    <EmbeddedResource Include="assets\lucide\*.png" />
+    <Content Include="assets\lucide\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,52 @@
+# Compilação e instalação local do .NET
+**/bin/
+**/obj/
+/src/QuotaDesk/app/
+/src/QuotaDesk/publish-staging/
+/src/QuotaDesk/previous/
+
+# Prévias, relatórios e capturas geradas na máquina
+/output/
+/snapshot*.png
+/snapshot*.txt
+/test.ico
+/test.*.png
+*.log
+*.tmp
+*.bak
+
+# Pipelines de arte locais (fora do repositório)
+/tools/
+/docs/
+
+# Estado local dos editores e agentes
+/.superpowers/
+/.codex/
+/.vs/
+/.idea/
+*.user
+*.suo
+**/__pycache__/
+**/node_modules/
+
+# Configuração privada e credenciais: nunca versionar
+.env
+.env.*
+!.env.example
+!.env.template
+**/settings.local.json
+settings.json
+claude-settings.json
+*.dat
+*.pfx
+*.p12
+*.pem
+*.key
+*.snk
+*token*.json
+*credentials*
+*secret*
+error.log
+
+# Pacotes gerados por build.ps1 -Package
+/dist/

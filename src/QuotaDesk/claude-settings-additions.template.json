@@ -1,0 +1,32 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"{{PASTA_DO_PROJETO}}\\claude-statusline.ps1\""
+  },
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/SessionStart", "timeout": 2 } ] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/UserPromptSubmit", "timeout": 2 } ] }
+    ],
+    "PreToolUse": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/PreToolUse", "timeout": 2 } ] }
+    ],
+    "PostToolUse": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/PostToolUse", "timeout": 2 } ] }
+    ],
+    "Notification": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/Notification", "timeout": 2 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/Stop", "timeout": 2 } ] }
+    ],
+    "StopFailure": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/StopFailure", "timeout": 2 } ] }
+    ],
+    "SessionEnd": [
+      { "hooks": [ { "type": "http", "url": "http://127.0.0.1:32871/claude/SessionEnd", "timeout": 2 } ] }
+    ]
+  }
+}

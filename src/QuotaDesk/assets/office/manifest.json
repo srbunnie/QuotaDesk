@@ -1,0 +1,158 @@
+{
+  "version": 2,
+  "asset": "voxel-loft.png",
+  "width": 2178,
+  "height": 224,
+  "viewportWidth": 1089,
+  "floorY": 206,
+  "windows": [
+    [
+      121.0,
+      19.0,
+      129.2,
+      97.0
+    ],
+    [
+      484.2,
+      36.5,
+      133.0,
+      89.2
+    ],
+    [
+      847.8,
+      19.8,
+      129.0,
+      96.5
+    ],
+    [
+      1210.5,
+      19.5,
+      128.2,
+      97.5
+    ],
+    [
+      1573.0,
+      18.5,
+      129.5,
+      97.2
+    ],
+    [
+      1936.2,
+      19.8,
+      128.0,
+      96.5
+    ]
+  ],
+  "providers": [
+    {
+      "id": "codex",
+      "seat": 183,
+      "head": [
+        187,
+        64
+      ],
+      "spriteScale": 0.6083,
+      "screen": [
+        230.0,
+        77.8,
+        73.2,
+        50.5
+      ],
+      "room": [
+        0,
+        363
+      ]
+    },
+    {
+      "id": "claude",
+      "seat": 545,
+      "head": [
+        549,
+        64
+      ],
+      "spriteScale": 0.6083,
+      "screen": [
+        592.2,
+        86.5,
+        70.8,
+        48.0
+      ],
+      "room": [
+        363,
+        363
+      ]
+    },
+    {
+      "id": "antigravity",
+      "seat": 909,
+      "head": [
+        913,
+        64
+      ],
+      "spriteScale": 0.6083,
+      "screen": [
+        956.0,
+        78.0,
+        72.5,
+        50.2
+      ],
+      "room": [
+        726,
+        363
+      ]
+    },
+    {
+      "id": "magnific",
+      "seat": 1239,
+      "head": [
+        1243,
+        64
+      ],
+      "spriteScale": 0.6083,
+      "screen": null,
+      "room": [
+        1089,
+        363
+      ]
+    },
+    {
+      "id": "figma",
+      "seat": 1628,
+      "head": [
+        1632,
+        64
+      ],
+      "spriteScale": 0.6083,
+      "screen": [
+        1674.8,
+        76.8,
+        73.2,
+        54.8
+      ],
+      "room": [
+        1452,
+        363
+      ]
+    },
+    {
+      "id": "openrouter",
+      "seat": 1997,
+      "head": [
+        2001,
+        64
+      ],
+      "spriteScale": 0.6083,
+      "screen": [
+        2044.2,
+        78.2,
+        73.0,
+        50.2
+      ],
+      "room": [
+        1815,
+        363
+      ]
+    }
+  ],
+  "notes": "Loft in rooms: six provider rooms generated one by one with Magnific Seedream 5 Pro and joined (tools/voxel-loft/rooms). World units are half the plate's pixels. Only the rooms of the providers on the panel are shown, side by side. Window panes and monitor glass are transparent: SharedOfficeScene paints the live sky and each tool's screen beneath them. Personas stay independent and animated; pets and Claude's Clawd belong to the plate."
+}
