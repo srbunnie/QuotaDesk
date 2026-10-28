@@ -29,7 +29,20 @@ irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex
 
 Baixa a última versão publicada em [Releases](../../releases/latest), instala em `%LOCALAPPDATA%\Programs\QuotaDesk`, cria atalhos no Menu Iniciar e na Área de Trabalho e abre o painel. Não precisa de administrador nem do .NET instalado. Se preferir, baixe [`QuotaDesk-win-x64.zip`](../../releases/latest/download/QuotaDesk-win-x64.zip), extraia e abra `QuotaDesk.exe`.
 
-**Um clique, a partir do código.** Baixe o repositório ([ZIP](../../archive/refs/heads/main.zip) ou `git clone`) e dê dois cliques em **`QuotaDesk.cmd`**. Ele:
+**Com o repositório baixado.** Baixe o repositório ([ZIP](../../archive/refs/heads/main.zip) ou `git clone`) e dê dois cliques em **`QuotaDesk.cmd`**. O menu abre e, se ninguém escolher nada em 8 segundos, abre o seu QuotaDesk:
+
+| Opção | Linha de comando | O que faz |
+|---|---|---|
+| 1 | `QuotaDesk.cmd abrir` | Abre o app instalado. Se ainda não houver um, instala a última versão publicada, sem compilar. |
+| 2 | `QuotaDesk.cmd atualizar` | Compara com a última Release e instala se houver versão nova (`reinstalar` instala mesmo assim). |
+| 3 | `QuotaDesk.cmd dev` | Compila o código atual e abre o [ambiente de desenvolvimento](#ambientes). |
+| 4 | `QuotaDesk.cmd homolog` | Compila o código atual e abre a [homologação](#ambientes). |
+| 5 | `QuotaDesk.cmd codigo` | Compila este código e instala na versão pessoal (veja abaixo). |
+| 6 | `QuotaDesk.cmd parar` | Fecha o desenvolvimento e a homologação. |
+
+Atualizar ou reinstalar troca só a pasta do programa; preferências, logins e histórico ficam em `%LOCALAPPDATA%\AIUsageMonitor`.
+
+A opção 5 (também `QuotaDesk.cmd -NoInstall` ou `-Package`):
 
 1. procura o SDK do .NET 10 e, se faltar, baixa o instalador oficial da Microsoft, confere a assinatura digital e instala só para o seu usuário;
 2. compila, confere se o Windows permite rodar o binário novo, guarda a instalação anterior e instala;
