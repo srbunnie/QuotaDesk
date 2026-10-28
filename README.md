@@ -146,6 +146,7 @@ Issues e pull requests são bem-vindos. Antes de abrir um PR, rode os autotestes
 
 ## Créditos e licença
 
+- **Autores:** o QuotaDesk é uma parceria entre [@edirsooo](https://github.com/edirsooo), de quem veio a ideia original e que colabora com ideias e código, e [@srbunnie](https://github.com/srbunnie), que deu continuidade ao projeto. O lançamento é dos dois.
 - **Código:** licença [MIT](LICENSE).
 - **Arte:** todas as ilustrações do app — as salas do Loft, os personagens e suas poses — foram geradas com IA no Magnific por [@edirsooo](https://github.com/edirsooo) e são de **livre uso pessoal**.
 - **Ícones:** [Lucide](https://lucide.dev) (ISC), em `src/QuotaDesk/assets/lucide`.

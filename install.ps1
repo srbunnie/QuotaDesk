@@ -1,4 +1,4 @@
-﻿# Instala a versão mais recente do QuotaDesk publicada no GitHub, sem compilar e sem administrador.
+# Instala a versão mais recente do QuotaDesk publicada no GitHub, sem compilar e sem administrador.
 # Uso (PowerShell):  irm https://raw.githubusercontent.com/srbunnie/QuotaDesk/main/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 & {
