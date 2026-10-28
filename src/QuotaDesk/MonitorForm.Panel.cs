@@ -322,6 +322,9 @@ internal sealed partial class MonitorForm
              hit.StartsWith("pager", StringComparison.Ordinal)
     };
 
+    // Cards whose rows show "esgota em" first (toggled by clicking the card).
+    private readonly HashSet<string> _depletionFirst = new(StringComparer.OrdinalIgnoreCase);
+
     private int? Idx(string? hit, string prefix) =>
         hit is not null && hit.StartsWith(prefix, StringComparison.Ordinal) && int.TryParse(hit.AsSpan(prefix.Length), out var i) && i < _agents.Count ? i : null;
 
@@ -347,7 +350,7 @@ internal sealed partial class MonitorForm
             _ when Idx(hit, "menu") is not null => "Opções desta ferramenta",
             _ when Idx(hit, "pager") is { } pg => $"{CardName(_agents[pg])}: trocar de ferramenta (clique à esquerda/direita ou role a roda)",
             _ when Idx(hit, "badge") is { } b => $"{PendingOf(_agents[b]).Count} sessão(ões) aguardando você\nClique para ver",
-            _ when Idx(hit, "card") is { } c => Details(_agents[c]),
+            _ when Idx(hit, "card") is { } c => Details(_agents[c]) + (Classic ? "" : "\nClique para alternar entre \"renova em\" e \"esgota em\""),
             _ => null
         };
         if (tip == _lastTip) return;
@@ -413,6 +416,14 @@ internal sealed partial class MonitorForm
                          QuotaRows(_agents[c]).All(w => w.Kind == WindowKind.Other))
                     // Per-model quotas: left half goes back, right half goes forward (groups change with the wheel).
                     StepModel(e.X / _scale < CardRect(c).X + CardRect(c).Width / 2 ? -1 : 1);
+                else if (Idx(hit, "card") is { } t)
+                {
+                    // Each click on a card trades "renova em" and "esgota em" on its quota rows.
+                    var id = _agents[t].Id;
+                    if (!_depletionFirst.Remove(id)) _depletionFirst.Add(id);
+                    _lastTip = null;
+                    Invalidate();
+                }
                 break;
         }
     }
@@ -942,11 +953,16 @@ internal sealed partial class MonitorForm
         var leftWidth = g.MeasureString(leftText, leftFont).Width;
         TextOut(g, leftText, leftFont, leftColor, x, ly);
 
+        // A click on the card swaps the two times: "Esgota em" on the right and the renewal on the line below.
+        var depletionTop = noData || expired || unknown ? null : NotchForecast.Short(w!, now, stale);
+        var swapped = _depletionFirst.Contains(agent.Id) && w is { Renewed: false, Credits: null };
         // Longest wording that still fits next to the left text; the short one drops "Renova".
         string rightLong, rightShort;
         if (noData) rightLong = rightShort = "";
         else if (expired) rightLong = rightShort = "renovação pendente";
         else if (w!.Renewed) rightLong = rightShort = "Renovada";
+        else if (swapped && depletionTop is { } top)
+            (rightLong, rightShort) = (top, top.Replace("Esgota em ", "esgota ", StringComparison.Ordinal));
         else if (w.Countdown(now) is { } countdown)
         {
             var tilde = w.ResetEstimated ? "~" : "";
@@ -965,6 +981,12 @@ internal sealed partial class MonitorForm
         // Forecast from the average rate so far: when the quota runs out, or that it lasts until the renewal.
         if (unknown || stale || w!.Depletion(now) is not { } depletion) return;
         var forecastFont = Theme.Font("mono", 12.5f, FontStyle.Bold);
+        if (swapped && depletionTop is not null)
+        {
+            var renewal = NotchForecast.Capitalize(w.ResetText(now)) + (w.ResetClock(now) is { } clock ? $" ({clock})" : "");
+            TextOut(g, renewal, forecastFont, Theme.Label, x, ly + 19);
+            return;
+        }
         if (depletion.BeforeReset)
         {
             var left = depletion.At - now;
