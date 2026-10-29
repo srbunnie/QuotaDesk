@@ -40,6 +40,6 @@
     <Content Include="assets\fonts\OFL-*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Shipped next to QuotaDesk.exe so a Release install can wire Claude Code without the repository. -->
     <Content Include="claude-statusline.ps1;claude-settings-additions.template.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <PackageReference Include="System.IO.Ports" Version="10.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.14" />
   </ItemGroup>
 </Project>
