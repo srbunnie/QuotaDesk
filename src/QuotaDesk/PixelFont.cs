@@ -95,8 +95,45 @@ internal static class PixelFont
         return sb.ToString();
     }
 
-    /// <summary>Width in pixels. <paramref name="spacing"/> is the gap between letters (default: one font pixel); bold adds 1px per glyph.</summary>
+    /// <summary>
+    /// Width in pixels. With a real title font chosen (<see cref="Theme.BitmapText"/> off) the text is set in that font,
+    /// sized so its capitals are as tall as the 7-row glyphs; in-world screens call the Glyph* methods to stay bitmap.
+    /// </summary>
     public static float Measure(string text, float scale, float? spacing = null, bool bold = false)
+    {
+        if (Theme.BitmapText) return MeasureGlyphs(text, scale, spacing, bold);
+        var font = FontFor(scale, bold);
+        return Measurer.MeasureString(text, font, PointF.Empty, StringFormat.GenericTypographic).Width;
+    }
+
+    public static void Draw(Graphics g, string text, float x, float y, float scale, Color color, float? spacing = null, bool bold = false)
+    {
+        if (Theme.BitmapText) { DrawGlyphs(g, text, x, y, scale, color, spacing, bold); return; }
+        var font = FontFor(scale, bold);
+        // Line the capitals' top up with where the bitmap glyphs would start.
+        var family = font.FontFamily;
+        var ascent = font.Size * family.GetCellAscent(font.Style) / family.GetEmHeight(font.Style);
+        var oldHint = g.TextRenderingHint;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+        using var brush = new SolidBrush(color);
+        g.DrawString(text, font, brush, x, y - (ascent - Height(scale)), StringFormat.GenericTypographic);
+        g.TextRenderingHint = oldHint;
+    }
+
+    // Same hint as Draw, so measured and drawn widths agree.
+    private static readonly Graphics Measurer = CreateMeasurer();
+
+    private static Graphics CreateMeasurer()
+    {
+        var g = Graphics.FromImage(new Bitmap(1, 1));
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+        return g;
+    }
+
+    // Capitals are about 70% of the em in these families, so a 10-unit em gives 7-unit capitals.
+    private static Font FontFor(float scale, bool bold) => Theme.Font(bold ? "display" : "number", Height(scale) / 0.7f);
+
+    public static float MeasureGlyphs(string text, float scale, float? spacing = null, bool bold = false)
     {
         var gap = spacing ?? scale;
         var w = 0f;
@@ -110,7 +147,7 @@ internal static class PixelFont
     private static string[] Glyph(char c) =>
         Glyphs.TryGetValue(c, out var g) ? g : Glyphs.TryGetValue(char.ToUpperInvariant(c), out var upper) ? upper : Glyphs[' '];
 
-    public static void Draw(Graphics g, string text, float x, float y, float scale, Color color, float? spacing = null, bool bold = false)
+    public static void DrawGlyphs(Graphics g, string text, float x, float y, float scale, Color color, float? spacing = null, bool bold = false)
     {
         var gap = spacing ?? scale;
         var oldSmoothing = g.SmoothingMode;

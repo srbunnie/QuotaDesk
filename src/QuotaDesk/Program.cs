@@ -15,7 +15,10 @@ internal static class Program
     {
         AppPaths.Configure(args);
         // Self-tests check Portuguese wording; everything else follows the saved choice (or Windows).
-        L.Configure(args.Length > 0 && args[0].StartsWith("--selftest", StringComparison.Ordinal) ? "pt" : AppSettings.Load().Language);
+        var selfTest = args.Length > 0 && args[0].StartsWith("--selftest", StringComparison.Ordinal);
+        var saved = selfTest ? new AppSettings() : AppSettings.Load();
+        L.Configure(selfTest ? "pt" : saved.Language);
+        Theme.UseFonts(saved.TextFont, saved.TitleFont);
         if (args.Length == 2 && args[0] == "--selftest-integrations")
         {
             try { IntegrationChecks.Run(args[1]); return 0; }

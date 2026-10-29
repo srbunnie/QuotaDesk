@@ -28,6 +28,8 @@ Open them with the settings button at the top of the panel.
 | **Keep the bar open** | When off, the bar collapses and opens on hover. You can also turn it on by right-clicking the bar. |
 | **Scale** | 70%, 80% (default), 100% or 120%. |
 | **Border glow** | No glow, soft or normal. |
+| **Text font** | JetBrains Mono (default), Roboto, Exo 2 or the classic one (Cascadia). Applies right away. |
+| **Title and number font** | Exo 2 (default), Geist Pixel, Jersey 25 or the classic one, the cards' original pixel font. Applies right away. |
 
 ## Alerts
 
@@ -49,6 +51,8 @@ Open them with the settings button at the top of the panel.
 ## Tools
 
 One checkbox per tool. Uncheck the ones you don't use to hide them.
+
+At the bottom of the tab, **Add a provider › Open guide** opens the [Add a provider](add-provider.md) page.
 
 ## Where preferences live
 

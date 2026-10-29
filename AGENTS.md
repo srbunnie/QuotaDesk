@@ -85,7 +85,7 @@ Mostre ao usuário este plano e marque cada etapa quando o arquivo existir e a v
 5. Criar o personagem
 6. Validar e documentar
 
-Sem um gerador de imagens disponível, faça só as etapas 1, 2, 3 e 6. Isso é o modo **só adaptador**: o card, a bandeja, o widget e o mini monitor funcionam, e o Loft mostra só os provedores que têm sala. Diga isso no PR.
+Sem um gerador de imagens disponível, faça só as etapas 1, 2, 3 e 6. Isso é o modo **só adaptador**: o card, a bandeja, o widget e o mini monitor funcionam, e o Loft põe o provedor numa sala provisória com a arte do OpenRouter (`ProviderArt.PlaceholderId`). Diga isso no PR.
 
 ### 1. Descobrir de onde vem a cota
 

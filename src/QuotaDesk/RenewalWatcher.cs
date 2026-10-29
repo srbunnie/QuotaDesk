@@ -105,6 +105,10 @@ internal sealed class AppSettings
     public bool NotifyPending { get; set; } = true;
     /// <summary>Interface language: "auto" (follows Windows), "pt" or "en". See <see cref="L"/>.</summary>
     public string Language { get; set; } = "auto";
+    /// <summary>Text font: one of <see cref="Theme.TextFonts"/>.</summary>
+    public string TextFont { get; set; } = "jetbrains";
+    /// <summary>Title and number font: one of <see cref="Theme.TitleFonts"/>.</summary>
+    public string TitleFont { get; set; } = "exo2";
     /// <summary>Characters also say what their agent is really doing (task title and last action), between the stock lines.</summary>
     public bool AgentSpeech { get; set; } = true;
     /// <summary>Automatic refresh every N minutes; 0 = manual only (sources still follow their own events).</summary>

@@ -104,18 +104,26 @@ internal sealed class SharedOfficeScene : IDisposable
         }
     }
 
-    /// <summary>The seat art for a provider: its own, or its category's while it has none.</summary>
-    private string SeatKey(string id) => _geometry.ContainsKey(id) ? id : ProviderCategories.SeatOf(id);
+    /// <summary>
+    /// The seat a provider sits at: its own room, its category's, or (no art yet) a seat of its own in a placeholder room.
+    /// </summary>
+    private string SeatKey(string id) =>
+        _geometry.ContainsKey(id) ? id : ProviderCategories.SeatOf(id) is var seat && _geometry.ContainsKey(seat) ? seat : id;
+
+    /// <summary>The art (room slice and persona) a seat is drawn with.</summary>
+    private string ArtKey(string seat) => _geometry.ContainsKey(seat) ? seat : ProviderArt.PlaceholderId;
 
     /// <summary>
-    /// The visible providers' rooms in office order, end to end from x = 0. A category member uses its category's room;
-    /// with nobody visible the whole Loft is the strip.
+    /// The visible providers' rooms in office order, end to end from x = 0, then the placeholder rooms of tools without
+    /// art. A category member uses its category's room; with nobody visible the whole Loft is the strip.
     /// </summary>
     private Strip StripFor(IEnumerable<string>? roomIds)
     {
-        var seats = (roomIds ?? []).Select(SeatKey).Where(_geometry.ContainsKey).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var seats = (roomIds ?? []).Select(SeatKey).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         // Without art (IsAvailable false) there is no geometry: an empty strip instead of a KeyNotFoundException.
-        var ids = Order.Where(id => _geometry.ContainsKey(id) && (seats.Count == 0 || seats.Contains(id))).ToArray();
+        var placeholders = _geometry.ContainsKey(ProviderArt.PlaceholderId) ? seats.Where(s => !_geometry.ContainsKey(s)) : [];
+        var ids = Order.Where(id => _geometry.ContainsKey(id) && (seats.Length == 0 || seats.Contains(id, StringComparer.OrdinalIgnoreCase)))
+            .Concat(placeholders).ToArray();
         var key = string.Join(",", ids);
         if (_strip?.Key == key) return _strip;
         var geometry = new Dictionary<string, ProviderGeometry>(StringComparer.OrdinalIgnoreCase);
@@ -123,7 +131,7 @@ internal sealed class SharedOfficeScene : IDisposable
         var x = 0f;
         foreach (var id in ids)
         {
-            var room = _geometry[id];
+            var room = _geometry.TryGetValue(id, out var own) ? own : _geometry[ProviderArt.PlaceholderId] with { Id = id };
             geometry.Add(id, room.MovedBy(x - room.RoomLeft));
             slices.Add((new RectangleF(room.RoomLeft, 0, room.RoomWidth, _worldHeight), x));
             x += room.RoomWidth;
@@ -203,7 +211,7 @@ internal sealed class SharedOfficeScene : IDisposable
             {
                 if (!geometry.TryGetValue(agent.Id, out var item)) continue;
                 var pose = PoseFor(agent, pauses[agent.Id].Kind, frame, Array.IndexOf(Order, agent.Id));
-                var sprite = _poses[agent.Id + ":" + pose];
+                var sprite = _poses[ArtKey(agent.Id) + ":" + pose];
                 var height = sprite.Height * item.SpriteScale;
                 var width = sprite.Width * item.SpriteScale;
                 var world = new RectangleF(item.Seat - width / 2, _floorY - height, width, height);
@@ -563,8 +571,8 @@ internal sealed class SharedOfficeScene : IDisposable
         }
         var ink = frame / 5 % 2 == 0 ? Color.FromArgb(240, 242, 248) : Color.FromArgb(170, 176, 196);
         Fill(sg, Color.FromArgb(210, 16, 18, 26), 2, h / 2 - 11, w - 4, 21);
-        PixelFont.Draw(sg, L.T("SEM", "NO"), (w - PixelFont.Measure(L.T("SEM", "NO"), 1, 1)) / 2f, h / 2 - 9, 1, ink, 1);
-        PixelFont.Draw(sg, L.T("SINAL", "SIGNAL"), (w - PixelFont.Measure(L.T("SINAL", "SIGNAL"), 1, 1)) / 2f, h / 2, 1, ink, 1);
+        PixelFont.DrawGlyphs(sg, L.T("SEM", "NO"), (w - PixelFont.MeasureGlyphs(L.T("SEM", "NO"), 1, 1)) / 2f, h / 2 - 9, 1, ink, 1);
+        PixelFont.DrawGlyphs(sg, L.T("SINAL", "SIGNAL"), (w - PixelFont.MeasureGlyphs(L.T("SINAL", "SIGNAL"), 1, 1)) / 2f, h / 2, 1, ink, 1);
     }
 
     /// <summary>Per-workspace screensavers: what each tool shows on its monitor while nobody is typing.</summary>
@@ -700,7 +708,7 @@ internal sealed class SharedOfficeScene : IDisposable
         var weekly = pause.Kind == PauseKind.Weekly;
         var scale = Math.Max(1f, MathF.Round((weekly ? 2.5f : 2f) * factor * 2) / 2);
         var lines = pause.SignLines(now);
-        var widths = lines.Select(l => PixelFont.Measure(l, scale, bold: true)).ToArray();
+        var widths = lines.Select(l => PixelFont.MeasureGlyphs(l, scale, bold: true)).ToArray();
         var pad = 3 * scale;
         var w = widths.Max() + pad * 2;
         var lineH = PixelFont.Height(scale) + 2 * scale;
@@ -718,7 +726,7 @@ internal sealed class SharedOfficeScene : IDisposable
         for (var i = 0; i < lines.Length; i++)
         {
             var color = i == 0 ? Theme.Label : urgent ? Theme.Amber : Color.FromArgb(244, 246, 250);
-            PixelFont.Draw(g, lines[i], x + (w - widths[i]) / 2, y + pad + i * lineH, scale, color, bold: true);
+            PixelFont.DrawGlyphs(g, lines[i], x + (w - widths[i]) / 2, y + pad + i * lineH, scale, color, bold: true);
         }
     }
 

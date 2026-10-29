@@ -28,6 +28,8 @@ Abra pelo botão de configurações no topo do painel.
 | **Manter a barra aberta** | Desligado, a barra recolhe e abre ao passar o mouse. Também dá para ligar com o botão direito na barra. |
 | **Escala** | 70%, 80% (padrão), 100% ou 120%. |
 | **Brilho das bordas** | Sem brilho, suave ou normal. |
+| **Fonte do texto** | JetBrains Mono (padrão), Roboto, Exo 2 ou a clássica (Cascadia). Muda na hora. |
+| **Fonte dos títulos e números** | Exo 2 (padrão), Geist Pixel, Jersey 25 ou a clássica, a fonte pixelada original dos cards. Muda na hora. |
 
 ## Avisos
 
@@ -49,6 +51,8 @@ Abra pelo botão de configurações no topo do painel.
 ## Ferramentas
 
 Uma caixa por ferramenta. Desmarque as que você não usa para escondê-las.
+
+No fim da aba, **Adicionar provedor › Ver guia** abre a página [Adicionar provedor](add-provider.md).
 
 ## Onde as preferências ficam
 

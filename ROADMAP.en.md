@@ -46,6 +46,17 @@ Reading the AIs (Codex, Claude Code, Antigravity, Magnific, OpenRouter and Figma
 **5. Small USB screen on all three systems**
 - The serial port already uses `System.IO.Ports`, which works outside Windows. What's left is testing port access permissions on Linux and macOS.
 
+## Next items
+
+Planned improvements, outside the Linux and macOS work:
+
+- **Claude quota reader**
+  - Turn on the Claude Code statusLine from the app itself, in one click and with a backup of `settings.json`, instead of editing the file by hand.
+  - Show how old the last reading is when Claude Code hasn't run for hours, so it's clear the number may be stale.
+  - Split the weekly limits per model when Claude Code reports each one.
+  - Rely less on estimates (`~`) when only the Claude desktop app is open, by reading its history more often.
+- **Own art for new providers:** today a tool without a room borrows OpenRouter's room and character. A generic room and character will replace that loan.
+
 ## How to help
 
 - Open an issue saying which system and desktop environment you use. It helps us prioritize.

@@ -75,30 +75,7 @@ As regras completas estão no [SECURITY.md](https://github.com/srbunnie/QuotaDes
 
 ## Adicionar uma ferramenta
 
-O roteiro completo, com as regras do projeto e o esqueleto do adaptador, está no **[AGENTS.md](https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta)**. Codex, Cursor e outros agentes de código leem esse arquivo sozinhos; o Claude Code o recebe pelo `CLAUDE.md`.
-
-Cada ferramenta é um **provedor** com três partes: um adaptador `IAgentSource`, que lê cota e atividade; uma sala no escritório; e um personagem com 12 poses. As etapas:
-
-1. Descobrir de onde vem a cota.
-2. Escrever o adaptador.
-3. Registrar o provedor.
-4. Criar a sala.
-5. Criar o personagem.
-6. Validar e documentar.
-
-Sem um gerador de imagens, faça só as etapas 1, 2, 3 e 6 (modo **só adaptador**): o card, a bandeja e o mini monitor funcionam, e o escritório mostra só os provedores que têm sala.
-
-A skill [`skills/add-provider`](https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md) ensina um agente a fazer tudo de ponta a ponta, com os prompts de arte, as regras de chroma-key e os scripts que recortam, alinham e validam a arte:
-
-```bash
-python skills/add-provider/scripts/add_room.py --id cursor --room cursor-room.png --seat 182
-python skills/add-provider/scripts/cut_poses.py --id cursor --sheet cursor-sheet.png --sheet2 cursor-sheet2.png
-python skills/add-provider/scripts/validate_assets.py
-```
-
-Para usar no Claude Code, copie a pasta para `.claude/skills/` (ou `~/.claude/skills/`) e peça "adicione o Cursor ao QuotaDesk".
-
-Ao adicionar uma ferramenta, crie também a página `connect-<id>` desta documentação nos dois idiomas: o menu do card abre `docs/connect-<id>.html` quando a ferramenta não tem dados.
+O passo a passo está na página **[Adicionar provedor](add-provider.md)**. O roteiro completo para agentes de código, com as regras do projeto e o esqueleto do adaptador, está no [AGENTS.md](https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta).
 
 ## Esta documentação
 

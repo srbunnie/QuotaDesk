@@ -75,30 +75,7 @@ The full rules are in [SECURITY.md](https://github.com/srbunnie/QuotaDesk/blob/m
 
 ## Add a tool
 
-The full guide, with the project rules and the adapter skeleton, is in **[AGENTS.md](https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta)** (in Portuguese). Codex, Cursor and other coding agents read that file on their own; Claude Code gets it through `CLAUDE.md`.
-
-Each tool is a **provider** with three parts: an `IAgentSource` adapter that reads limits and activity, a room in the office, and a character with 12 poses. The steps:
-
-1. Find out where the limit comes from.
-2. Write the adapter.
-3. Register the provider.
-4. Create the room.
-5. Create the character.
-6. Validate and document.
-
-Without an image generator, do only steps 1, 2, 3 and 6 (**adapter only** mode): the card, the tray and the mini monitor work, and the office shows only the providers that have a room.
-
-The [`skills/add-provider`](https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md) skill teaches an agent to do it end to end, with the art prompts, the chroma-key rules and the scripts that cut, align and validate the art:
-
-```bash
-python skills/add-provider/scripts/add_room.py --id cursor --room cursor-room.png --seat 182
-python skills/add-provider/scripts/cut_poses.py --id cursor --sheet cursor-sheet.png --sheet2 cursor-sheet2.png
-python skills/add-provider/scripts/validate_assets.py
-```
-
-To use it in Claude Code, copy the folder to `.claude/skills/` (or `~/.claude/skills/`) and ask "add Cursor to QuotaDesk".
-
-When you add a tool, also create its `connect-<id>` page in these docs, in both languages: the card menu opens `docs/connect-<id>.html` when the tool has no data.
+The steps are on the **[Add a provider](add-provider.md)** page. The full guide for coding agents, with the project rules and the adapter skeleton, is in [AGENTS.md](https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta) (in Portuguese).
 
 ## These docs
 

@@ -104,11 +104,30 @@ internal static class SharedOfficeChecks
         using (var collapsed = Render(scene, trio, scene.GetViewport(trio.Select(a => a.Id).ToArray()), 40, 2f))
             collapsed.Save(Path.Combine(folder, "rooms-collapsed.png"), ImageFormat.Png);
 
+        // A tool without art gets a placeholder room and persona of its own, after the built-in rooms.
+        var newcomer = new AgentStatus("exemplo", "Exemplo", ActivityState.Working, false, "offline visual check", "check",
+            ProviderSnapshot.Unavailable("Exemplo", "offline visual check"));
+        var withNewcomer = trio.Append(newcomer).ToArray();
+        var rooms = withNewcomer.Select(a => a.Id).ToArray();
+        var world = new RectangleF(0, 0, 4 * 363, 224);
+        var head = scene.GetHeadAnchor("exemplo", world, world, rooms).X - scene.GetHeadAnchor("openrouter", world, world, rooms).X;
+        Require(Math.Abs(head - 363) < 2, "a tool without art gets its own room after the others");
+        using (var placeholder = Render(scene, withNewcomer, scene.GetViewport(["openrouter", "exemplo"], rooms), 40))
+        using (var without = Render(scene, trio, scene.GetViewport(["openrouter", "exemplo"], rooms), 40))
+        {
+            Require(DifferentPixels(placeholder, without), "the placeholder room has a persona at its desk");
+            placeholder.Save(Path.Combine(folder, "placeholder-room.png"), ImageFormat.Png);
+        }
+        var seats = new OfficeViewport();
+        seats.SetEnabled(["exemplo", "codex"]);
+        Require(seats.EnabledIds.SequenceEqual(["codex", "exemplo"]), "office navigation includes the placeholder seat, after the built-in ones");
+
         report.Add("PASS " + "embedded backdrop, manifest and all independent poses load");
         report.Add("PASS " + "modular rooms: three-room view, hidden providers' rooms collapse");
         report.Add("PASS " + "six separate provider renders and 12 individual unknown-state frames");
         report.Add("PASS " + "three-seat no-signal frames alternate");
         report.Add("PASS " + "camera clipping excludes off-screen providers");
+        report.Add("PASS " + "a tool without art gets a placeholder room and persona");
         File.WriteAllLines(Path.Combine(folder, "shared-office-checks.txt"), report, Encoding.UTF8);
     }
 

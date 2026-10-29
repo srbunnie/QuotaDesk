@@ -45,7 +45,7 @@
 <div class="nav-group"><h2 class="nav-title" id="grp-start">Get started</h2><ul aria-labelledby="grp-start"><li><a href="index.html">Overview</a></li><li><a href="install.html">Install</a></li></ul></div>
 <div class="nav-group"><h2 class="nav-title" id="grp-connect">Connect</h2><ul aria-labelledby="grp-connect"><li><a href="connect-codex.html">Connect Codex</a></li><li><a href="connect-claude.html">Connect Claude Code</a></li><li><a href="connect-antigravity.html">Connect Antigravity</a></li><li><a href="connect-magnific.html">Connect Magnific</a></li><li><a href="connect-openrouter.html">Connect OpenRouter</a></li><li><a href="connect-figma.html">Connect Figma</a></li></ul></div>
 <div class="nav-group"><h2 class="nav-title" id="grp-use">Use</h2><ul aria-labelledby="grp-use"><li><a href="use.html">Use the panel</a></li><li><a href="settings.html">Settings</a></li></ul></div>
-<div class="nav-group"><h2 class="nav-title" id="grp-more">More</h2><ul aria-labelledby="grp-more"><li><a href="privacy.html">Privacy and security</a></li><li><a href="develop.html" aria-current="page">Develop</a></li></ul></div>
+<div class="nav-group"><h2 class="nav-title" id="grp-more">More</h2><ul aria-labelledby="grp-more"><li><a href="privacy.html">Privacy and security</a></li><li><a href="develop.html" aria-current="page">Develop</a></li><li><a href="add-provider.html">Add a provider</a></li></ul></div>
     <p class="nav-empty" hidden>No results</p>
   </nav>
 
@@ -97,16 +97,7 @@ QuotaDesk.exe --preview &lt;folder&gt;      # panel, skies, edge bar and tray wi
 <ul><li>Never attach <code>settings.json</code>, <code>*.dat</code> files, <code>error.log</code> or screenshots with your account data.</li><li>No personal data in tracked files: in examples, use <code>C:&#92;Users&#92;&lt;your-user&gt;</code> or <code>%LOCALAPPDATA%</code>.</li><li>Use your GitHub <em>noreply</em> e-mail in commits.</li></ul>
 <p>The full rules are in <a href="https://github.com/srbunnie/QuotaDesk/blob/main/SECURITY.md#english" target="_blank" rel="noopener">SECURITY.md</a>.</p>
 <h2 id="add-a-tool">Add a tool<a class="anchor" href="#add-a-tool" aria-hidden="true" tabindex="-1">#</a></h2>
-<p>The full guide, with the project rules and the adapter skeleton, is in <strong><a href="https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta" target="_blank" rel="noopener">AGENTS.md</a></strong> (in Portuguese). Codex, Cursor and other coding agents read that file on their own; Claude Code gets it through <code>CLAUDE.md</code>.</p>
-<p>Each tool is a <strong>provider</strong> with three parts: an <code>IAgentSource</code> adapter that reads limits and activity, a room in the office, and a character with 12 poses. The steps:</p>
-<ol><li>Find out where the limit comes from.</li><li>Write the adapter.</li><li>Register the provider.</li><li>Create the room.</li><li>Create the character.</li><li>Validate and document.</li></ol>
-<p>Without an image generator, do only steps 1, 2, 3 and 6 (<strong>adapter only</strong> mode): the card, the tray and the mini monitor work, and the office shows only the providers that have a room.</p>
-<p>The <a href="https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md" target="_blank" rel="noopener"><code>skills/add-provider</code></a> skill teaches an agent to do it end to end, with the art prompts, the chroma-key rules and the scripts that cut, align and validate the art:</p>
-<pre data-lang="bash"><code class="language-bash">python skills/add-provider/scripts/add_room.py --id cursor --room cursor-room.png --seat 182
-python skills/add-provider/scripts/cut_poses.py --id cursor --sheet cursor-sheet.png --sheet2 cursor-sheet2.png
-python skills/add-provider/scripts/validate_assets.py</code></pre>
-<p>To use it in Claude Code, copy the folder to <code>.claude/skills/</code> (or <code>~/.claude/skills/</code>) and ask &quot;add Cursor to QuotaDesk&quot;.</p>
-<p>When you add a tool, also create its <code>connect-&lt;id&gt;</code> page in these docs, in both languages: the card menu opens <code>docs/connect-&lt;id&gt;.html</code> when the tool has no data.</p>
+<p>The steps are on the <strong><a href="add-provider.html">Add a provider</a></strong> page. The full guide for coding agents, with the project rules and the adapter skeleton, is in <a href="https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta" target="_blank" rel="noopener">AGENTS.md</a> (in Portuguese).</p>
 <h2 id="these-docs">These docs<a class="anchor" href="#these-docs" aria-hidden="true" tabindex="-1">#</a></h2>
 <p>The pages are written in Markdown in <code>docs/docs/md/</code> (Portuguese) and <code>docs/en/docs/md/</code> (English). To build the HTML:</p>
 <pre data-lang="powershell"><code class="language-powershell">python scripts/build_docs.py</code></pre>
@@ -114,7 +105,7 @@ python skills/add-provider/scripts/validate_assets.py</code></pre>
 <h2 id="roadmap">Roadmap<a class="anchor" href="#roadmap" aria-hidden="true" tabindex="-1">#</a></h2>
 <p>Today QuotaDesk runs only on Windows. The next versions bring the same office to Linux and macOS: first by splitting out a core without WinForms, then by moving the drawing to Skia. Step 1 doesn&#x27;t need a Mac or Linux. See the <a href="https://github.com/srbunnie/QuotaDesk/blob/main/ROADMAP.en.md" target="_blank" rel="noopener">full roadmap</a>.</p>
       </div>
-      <nav class="pager" aria-label="Page navigation"><a class="pager-prev" href="privacy.html" rel="prev"><span class="pager-label"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Previous</span><span class="pager-title">Privacy and security</span></a></nav>
+      <nav class="pager" aria-label="Page navigation"><a class="pager-prev" href="privacy.html" rel="prev"><span class="pager-label"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Previous</span><span class="pager-title">Privacy and security</span></a><a class="pager-next" href="add-provider.html" rel="next"><span class="pager-label">Next <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span class="pager-title">Add a provider</span></a></nav>
     </article>
   </main>
 

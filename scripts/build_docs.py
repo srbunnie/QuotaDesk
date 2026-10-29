@@ -33,7 +33,7 @@ GROUPS = [
     ("connect", ["connect-codex", "connect-claude", "connect-antigravity",
                  "connect-magnific", "connect-openrouter", "connect-figma"]),
     ("use", ["use", "settings"]),
-    ("more", ["privacy", "develop"]),
+    ("more", ["privacy", "develop", "add-provider"]),
 ]
 ORDER = [slug for _, slugs in GROUPS for slug in slugs]
 

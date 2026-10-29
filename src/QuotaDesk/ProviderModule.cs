@@ -29,6 +29,27 @@ internal sealed record ProviderModule(
     ProviderStation Station,
     Func<IAgentSource>? CreateSource);
 
+/// <summary>
+/// Which room and persona art a provider is drawn with: its own, its category's, or a stand-in so a new tool shows up in
+/// the office before anyone makes art for it.
+/// </summary>
+internal static class ProviderArt
+{
+    // Temporary stand-in: OpenRouter's room and persona, until a dedicated placeholder is drawn.
+    public const string PlaceholderId = "openrouter";
+
+    private static readonly HashSet<string> WithArt = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceNames()
+        .Select(n => (Start: n.IndexOf(".providers.", StringComparison.OrdinalIgnoreCase), End: n.IndexOf(".poses.", StringComparison.OrdinalIgnoreCase), Name: n))
+        .Where(r => r.Start >= 0 && r.End > r.Start)
+        .Select(r => r.Name[(r.Start + ".providers.".Length)..r.End])
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    public static bool Has(string id) => WithArt.Contains(id);
+
+    public static string For(string id) =>
+        Has(id) ? id : ProviderCategories.SeatOf(id) is var seat && Has(seat) ? seat : PlaceholderId;
+}
+
 internal static class ProviderModuleCatalog
 {
     private static readonly ProviderStation StandardStation = new(

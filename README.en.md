@@ -189,8 +189,9 @@ Never attach `settings.json`, `*.dat` files, `error.log` or screenshots with you
 
 ## Credits and license
 
-- **Authors:** QuotaDesk is a partnership between [@edirsooo](https://github.com/edirsooo), who had the original idea and contributes ideas and code, and [@srbunnie](https://github.com/srbunnie), who carried the project forward. The launch belongs to both.
+- **Authors:** a partnership between [@edirsooo](https://github.com/edirsooo) and [@srbunnie](https://github.com/srbunnie). Open source and free to use and customize.
 - **Code:** [MIT](LICENSE) license.
-- **Art:** all illustrations in the app — the office rooms, the characters and their poses — were generated with AI in Magnific by [@edirsooo](https://github.com/edirsooo) and are **free for personal use**.
+- **Art:** all illustrations in the app — the office rooms, the characters and their poses — were generated with AI in Magnific.
 - **Icons:** [Lucide](https://lucide.dev) (ISC), in `src/QuotaDesk/assets/lucide`.
+- **Fonts:** JetBrains Mono, Roboto, Exo 2, Geist Pixel and Jersey 25, from [Google Fonts](https://fonts.google.com), under the SIL Open Font License 1.1. They live in `src/QuotaDesk/assets/fonts`, with their licenses.
 - **Trademarks:** the names and logos of Claude, Codex/ChatGPT, Antigravity, Figma, Magnific and OpenRouter belong to their owners and appear only to identify each service. QuotaDesk is independent and not affiliated with any of them.

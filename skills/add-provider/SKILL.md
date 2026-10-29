@@ -99,7 +99,7 @@ src/QuotaDesk/publish-staging/QuotaDesk.exe --selftest-providers <folder>/provid
 
 ## Adapter-only
 
-When art cannot be generated, ship the adapter without a room: register the module, skip the room and character, and leave the id out of `SharedOfficeScene.Order`, `OfficeViewport.PhysicalOrder` and the manifest. The card, tray, widget and mini screen work; the Loft shows only the providers that have rooms. Say so in the PR.
+When art cannot be generated, ship the adapter without a room: register the module, skip the room and character, and leave the id out of `SharedOfficeScene.Order`, `OfficeViewport.PhysicalOrder` and the manifest. The card, tray, widget and mini screen work; the Loft gives the provider a placeholder room of its own, after the built-in rooms, drawn with OpenRouter's room and persona (`ProviderArt.PlaceholderId`). Say so in the PR.
 
 ## Rules
 

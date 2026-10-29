@@ -115,6 +115,12 @@ internal sealed class SettingsForm : Form
                     Pick: i => { S.Scale = scales[i]; Apply(); });
                 yield return new Row(L.T("Brilho das bordas", "Border glow"), null, Options: [L.T("Sem brilho", "No glow"), L.T("Suave", "Soft"), "Normal"],
                     Index: () => Math.Clamp(S.Glow, 0, 2), Pick: i => { S.Glow = i; Apply(); });
+                yield return new Row(L.T("Fonte do texto", "Text font"), null, Options: Theme.TextFontLabels,
+                    Index: () => Math.Max(0, Array.IndexOf(Theme.TextFonts, S.TextFont)),
+                    Pick: i => { S.TextFont = Theme.TextFonts[i]; Theme.UseFonts(S.TextFont, S.TitleFont); Apply(); });
+                yield return new Row(L.T("Fonte dos títulos e números", "Title and number font"), null, Options: Theme.TitleFontLabels,
+                    Index: () => Math.Max(0, Array.IndexOf(Theme.TitleFonts, S.TitleFont)),
+                    Pick: i => { S.TitleFont = Theme.TitleFonts[i]; Theme.UseFonts(S.TextFont, S.TitleFont); Apply(); });
                 break;
             case 2:
                 yield return new Row(L.T("Som ao pedir atenção", "Sound on attention"), null, () => S.Sound, v => { S.Sound = v; Apply(); });
@@ -138,6 +144,8 @@ internal sealed class SettingsForm : Form
                         () => !S.HiddenProviders.Contains(id, StringComparer.OrdinalIgnoreCase),
                         v => { _owner.SetProviderVisible(id, v); Invalidate(); });
                 }
+                yield return new Row(L.T("Adicionar provedor", "Add a provider"), L.T("Guia para conectar uma ferramenta nova", "Guide to plugging in a new tool"),
+                    Button: L.T("Ver guia", "Open guide"), Click: () => L.OpenDocs("add-provider"));
                 break;
         }
     }

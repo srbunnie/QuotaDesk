@@ -19,8 +19,11 @@ internal sealed class OfficeViewport
     {
         var incoming = enabledIds.ToList();
         var oldAnchor = VisibleIds.FirstOrDefault();
-        // A category member sits at its category's seat (one card, one persona per category).
-        _enabled = PhysicalOrder.Select(seat => incoming.FirstOrDefault(id =>
+        // A category member sits at its category's seat (one card, one persona per category). Tools without a seat of
+        // their own sit after the built-in ones, in placeholder rooms.
+        var seats = PhysicalOrder.Concat(incoming.Select(ProviderCategories.SeatOf)
+            .Where(seat => !PhysicalOrder.Contains(seat, StringComparer.OrdinalIgnoreCase))).Distinct(StringComparer.OrdinalIgnoreCase);
+        _enabled = seats.Select(seat => incoming.FirstOrDefault(id =>
             string.Equals(ProviderCategories.SeatOf(id), seat, StringComparison.OrdinalIgnoreCase))).OfType<string>().ToArray();
         // Preserve the first visible seat through refreshes and visibility changes. If it was hidden,
         // retain its former ordinal and clamp to the last complete window.

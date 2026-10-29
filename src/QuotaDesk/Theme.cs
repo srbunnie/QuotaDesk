@@ -84,20 +84,68 @@ internal static class Theme
     private static readonly Dictionary<(string, float, FontStyle), Font> Fonts = [];
     private static readonly InstalledFontCollection Installed = new();
     private static readonly HashSet<string> Families = Installed.Families.Select(f => f.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    private static readonly PrivateFontCollection Bundled = LoadBundledFonts();
+
+    /// <summary>Text font choices (mono and body roles); index 0 is the default. See <see cref="AppSettings.TextFont"/>.</summary>
+    public static readonly string[] TextFonts = ["jetbrains", "roboto", "exo2", "classic"];
+    public static string[] TextFontLabels => [L.T("JetBrains Mono (padrão)", "JetBrains Mono (default)"), "Roboto", "Exo 2", L.T("Clássica (Cascadia)", "Classic (Cascadia)")];
+    /// <summary>Title and number font choices (display and number roles). See <see cref="AppSettings.TitleFont"/>.</summary>
+    public static readonly string[] TitleFonts = ["exo2", "geist", "jersey", "classic"];
+    public static string[] TitleFontLabels => [L.T("Exo 2 (padrão)", "Exo 2 (default)"), "Geist Pixel", "Jersey 25", L.T("Clássica (pixel original)", "Classic (original pixel)")];
+    private static string _text = TextFonts[0], _title = TitleFonts[0];
+
+    /// <summary>Card names, percentages and the wordmark use the hand-drawn 5x7 <see cref="PixelFont"/> glyphs.</summary>
+    public static bool BitmapText => _title == "classic";
+
+    /// <summary>Switches the font choices; the next paint picks them up.</summary>
+    public static void UseFonts(string? text, string? title)
+    {
+        _text = TextFonts.Contains(text) ? text! : TextFonts[0];
+        _title = TitleFonts.Contains(title) ? title! : TitleFonts[0];
+    }
 
     /// <summary>Returns a shared cached font; callers must not dispose the returned instance.</summary>
     public static Font Font(string role, float size, FontStyle style = FontStyle.Regular)
     {
         var family = role switch
         {
-            "display" => Pick("Bahnschrift SemiBold", "Segoe UI Semibold"),
-            "number" => Pick("Bahnschrift", "Segoe UI"),
-            "mono" => Pick("Cascadia Mono", "Consolas"),
-            _ => "Segoe UI"
+            "display" => _title switch { "geist" => "Geist Pixel", "jersey" => "Jersey 25", "classic" => Pick("Bahnschrift SemiBold", "Segoe UI Semibold"), _ => "Exo 2 SemiBold" },
+            "number" => _title switch { "geist" => "Geist Pixel", "jersey" => "Jersey 25", "classic" => Pick("Bahnschrift", "Segoe UI"), _ => "Exo 2" },
+            "mono" => _text switch { "roboto" => "Roboto", "exo2" => "Exo 2", "classic" => Pick("Cascadia Mono", "Consolas"), _ => "JetBrains Mono" },
+            _ => _text switch { "exo2" => "Exo 2", "classic" => "Segoe UI", _ => "Roboto" }
         };
+        // Jersey 25 is drawn small for its em size; scale it so it lines up with the other families.
+        if (family == "Jersey 25") size *= 1.25f;
         var key = (family, size, style);
-        if (!Fonts.TryGetValue(key, out var font)) Fonts[key] = font = new Font(family, size, style, GraphicsUnit.Pixel);
+        if (!Fonts.TryGetValue(key, out var font)) Fonts[key] = font = Create(family, size, style);
         return font;
+    }
+
+    private static Font Create(string family, float size, FontStyle style)
+    {
+        var bundled = Bundled.Families.FirstOrDefault(f => f.Name == family);
+        if (bundled is null) return new Font(family, size, style, GraphicsUnit.Pixel);
+        // Single-weight families (the pixel fonts, the SemiBold cut) throw on a style they lack.
+        if (!bundled.IsStyleAvailable(style)) style = bundled.IsStyleAvailable(style & ~FontStyle.Bold) ? style & ~FontStyle.Bold : FontStyle.Regular;
+        return new Font(bundled, size, style, GraphicsUnit.Pixel);
+    }
+
+    private static PrivateFontCollection LoadBundledFonts()
+    {
+        var collection = new PrivateFontCollection();
+        var assembly = typeof(Theme).Assembly;
+        foreach (var name in assembly.GetManifestResourceNames().Where(n => n.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase)))
+        {
+            using var stream = assembly.GetManifestResourceStream(name);
+            if (stream is null) continue;
+            var bytes = new byte[stream.Length];
+            stream.ReadExactly(bytes);
+            // AddMemoryFont needs the buffer for the collection's lifetime, which is the whole process: never freed.
+            var buffer = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(bytes.Length);
+            System.Runtime.InteropServices.Marshal.Copy(bytes, 0, buffer, bytes.Length);
+            collection.AddMemoryFont(buffer, bytes.Length);
+        }
+        return collection;
     }
 
     private static string Pick(string preferred, string fallback) => Families.Contains(preferred) ? preferred : fallback;

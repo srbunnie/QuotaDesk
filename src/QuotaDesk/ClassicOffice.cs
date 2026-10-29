@@ -93,8 +93,8 @@ internal sealed class ClassicOffice : IDisposable
     // Desks follow the cards, left to right, whichever tools are on camera.
     private static Station StationFor(AgentStatus agent, int index) => Stations[index % Stations.Length];
 
-    /// <summary>The persona art for a tool: its own, or its category's while it has none.</summary>
-    private static string ArtId(string id) => ProviderModuleCatalog.Find(id) is not null ? id : ProviderCategories.SeatOf(id);
+    /// <summary>The persona art for a tool: its own, its category's, or the placeholder while it has none.</summary>
+    private static string ArtId(string id) => ProviderArt.For(id);
 
     /// <summary>Where the chair's leftmost wheel sits inside the provider's pose canvas.</summary>
     private static int AnchorXFor(string id) => ProviderModuleCatalog.Find(ArtId(id))?.Station.CharacterAnchorX ?? 32;
@@ -373,8 +373,8 @@ internal sealed class ClassicOffice : IDisposable
                     }
                     var ink = frame / 5 % 2 == 0 ? Color.FromArgb(240, 242, 248) : Color.FromArgb(170, 176, 196);
                     Fill(sg, Color.FromArgb(200, 16, 18, 26), 2, h / 2 - 11, w - 4, 21);
-                    PixelFont.Draw(sg, L.T("SEM", "NO"), (w - PixelFont.Measure(L.T("SEM", "NO"), 1, 1)) / 2f, h / 2 - 9, 1, ink, 1);
-                    PixelFont.Draw(sg, L.T("SINAL", "SIGNAL"), (w - PixelFont.Measure(L.T("SINAL", "SIGNAL"), 1, 1)) / 2f, h / 2, 1, ink, 1);
+                    PixelFont.DrawGlyphs(sg, L.T("SEM", "NO"), (w - PixelFont.MeasureGlyphs(L.T("SEM", "NO"), 1, 1)) / 2f, h / 2 - 9, 1, ink, 1);
+                    PixelFont.DrawGlyphs(sg, L.T("SINAL", "SIGNAL"), (w - PixelFont.MeasureGlyphs(L.T("SINAL", "SIGNAL"), 1, 1)) / 2f, h / 2, 1, ink, 1);
                     break;
             }
         }

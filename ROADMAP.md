@@ -46,6 +46,17 @@ As leituras das IAs (Codex, Claude Code, Antigravity, Magnific, OpenRouter e Fig
 **5. Telinha USB nos três sistemas**
 - A porta serial já usa `System.IO.Ports`, que funciona fora do Windows. Falta testar as permissões de acesso à porta no Linux e no macOS.
 
+## Próximos itens
+
+Melhorias planejadas, fora do trabalho de Linux e macOS:
+
+- **Leitor de cota do Claude**
+  - Ligar o statusLine do Claude Code pelo próprio app, com um clique e backup do `settings.json`, em vez de editar o arquivo à mão.
+  - Mostrar há quanto tempo veio a última leitura quando o Claude Code não roda há horas, para ficar claro que o número pode estar velho.
+  - Separar os limites semanais por modelo quando o Claude Code informar cada um.
+  - Diminuir a estimativa (`~`) quando só o app Claude (desktop) está aberto, lendo o histórico com mais frequência.
+- **Arte própria para provedores novos:** hoje uma ferramenta sem sala usa a sala e o personagem do OpenRouter. Um quarto e um personagem genéricos vão substituir esse empréstimo.
+
 ## Como ajudar
 
 - Abra uma issue dizendo qual sistema e qual ambiente de desktop você usa. Isso ajuda a priorizar.

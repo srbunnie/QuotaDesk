@@ -56,6 +56,17 @@ O Claude Code tem três fontes, da mais para a menos precisa:
 
 O passo a passo abaixo liga a 1 e a 3.
 
+### Opção avançada: API oficial de uso (ainda não implementada)
+
+Há uma quarta forma de obter a cota exata sem depender do terminal nem do app: consultar `GET https://api.anthropic.com/api/oauth/usage` com o token que o Claude Code guarda em `%USERPROFILE%\.claude\.credentials.json`. É o método de outros monitores, como o Codenotch, e devolve as porcentagens e os horários de renovação das janelas de 5 horas e semanal, a cada ~5 min.
+
+> **⚠️ Aviso:** esta opção **lê uma credencial** de outra ferramenta e a envia à Anthropic. Por isso ela contraria a regra atual do QuotaDesk de não ler credenciais, e **não está disponível** nas versões atuais. Se for adicionada, será desligada por padrão e só ativada por você.
+>
+> - O token ficaria apenas na memória do QuotaDesk: não seria gravado, copiado nem registrado.
+> - Um token vencido não seria enviado. Quem renova o arquivo é o Claude Code de terminal; o Claude Code do app desktop não o atualiza, e a leitura voltaria a ficar *antiga*.
+> - O endpoint não é documentado publicamente e pode mudar ou limitar consultas (resposta 429) sem aviso.
+> - Em caso de falha, o card mostraria a última leitura marcada como antiga, nunca um número inventado.
+
 ### 1. Ache o script do statusLine
 
 - **Instalado pela Release:** `%LOCALAPPDATA%\Programs\QuotaDesk\claude-statusline.ps1`. Ele vem no pacote a partir da versão seguinte à 0.4.0. Na 0.4.0, use a cópia do repositório.

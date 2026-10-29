@@ -45,7 +45,7 @@
 <div class="nav-group"><h2 class="nav-title" id="grp-start">Começar</h2><ul aria-labelledby="grp-start"><li><a href="index.html">Visão geral</a></li><li><a href="install.html">Instalar</a></li></ul></div>
 <div class="nav-group"><h2 class="nav-title" id="grp-connect">Conectar</h2><ul aria-labelledby="grp-connect"><li><a href="connect-codex.html">Conectar o Codex</a></li><li><a href="connect-claude.html">Conectar o Claude Code</a></li><li><a href="connect-antigravity.html">Conectar o Antigravity</a></li><li><a href="connect-magnific.html">Conectar a Magnific</a></li><li><a href="connect-openrouter.html">Conectar a OpenRouter</a></li><li><a href="connect-figma.html">Conectar o Figma</a></li></ul></div>
 <div class="nav-group"><h2 class="nav-title" id="grp-use">Usar</h2><ul aria-labelledby="grp-use"><li><a href="use.html">Usar o painel</a></li><li><a href="settings.html">Configurações</a></li></ul></div>
-<div class="nav-group"><h2 class="nav-title" id="grp-more">Mais</h2><ul aria-labelledby="grp-more"><li><a href="privacy.html">Privacidade e segurança</a></li><li><a href="develop.html" aria-current="page">Desenvolver</a></li></ul></div>
+<div class="nav-group"><h2 class="nav-title" id="grp-more">Mais</h2><ul aria-labelledby="grp-more"><li><a href="privacy.html">Privacidade e segurança</a></li><li><a href="develop.html" aria-current="page">Desenvolver</a></li><li><a href="add-provider.html">Adicionar provedor</a></li></ul></div>
     <p class="nav-empty" hidden>Nenhum resultado</p>
   </nav>
 
@@ -97,16 +97,7 @@ QuotaDesk.exe --preview &lt;pasta&gt;      # painel, céus, barra na borda e ban
 <ul><li>Nunca anexe <code>settings.json</code>, arquivos <code>*.dat</code>, o <code>error.log</code> ou capturas com dados da sua conta.</li><li>Nada de dados pessoais em arquivos versionados: em exemplos, use <code>C:&#92;Users&#92;&lt;seu-usuario&gt;</code> ou <code>%LOCALAPPDATA%</code>.</li><li>Use o e-mail <em>noreply</em> do GitHub nos commits.</li></ul>
 <p>As regras completas estão no <a href="https://github.com/srbunnie/QuotaDesk/blob/main/SECURITY.md#regras-do-reposit%C3%B3rio" target="_blank" rel="noopener">SECURITY.md</a>.</p>
 <h2 id="adicionar-uma-ferramenta">Adicionar uma ferramenta<a class="anchor" href="#adicionar-uma-ferramenta" aria-hidden="true" tabindex="-1">#</a></h2>
-<p>O roteiro completo, com as regras do projeto e o esqueleto do adaptador, está no <strong><a href="https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta" target="_blank" rel="noopener">AGENTS.md</a></strong>. Codex, Cursor e outros agentes de código leem esse arquivo sozinhos; o Claude Code o recebe pelo <code>CLAUDE.md</code>.</p>
-<p>Cada ferramenta é um <strong>provedor</strong> com três partes: um adaptador <code>IAgentSource</code>, que lê cota e atividade; uma sala no escritório; e um personagem com 12 poses. As etapas:</p>
-<ol><li>Descobrir de onde vem a cota.</li><li>Escrever o adaptador.</li><li>Registrar o provedor.</li><li>Criar a sala.</li><li>Criar o personagem.</li><li>Validar e documentar.</li></ol>
-<p>Sem um gerador de imagens, faça só as etapas 1, 2, 3 e 6 (modo <strong>só adaptador</strong>): o card, a bandeja e o mini monitor funcionam, e o escritório mostra só os provedores que têm sala.</p>
-<p>A skill <a href="https://github.com/srbunnie/QuotaDesk/blob/main/skills/add-provider/SKILL.md" target="_blank" rel="noopener"><code>skills/add-provider</code></a> ensina um agente a fazer tudo de ponta a ponta, com os prompts de arte, as regras de chroma-key e os scripts que recortam, alinham e validam a arte:</p>
-<pre data-lang="bash"><code class="language-bash">python skills/add-provider/scripts/add_room.py --id cursor --room cursor-room.png --seat 182
-python skills/add-provider/scripts/cut_poses.py --id cursor --sheet cursor-sheet.png --sheet2 cursor-sheet2.png
-python skills/add-provider/scripts/validate_assets.py</code></pre>
-<p>Para usar no Claude Code, copie a pasta para <code>.claude/skills/</code> (ou <code>~/.claude/skills/</code>) e peça &quot;adicione o Cursor ao QuotaDesk&quot;.</p>
-<p>Ao adicionar uma ferramenta, crie também a página <code>connect-&lt;id&gt;</code> desta documentação nos dois idiomas: o menu do card abre <code>docs/connect-&lt;id&gt;.html</code> quando a ferramenta não tem dados.</p>
+<p>O passo a passo está na página <strong><a href="add-provider.html">Adicionar provedor</a></strong>. O roteiro completo para agentes de código, com as regras do projeto e o esqueleto do adaptador, está no <a href="https://github.com/srbunnie/QuotaDesk/blob/main/AGENTS.md#tutorial-adicionar-uma-ferramenta" target="_blank" rel="noopener">AGENTS.md</a>.</p>
 <h2 id="esta-documentacao">Esta documentação<a class="anchor" href="#esta-documentacao" aria-hidden="true" tabindex="-1">#</a></h2>
 <p>As páginas são escritas em Markdown em <code>docs/docs/md/</code> (português) e <code>docs/en/docs/md/</code> (inglês). Para gerar o HTML:</p>
 <pre data-lang="powershell"><code class="language-powershell">python scripts/build_docs.py</code></pre>
@@ -114,7 +105,7 @@ python skills/add-provider/scripts/validate_assets.py</code></pre>
 <h2 id="roteiro">Roteiro<a class="anchor" href="#roteiro" aria-hidden="true" tabindex="-1">#</a></h2>
 <p>Hoje o QuotaDesk roda só no Windows. As próximas versões levam o mesmo escritório para o Linux e o macOS: primeiro separando o núcleo sem WinForms, depois trocando o desenho para Skia. A etapa 1 não depende de Mac nem de Linux. Veja o <a href="https://github.com/srbunnie/QuotaDesk/blob/main/ROADMAP.md" target="_blank" rel="noopener">roteiro completo</a>.</p>
       </div>
-      <nav class="pager" aria-label="Navegação entre páginas"><a class="pager-prev" href="privacy.html" rel="prev"><span class="pager-label"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Anterior</span><span class="pager-title">Privacidade e segurança</span></a></nav>
+      <nav class="pager" aria-label="Navegação entre páginas"><a class="pager-prev" href="privacy.html" rel="prev"><span class="pager-label"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Anterior</span><span class="pager-title">Privacidade e segurança</span></a><a class="pager-next" href="add-provider.html" rel="next"><span class="pager-label">Próxima <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span class="pager-title">Adicionar provedor</span></a></nav>
     </article>
   </main>
 

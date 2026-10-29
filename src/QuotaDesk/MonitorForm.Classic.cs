@@ -76,14 +76,16 @@ internal sealed partial class MonitorForm
         var scale = LogicalWidth >= 600 ? 3f : 2f;
         var x = Margin + 68f;
         var quotaWidth = PixelFont.Measure("QUOTA", scale, 4, bold: true);
-        var titleWidth = quotaWidth + 5 + PixelFont.Measure("DESK", scale, 4, bold: true);
+        // The bitmap glyphs carry a 4-unit letter gap; a real font only needs a hairline between the two words.
+        var wordGap = Theme.BitmapText ? 5 : 1;
+        var titleWidth = quotaWidth + wordGap + PixelFont.Measure("DESK", scale, 4, bold: true);
         _wordmarkShown = x + titleWidth <= free;
         if (_wordmarkShown)
         {
             using (var logo = TrayIconRenderer.Render(48, TrayIconRenderer.Logo)) g.DrawImage(logo, Margin + 4, 20, 48, 48);
             PixelFont.Draw(g, "QUOTADESK", x + 2, 26, scale, Color.FromArgb(0, 0, 0), 4, bold: true);
             PixelFont.Draw(g, "QUOTA", x, 24, scale, Color.FromArgb(240, 242, 248), 4, bold: true);
-            PixelFont.Draw(g, "DESK", x + quotaWidth + 4 + 1, 24, scale, Theme.Orange, 4, bold: true);
+            PixelFont.Draw(g, "DESK", x + quotaWidth + wordGap, 24, scale, Theme.Orange, 4, bold: true);
             if (LogicalWidth >= 600)
             {
                 var subtitle = L.T("MONITOR DE IA // LOCAL", "AI MONITOR // LOCAL");
