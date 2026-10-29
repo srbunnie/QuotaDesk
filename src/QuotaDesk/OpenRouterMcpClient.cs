@@ -347,7 +347,7 @@ internal sealed class OpenRouterLoopbackCallback : IDisposable
 
     private static async Task RespondAsync(NetworkStream stream, string message, CancellationToken cancellationToken)
     {
-        var body = Encoding.UTF8.GetBytes($"<!doctype html><meta charset=\"utf-8\"><title>QuotaDesk</title><p>{message}</p>");
+        var body = Encoding.UTF8.GetBytes($"<!doctype html><meta charset=\"utf-8\"><title>QuotaDesk</title><p>{System.Net.WebUtility.HtmlEncode(message)}</p>");
         var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {body.Length}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
         await stream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
         await stream.WriteAsync(body, cancellationToken).ConfigureAwait(false);
