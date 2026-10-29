@@ -56,6 +56,17 @@ Claude Code has three sources, from most to least accurate:
 
 The steps below turn on sources 1 and 3.
 
+## Advanced option: official usage API (not implemented yet)
+
+There is a fourth way to get the exact limit without depending on the terminal or the app: query `GET https://api.anthropic.com/api/oauth/usage` with the token Claude Code keeps in `%USERPROFILE%\.claude\.credentials.json`. Other monitors, such as Codenotch, use it, and it returns the percentages and reset times of the 5-hour and weekly windows, about every 5 min.
+
+> **⚠️ Warning:** this option **reads a credential** that belongs to another tool and sends it to Anthropic. That goes against QuotaDesk's current rule of not reading credentials, and it is **not available** in the current versions. If it is added, it will be off by default and turned on only by you.
+>
+> - The token would stay only in QuotaDesk's memory: it would not be saved, copied or logged.
+> - An expired token would not be sent. Only terminal Claude Code renews the file; Claude Code inside the desktop app does not update it, and the reading would go back to *old*.
+> - The endpoint is not publicly documented and may change or rate-limit requests (a 429 response) without notice.
+> - On failure, the card would show the last reading marked as old, never an invented number.
+
 ### 1. Find the statusLine script
 
 - **Installed from a Release:** `%LOCALAPPDATA%\Programs\QuotaDesk\claude-statusline.ps1`. It ships in the package starting with the version after 0.4.0. On 0.4.0, use the copy from the repository.
