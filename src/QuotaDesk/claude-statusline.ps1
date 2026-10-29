@@ -3,7 +3,8 @@ try {
     $inputJson = [Console]::In.ReadToEnd() | ConvertFrom-Json
     $limits = $inputJson.rate_limits
     if ($null -ne $limits) {
-        $dataDir = Join-Path $env:LOCALAPPDATA 'AIUsageMonitor'
+        # Same data folder the app reads (QUOTADESK_DATA_DIR when set, as in AppPaths.cs).
+        $dataDir = if ($env:QUOTADESK_DATA_DIR) { $env:QUOTADESK_DATA_DIR } else { Join-Path $env:LOCALAPPDATA 'AIUsageMonitor' }
         [System.IO.Directory]::CreateDirectory($dataDir) | Out-Null
         $destination = Join-Path $dataDir 'claude-limits.json'
         $temporary = Join-Path $dataDir ("claude-limits.{0}.tmp" -f [guid]::NewGuid().ToString('N'))
