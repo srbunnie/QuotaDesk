@@ -7,7 +7,8 @@
 param([switch]$NoBuild)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$app = Join-Path $env:LOCALAPPDATA 'Programs\QuotaDesk'
+# The personal install lives in the central folder next to this repository (pessoal\app).
+$app = Join-Path (Split-Path $root -Parent) 'pessoal\app'
 $exe = Join-Path $app 'QuotaDesk.exe'
 $staging = Join-Path $root 'src\QuotaDesk\publish-staging'
 
@@ -20,7 +21,7 @@ if (-not (Test-Path (Join-Path $staging 'QuotaDesk.exe'))) { throw 'Nada compila
 # The personal folder is a junction into the central QuotaDesk folder, so the running
 # process may report either path. Match both to stop the right instance only.
 Get-Process QuotaDesk -ErrorAction SilentlyContinue | Where-Object {
-    $_.Path -and ($_.Path -eq $exe -or $_.Path -like '*\QuotaDesk\pessoal\app\QuotaDesk.exe')
+    $_.Path -and ($_.Path -eq $exe -or $_.Path -like '*\Programs\QuotaDesk\QuotaDesk.exe')
 } | Stop-Process -Force
 Start-Sleep -Milliseconds 600
 

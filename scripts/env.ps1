@@ -18,9 +18,11 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$app = Join-Path $env:LOCALAPPDATA "Programs\QuotaDesk-$Name"
-$data = Join-Path $env:LOCALAPPDATA "AIUsageMonitor-$Name"
-$personal = Join-Path $env:LOCALAPPDATA 'AIUsageMonitor'
+# Each environment lives in the central folder next to this repository: <central>\<name>\app and \dados.
+$central = Split-Path $root -Parent
+$app = Join-Path $central "$Name\app"
+$data = Join-Path $central "$Name\dados"
+$personal = Join-Path $central 'pessoal\dados'
 $exe = Join-Path $app 'QuotaDesk.exe'
 
 function Stop-Environment {
