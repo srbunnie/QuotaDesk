@@ -22,7 +22,7 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ModelContextProtocol.Core" Version="2.3.0" />
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.3.1" />
     <EmbeddedResource Include="assets\antigravity-logo.png" />
     <EmbeddedResource Include="assets\codex-logo.png" />
     <EmbeddedResource Include="assets\claude-logo.png" />
