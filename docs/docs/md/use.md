@@ -32,7 +32,7 @@ Cada card mostra a cota de 5 horas e a semanal (ou o saldo, para Magnific e Open
 
 ### Trocar "Renova em" por "Esgota em"
 
-**Clique no card**, ou gire a rodinha do mouse sobre ele, para alternar entre **Renova em X** (quando a cota renova) e **Esgota em X** (quando ela acaba no ritmo atual).
+**Clique numa linha** do card (5 horas ou semanal) para alternar só aquela linha entre **Renova em X** (quando a cota renova) e **Esgota em X** (quando ela acaba no ritmo atual). Clicar fora das linhas, ou girar a rodinha do mouse sobre o card, alterna todas as linhas de uma vez. Assim dá para ver só o "esgota em" das 5 horas quando for preciso.
 
 ### O menu do card
 
@@ -45,6 +45,7 @@ O botão de menu no canto de cada card reúne as ações daquela ferramenta:
 - **Ver pendências:** lista as sessões esperando por você.
 - **Próximo grupo / modelo** e **Próxima ferramenta:** trocam o que o card mostra.
 - **Nível visual:** só ícone, ícone + estado ou dados completos.
+- **Janelas visíveis:** escolha quais janelas o card mostra (5 horas, semanal, créditos ou por modelo). Serve para ferramentas que não têm janela de 5 horas em alguns planos. Só a exibição muda: os avisos continuam vendo todas as janelas, e a última janela visível não pode ser escondida.
 
 ## Avisos
 
@@ -68,14 +69,20 @@ O ícone perto do relógio tem um medidor por ferramenta, e passar o mouse mostr
 
 - **Abrir painel**, **Abrir central de controle** e **Atualizar agora**;
 - **Conectar Magnific** e **Conectar OpenRouter**;
-- **Sempre no topo**, **Barra lateral na borda da tela**, **Mini monitor (tela secundária)** e o clima;
+- **Sempre no topo**, **Barra lateral na borda da tela**, **Barra minimalista**, **Fixar a barra (mantê-la aberta)**, **Mini monitor (tela secundária)** e o clima;
+- a primeira linha do menu mostra a **versão e o número da build** (e o ambiente, como `dev` ou `homolog`), para saber qual cópia está aberta;
 - **Iniciar com o Windows**;
 - **Idioma / Language**;
 - **Ajuda e documentação**, que abre esta documentação.
 
 ## Mini monitor
 
-Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel permanente, que pagina as ferramentas sozinho. Ligue em menu da bandeja › **Mini monitor (tela secundária)**. Telas que aparecem como porta serial são detectadas sozinhas.
+Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel permanente, que pagina as ferramentas sozinho. Ligue em menu da bandeja › **Mini monitor (tela secundária)**. Telas que aparecem como porta serial são detectadas sozinhas. As mesmas opções ficam em **Configurações › Geral**.
+
+- **Feche o programa do fabricante** da tela antes (por exemplo, o do cabo USB): só um programa por vez usa a porta serial. Se ele abre junto com o Windows, tire-o da inicialização.
+- **Tela deitada:** se a tela fica apoiada na horizontal, ligue **Tela USB deitada**. O QuotaDesk desenha o layout 480×320 e gira a imagem 90° para ela aparecer em pé.
+- **Fluidez:** o cabo leva cerca de 165 KB/s, então um quadro inteiro (320×480) demora ~1,9 s, qualquer que seja a velocidade configurada. Por isso, depois do primeiro quadro só os blocos de 16×16 pixels que mudaram são enviados, e a animação fica bem mais fluida. Em **Configurações › Geral › Estado da tela USB** aparece o ritmo real.
+- **Poucas ferramentas:** com 1 ou 2 ferramentas ativas os cards ocupam a largura toda; com 1, a sala fica ao lado do card.
 
 ## Atalhos
 

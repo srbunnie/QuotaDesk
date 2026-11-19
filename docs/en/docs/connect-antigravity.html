@@ -73,7 +73,8 @@
 <ol><li>Open Google Antigravity and sign in.</li><li>That&#x27;s it. QuotaDesk finds Antigravity&#x27;s local server and reads the limit every 30 seconds.</li></ol>
 <p>To see another model group on the card, use the card menu › <strong>Next group / model</strong>.</p>
 <h2 id="where-the-data-comes-from">Where the data comes from<a class="anchor" href="#where-the-data-comes-from" aria-hidden="true" tabindex="-1">#</a></h2>
-<p>QuotaDesk only accepts the <code>language_server</code> process from the Antigravity install folder, and only talks to it over <code>127.0.0.1</code>. The token for this local session stays in memory and is never saved.</p>
+<p>QuotaDesk only accepts Antigravity&#x27;s own local server: the <code>language_server</code> process from the install folder (older versions) or <code>agy.exe</code> in <code>%USERPROFILE%&#92;.gemini&#92;bin</code> (the current Antigravity IDE). It only talks to it over <code>127.0.0.1</code>. The token for this local session stays in memory and is never saved.</p>
+<p>When there is more than one model group, the card switches by itself to the group whose usage just went up, unless you picked a group by hand in the last 30 minutes. The card note lists every group, for example <em>Gemini 37% · Claude and GPT 0%</em>. If an account has no 5-hour window, use the card menu › <strong>Visible windows</strong> to hide that row.</p>
 <h2 id="if-it-doesnt-show-up">If it doesn&#x27;t show up<a class="anchor" href="#if-it-doesnt-show-up" aria-hidden="true" tabindex="-1">#</a></h2>
 <div class="table-scroll" tabindex="0"><table><thead><tr><th scope="col">Message</th><th scope="col">What to do</th></tr></thead><tbody><tr><td><em>Open Antigravity to read the limit.</em></td><td>It&#x27;s closed or still starting. Open Antigravity and wait a few seconds.</td></tr></tbody></table></div>
 <p>While Antigravity is closed, the card shows the last reading marked as old.</p>

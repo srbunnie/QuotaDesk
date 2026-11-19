@@ -16,6 +16,8 @@ QuotaDesk starts `codex app-server` in the background and only asks for the acco
 
 Message content is never read, and nothing is sent to the model.
 
+**How often:** every 1 minute with the panel open and every 3 minutes with it closed, plus a reading the moment you open the panel. If a reading fails, QuotaDesk retries after 15, 30 and 60 seconds, keeps the last reading marked as old (with its age) and logs the reason in `error.log`, without account data.
+
 ## If it doesn't show up
 
 | Message on the card | What to do |

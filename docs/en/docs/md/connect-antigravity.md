@@ -13,7 +13,9 @@ To see another model group on the card, use the card menu › **Next group / mod
 
 ## Where the data comes from
 
-QuotaDesk only accepts the `language_server` process from the Antigravity install folder, and only talks to it over `127.0.0.1`. The token for this local session stays in memory and is never saved.
+QuotaDesk only accepts Antigravity's own local server: the `language_server` process from the install folder (older versions) or `agy.exe` in `%USERPROFILE%\.gemini\bin` (the current Antigravity IDE). It only talks to it over `127.0.0.1`. The token for this local session stays in memory and is never saved.
+
+When there is more than one model group, the card switches by itself to the group whose usage just went up, unless you picked a group by hand in the last 30 minutes. The card note lists every group, for example *Gemini 37% · Claude and GPT 0%*. If an account has no 5-hour window, use the card menu › **Visible windows** to hide that row.
 
 ## If it doesn't show up
 

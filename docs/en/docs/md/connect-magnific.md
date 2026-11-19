@@ -27,6 +27,10 @@ Card menu › **Switch account…**. It forgets the current login and opens the 
 | *Connect or re-authorize Magnific from the tray menu.* | The login expired or was revoked. Connect again. |
 | *Could not read the Magnific credits; next try in 15 minutes.* | Network or service failure. The card keeps the last reading, marked as old. |
 
+## Reconnecting
+
+**Connect** first tries to read with the login you already have and only opens the browser when it no longer works. Only one login is open at a time: clicking again while the browser is waiting does not open another tab. When you sign in again, QuotaDesk registers a new access instead of reusing the old one, which the service may have dropped.
+
 ## Disconnect
 
 Close QuotaDesk and delete `magnific-mcp-token.dat` in `%LOCALAPPDATA%\AIUsageMonitor`. To also revoke access on the service side, remove the authorization on the Magnific site.

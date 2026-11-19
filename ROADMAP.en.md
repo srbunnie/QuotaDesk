@@ -55,6 +55,15 @@ Planned improvements, outside the Linux and macOS work:
   - Show how old the last reading is when Claude Code hasn't run for hours, so it's clear the number may be stale.
   - Split the weekly limits per model when Claude Code reports each one.
   - Rely less on estimates (`~`) when only the Claude desktop app is open, by reading its history more often.
+- **Small USB screen**
+  - Configurable rate (economy or smooth) and pausing the sends while the PC is locked or the screen is off.
+  - Choose the rotation direction (today **USB screen on its side** turns 90° one way only).
+  - Draw only the animated regions, instead of comparing the whole frame every 125 ms.
+- **Connections**
+  - OpenRouter: the login lasts 7 days. Warn before it expires and, if OpenRouter allows reading the balance with a long-lived key, avoid the weekly reconnect.
+  - Codex: keep the local server open and listen for the limit-change notice, instead of starting a process on every reading.
+  - Notify when a login (Claude Code, OpenRouter, Magnific) expires, besides the note on the card.
+- **Claude Code without opening the terminal:** evaluate an official, documented source to read the exact limit without the terminal (today the statusLine only updates while Claude Code runs, and the Claude app only records while open). The option that exists today requires reading another tool's login and uses an undocumented address, so it only comes in as an off-by-default option, or if an official API appears. See [Connect Claude Code](https://srbunnie.github.io/QuotaDesk/en/docs/connect-claude.html).
 - **Own art for new providers:** today a tool without a room borrows OpenRouter's room and character. A generic room and character will replace that loan.
 
 ## How to help

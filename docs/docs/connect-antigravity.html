@@ -73,7 +73,8 @@
 <ol><li>Abra o Google Antigravity e entre na sua conta.</li><li>Pronto. O QuotaDesk encontra o servidor local do Antigravity e lê a cota a cada 30 segundos.</li></ol>
 <p>Para ver outro grupo de modelos no card, use o menu do card › <strong>Próximo grupo / modelo</strong>.</p>
 <h2 id="de-onde-vem-os-dados">De onde vêm os dados<a class="anchor" href="#de-onde-vem-os-dados" aria-hidden="true" tabindex="-1">#</a></h2>
-<p>O QuotaDesk só aceita o processo <code>language_server</code> da pasta de instalação do Antigravity, e só conversa com ele pelo <code>127.0.0.1</code>. O token dessa sessão local fica na memória e nunca é gravado.</p>
+<p>O QuotaDesk só aceita o servidor local do próprio Antigravity: o processo <code>language_server</code> da pasta de instalação (versões antigas) ou o <code>agy.exe</code> em <code>%USERPROFILE%&#92;.gemini&#92;bin</code> (o Antigravity IDE atual). Só conversa com ele pelo <code>127.0.0.1</code>. O token dessa sessão local fica na memória e nunca é gravado.</p>
+<p>Quando há mais de um grupo de modelos, o card passa sozinho a mostrar o grupo cujo uso acabou de subir, a não ser que você tenha escolhido um grupo na mão nos últimos 30 minutos. A nota do card lista todos os grupos, por exemplo <em>Gemini 37% · Claude e GPT 0%</em>. Se uma conta não tem janela de 5 horas, use o menu do card › <strong>Janelas visíveis</strong> para esconder a linha.</p>
 <h2 id="se-nao-aparecer">Se não aparecer<a class="anchor" href="#se-nao-aparecer" aria-hidden="true" tabindex="-1">#</a></h2>
 <div class="table-scroll" tabindex="0"><table><thead><tr><th scope="col">Mensagem</th><th scope="col">O que fazer</th></tr></thead><tbody><tr><td><em>Abra o Antigravity para consultar a cota.</em></td><td>Ele está fechado ou ainda iniciando. Abra o Antigravity e espere alguns segundos.</td></tr></tbody></table></div>
 <p>Com o Antigravity fechado, o card mostra a última leitura marcada como antiga.</p>

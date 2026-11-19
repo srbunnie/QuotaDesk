@@ -77,6 +77,10 @@
 <p>Card menu › <strong>Switch account…</strong>. It forgets the current login and opens the login page in your browser.</p>
 <h2 id="if-it-doesnt-show-up">If it doesn&#x27;t show up<a class="anchor" href="#if-it-doesnt-show-up" aria-hidden="true" tabindex="-1">#</a></h2>
 <div class="table-scroll" tabindex="0"><table><thead><tr><th scope="col">Message</th><th scope="col">What to do</th></tr></thead><tbody><tr><td><em>Connect or re-authorize OpenRouter from the tray menu.</em></td><td>The login expired or was revoked. Connect again.</td></tr><tr><td><em>Could not read the OpenRouter balance</em></td><td>Network or service failure. QuotaDesk retries after 1 hour and keeps the last reading.</td></tr></tbody></table></div>
+<h2 id="the-login-lasts-7-days">The login lasts 7 days<a class="anchor" href="#the-login-lasts-7-days" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>OpenRouter does not renew this login by itself: after a week the card asks you to connect again (<em>Authorization expired</em>). Choose <strong>Connect OpenRouter</strong> once more. The key it creates has a US$ 0 limit on purpose: it can only read the balance, never spend.</p>
+<h2 id="organization-accounts">Organization accounts<a class="anchor" href="#organization-accounts" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>If the key is created in an organization workspace where you are not an admin, OpenRouter refuses the balance (<em>only management keys or keys created by organization admins can see the organization balance</em>). The card says so. When connecting, pick your personal (Default) workspace, or ask an organization admin to authorize.</p>
 <h2 id="disconnect">Disconnect<a class="anchor" href="#disconnect" aria-hidden="true" tabindex="-1">#</a></h2>
 <p>Close QuotaDesk and delete <code>openrouter-mcp-token.dat</code> in <code>%LOCALAPPDATA%&#92;AIUsageMonitor</code>. To also revoke access on the service side, remove the authorization on the OpenRouter site.</p>
       </div>
@@ -84,7 +88,7 @@
     </article>
   </main>
 
-  <aside class="toc" aria-labelledby="toc-title"><div class="toc-inner"><p class="toc-title" id="toc-title">On this page</p><ul><li class="toc-l2"><a href="#step-by-step">Step by step</a></li><li class="toc-l2"><a href="#where-the-data-comes-from">Where the data comes from</a></li><li class="toc-l2"><a href="#switch-accounts">Switch accounts</a></li><li class="toc-l2"><a href="#if-it-doesnt-show-up">If it doesn&#x27;t show up</a></li><li class="toc-l2"><a href="#disconnect">Disconnect</a></li></ul></div></aside>
+  <aside class="toc" aria-labelledby="toc-title"><div class="toc-inner"><p class="toc-title" id="toc-title">On this page</p><ul><li class="toc-l2"><a href="#step-by-step">Step by step</a></li><li class="toc-l2"><a href="#where-the-data-comes-from">Where the data comes from</a></li><li class="toc-l2"><a href="#switch-accounts">Switch accounts</a></li><li class="toc-l2"><a href="#if-it-doesnt-show-up">If it doesn&#x27;t show up</a></li><li class="toc-l2"><a href="#the-login-lasts-7-days">The login lasts 7 days</a></li><li class="toc-l2"><a href="#organization-accounts">Organization accounts</a></li><li class="toc-l2"><a href="#disconnect">Disconnect</a></li></ul></div></aside>
 </div>
 
 <footer class="site-footer">

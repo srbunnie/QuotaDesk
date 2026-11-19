@@ -18,6 +18,10 @@ Abra pelo botão de configurações no topo do painel.
 | **Minimizar para a bandeja** | Esconde o painel; ele continua no ícone da bandeja. |
 | **Desligar o QuotaDesk** | Fecha o app. |
 | **Resolução** | Desktop ou mini monitor 480×320. `F11` alterna. |
+| **Segunda tela (mini monitor)** | Liga a tela USB de 3,5" ou o monitor pequeno ao lado. Veja [Mini monitor](use.md#mini-monitor). |
+| **Estado da tela USB** | Mostra *conectada em COM3*, *encontrada* ou *nenhuma tela encontrada*, e o ritmo real: envios por segundo e KB/s. |
+| **Procurar a tela de novo** | Refaz a busca. Feche antes o programa do fabricante da tela: só um programa por vez usa a porta. |
+| **Tela USB deitada** | Para a tela apoiada na horizontal: o QuotaDesk desenha o layout 480×320 e gira a imagem 90°. Desligado por padrão. |
 
 ## Aparência
 
@@ -25,7 +29,7 @@ Abra pelo botão de configurações no topo do painel.
 |---|---|
 | **Visual do painel** | **Escritório** (animado), **Retrô** ou **Só os cards**. |
 | **Barra na borda da tela** | **Anéis**, **Minimalista** ou **Desligada**. É o resumo sempre à vista, colado na borda do monitor. |
-| **Manter a barra aberta** | Desligado, a barra recolhe e abre ao passar o mouse. Também dá para ligar com o botão direito na barra. |
+| **Fixar a barra (mantê-la aberta)** | Desligado, a barra recolhe e abre ao passar o mouse. Também dá para ligar com o botão direito na barra. |
 | **Escala** | 70%, 80% (padrão), 100% ou 120%. |
 | **Brilho das bordas** | Sem brilho, suave ou normal. |
 | **Fonte do texto** | JetBrains Mono (padrão), Roboto, Exo 2 ou a clássica (Cascadia). Muda na hora. |

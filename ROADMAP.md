@@ -55,6 +55,15 @@ Melhorias planejadas, fora do trabalho de Linux e macOS:
   - Mostrar há quanto tempo veio a última leitura quando o Claude Code não roda há horas, para ficar claro que o número pode estar velho.
   - Separar os limites semanais por modelo quando o Claude Code informar cada um.
   - Diminuir a estimativa (`~`) quando só o app Claude (desktop) está aberto, lendo o histórico com mais frequência.
+- **Telinha USB**
+  - Ritmo configurável (economia ou fluido) e pausa do envio com o PC bloqueado ou a tela apagada.
+  - Escolher o sentido da rotação (hoje a opção **Tela USB deitada** gira 90° para um lado só).
+  - Desenhar só as regiões animadas, em vez de comparar o quadro inteiro a cada 125 ms.
+- **Conexões**
+  - OpenRouter: o login vale 7 dias. Avisar antes de vencer e, se a OpenRouter permitir ler o saldo com uma chave duradoura, evitar a reconexão semanal.
+  - Codex: manter o servidor local aberto e ouvir o aviso de mudança de limites, em vez de abrir um processo a cada leitura.
+  - Avisar por notificação quando um login (Claude Code, OpenRouter, Magnific) vencer, além da nota no card.
+- **Claude Code sem abrir o terminal:** avaliar uma fonte oficial e documentada para ler a cota exata sem o terminal (hoje o statusLine só atualiza com o Claude Code rodando, e o app Claude só registra com ele aberto). A opção que existe hoje exige ler o login de outra ferramenta e usa um endereço não documentado; por isso só entra como opção desligada por padrão, ou se houver uma API oficial. Veja [Conectar o Claude Code](https://srbunnie.github.io/QuotaDesk/docs/connect-claude.html).
 - **Arte própria para provedores novos:** hoje uma ferramenta sem sala usa a sala e o personagem do OpenRouter. Um quarto e um personagem genéricos vão substituir esse empréstimo.
 
 ## Como ajudar

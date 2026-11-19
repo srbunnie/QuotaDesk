@@ -81,7 +81,7 @@ O executável não é assinado digitalmente. Na primeira execução o Windows po
 
 <p align="center"><img src="docs/assets/screens/notch.png" alt="Balão da barra na borda da tela com as cotas do Claude Code e a previsão de quando acabam" width="382"></p>
 
-**Um painel dedicado numa telinha.** Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel permanente, que pagina as ferramentas sozinho.
+**Um painel dedicado numa telinha.** Uma tela USB-C de 3,5" (Turing Smart Screen e clones) ou um monitor pequeno vira um mini painel permanente, que pagina as ferramentas sozinho. Só as partes que mudam são enviadas pelo cabo, então a animação fica fluida, e dá para deixar a tela deitada.
 
 <p align="center">
 <img src="docs/assets/screens/mini-landscape.png" alt="Mini monitor 480x320 com três ferramentas" width="480">
