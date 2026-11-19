@@ -47,7 +47,21 @@ internal sealed class MagnificAgent : IAgentSource
     public Task RefreshQuotaAsync(bool force) => RefreshCoreAsync(allowAuthorization: false, force, CancellationToken.None);
 
     /// <summary>Starts or resumes the browser OAuth flow only after the user chooses the tray action.</summary>
-    public Task ConnectAsync() => RefreshCoreAsync(allowAuthorization: true, force: true, CancellationToken.None);
+    public async Task ConnectAsync()
+    {
+        // One browser login at a time: a second click while one is open would stack more tabs and loopback listeners.
+        if (Interlocked.Exchange(ref _connecting, 1) == 1) return;
+        try
+        {
+            // Already connected and working? Then there is nothing to log in to: just refresh the reading.
+            _lastAttempt = DateTimeOffset.MinValue;
+            await RefreshCoreAsync(allowAuthorization: false, force: true, CancellationToken.None).ConfigureAwait(false);
+            if (_quota.Windows.Count > 0 && _quota.Error is null && !_quota.Stale) return;
+            await RefreshCoreAsync(allowAuthorization: true, force: true, CancellationToken.None).ConfigureAwait(false);
+        }
+        finally { Interlocked.Exchange(ref _connecting, 0); }
+    }
+    private int _connecting;
 
     /// <summary>Drops the saved login and signs in again, so the credits can come from another Magnific account.</summary>
     public async Task SwitchAccountAsync()
@@ -105,8 +119,9 @@ internal sealed class MagnificAgent : IAgentSource
             SetUnavailableOrStale(L.T("Autorização expirada ou revogada. Escolha Conectar Magnific no menu da bandeja.",
                 "Authorization expired or revoked. Choose Connect Magnific from the tray menu."));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            ErrorLog.Write("magnific-balance", ex);
             SetUnavailableOrStale(L.T("Não foi possível consultar os créditos do Magnific; nova tentativa em 15 minutos.",
                 "Could not read Magnific credits; retrying in 15 minutes."));
         }

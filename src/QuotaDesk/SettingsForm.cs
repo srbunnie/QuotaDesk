@@ -94,6 +94,14 @@ internal sealed class SettingsForm : Form
                 yield return new Row(L.T("Desligar o QuotaDesk", "Quit QuotaDesk"), null, Button: L.T("Desligar", "Quit"), Click: () => { Close(); _owner.RequestShutdown(); });
                 yield return new Row(L.T("Resolução", "Resolution"), L.T("F11 alterna", "F11 toggles"), Options: ["Desktop", "Mini monitor 480×320"],
                     Index: () => S.PanelLayout == "mini" ? 1 : 0, Pick: i => { _owner.SetLayout(i == 1 ? "mini" : "desktop"); Invalidate(); });
+                yield return new Row(L.T("Segunda tela (mini monitor)", "Second screen (mini monitor)"),
+                    L.T("Tela USB de 3,5\" ou monitor pequeno ao lado", "3.5\" USB screen or a small monitor next to yours"),
+                    () => S.MiniScreen, v => { S.MiniScreen = v; Apply(); });
+                yield return new Row(L.T("Estado da tela USB", "USB screen status"), Info: () => _owner.SecondScreenStatus?.Invoke() ?? "-");
+                yield return new Row(L.T("Tela USB deitada", "USB screen on its side"), L.T("Gira a imagem 90° para a tela apoiada na horizontal", "Turns the picture 90° for a screen lying on its side"),
+                    () => S.SerialLandscape, v => { S.SerialLandscape = v; Apply(); });
+                yield return new Row(L.T("Procurar a tela de novo", "Look for the screen again"), L.T("Feche o programa do fabricante antes", "Close the maker's software first"),
+                    Button: L.T("Procurar", "Search"), Click: () => { _owner.RequestSecondScreenRescan(); Invalidate(); });
                 break;
             case 1:
                 yield return new Row(L.T("Visual do painel", "Panel look"), L.T("Escritório animado, retrô ou só os cards", "Animated office, retro or cards only"), Options: MonitorForm.SkinNames,
@@ -107,7 +115,7 @@ internal sealed class SettingsForm : Form
                         if (i != 2) S.DockStyle = i == 0 ? "classic" : "notch";
                         Apply();
                     });
-                yield return new Row(L.T("Manter a barra aberta", "Keep the bar open"), L.T("Desligado, ela recolhe e abre ao passar o mouse", "When off, it collapses and opens on hover"), () => S.WidgetPinned,
+                yield return new Row(L.T("Fixar a barra (mantê-la aberta)", "Pin the bar (keep it open)"), L.T("Desligado, ela recolhe e abre ao passar o mouse", "When off, it collapses and opens on hover"), () => S.WidgetPinned,
                     v => { S.WidgetPinned = v; Apply(); });
                 float[] scales = [0.70f, 0.80f, 1.00f, 1.20f];
                 yield return new Row(L.T("Escala", "Scale"), null, Options: ["70%", L.T("80% (padrão)", "80% (default)"), "100%", "120%"],

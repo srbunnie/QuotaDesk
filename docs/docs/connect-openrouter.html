@@ -77,6 +77,10 @@
 <p>Menu do card › <strong>Trocar conta…</strong>. Ele esquece o login atual e abre o login no navegador.</p>
 <h2 id="se-nao-aparecer">Se não aparecer<a class="anchor" href="#se-nao-aparecer" aria-hidden="true" tabindex="-1">#</a></h2>
 <div class="table-scroll" tabindex="0"><table><thead><tr><th scope="col">Mensagem</th><th scope="col">O que fazer</th></tr></thead><tbody><tr><td><em>Conecte ou reautorize OpenRouter no menu da bandeja.</em></td><td>O login expirou ou foi revogado. Conecte de novo.</td></tr><tr><td><em>Não foi possível consultar o saldo do OpenRouter</em></td><td>Falha de rede ou do serviço. O QuotaDesk tenta de novo após 1 hora e mantém a última leitura.</td></tr></tbody></table></div>
+<h2 id="o-login-vale-7-dias">O login vale 7 dias<a class="anchor" href="#o-login-vale-7-dias" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>A OpenRouter não renova esse login sozinha: depois de uma semana, o card pede para conectar de novo (<em>Autorização expirada</em>). Escolha <strong>Conectar OpenRouter</strong> outra vez. A chave criada tem limite de US$ 0 de propósito: ela só serve para ler o saldo, nunca para gastar.</p>
+<h2 id="conta-de-organizacao">Conta de organização<a class="anchor" href="#conta-de-organizacao" aria-hidden="true" tabindex="-1">#</a></h2>
+<p>Se a chave for criada num workspace de organização em que você não é admin, a OpenRouter recusa o saldo (<em>só chaves de gerenciamento ou criadas por admins da organização veem o saldo da organização</em>). O card avisa isso. Ao conectar, escolha o seu workspace pessoal (Default), ou peça a um admin da organização para autorizar.</p>
 <h2 id="desconectar">Desconectar<a class="anchor" href="#desconectar" aria-hidden="true" tabindex="-1">#</a></h2>
 <p>Feche o QuotaDesk e apague <code>openrouter-mcp-token.dat</code> em <code>%LOCALAPPDATA%&#92;AIUsageMonitor</code>. Para revogar o acesso também do lado do serviço, remova a autorização no site da OpenRouter.</p>
       </div>
@@ -84,7 +88,7 @@
     </article>
   </main>
 
-  <aside class="toc" aria-labelledby="toc-title"><div class="toc-inner"><p class="toc-title" id="toc-title">Nesta página</p><ul><li class="toc-l2"><a href="#passo-a-passo">Passo a passo</a></li><li class="toc-l2"><a href="#de-onde-vem-os-dados">De onde vêm os dados</a></li><li class="toc-l2"><a href="#trocar-de-conta">Trocar de conta</a></li><li class="toc-l2"><a href="#se-nao-aparecer">Se não aparecer</a></li><li class="toc-l2"><a href="#desconectar">Desconectar</a></li></ul></div></aside>
+  <aside class="toc" aria-labelledby="toc-title"><div class="toc-inner"><p class="toc-title" id="toc-title">Nesta página</p><ul><li class="toc-l2"><a href="#passo-a-passo">Passo a passo</a></li><li class="toc-l2"><a href="#de-onde-vem-os-dados">De onde vêm os dados</a></li><li class="toc-l2"><a href="#trocar-de-conta">Trocar de conta</a></li><li class="toc-l2"><a href="#se-nao-aparecer">Se não aparecer</a></li><li class="toc-l2"><a href="#o-login-vale-7-dias">O login vale 7 dias</a></li><li class="toc-l2"><a href="#conta-de-organizacao">Conta de organização</a></li><li class="toc-l2"><a href="#desconectar">Desconectar</a></li></ul></div></aside>
 </div>
 
 <footer class="site-footer">

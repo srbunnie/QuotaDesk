@@ -13,7 +13,9 @@ Para ver outro grupo de modelos no card, use o menu do card › **Próximo grupo
 
 ## De onde vêm os dados
 
-O QuotaDesk só aceita o processo `language_server` da pasta de instalação do Antigravity, e só conversa com ele pelo `127.0.0.1`. O token dessa sessão local fica na memória e nunca é gravado.
+O QuotaDesk só aceita o servidor local do próprio Antigravity: o processo `language_server` da pasta de instalação (versões antigas) ou o `agy.exe` em `%USERPROFILE%\.gemini\bin` (o Antigravity IDE atual). Só conversa com ele pelo `127.0.0.1`. O token dessa sessão local fica na memória e nunca é gravado.
+
+Quando há mais de um grupo de modelos, o card passa sozinho a mostrar o grupo cujo uso acabou de subir, a não ser que você tenha escolhido um grupo na mão nos últimos 30 minutos. A nota do card lista todos os grupos, por exemplo *Gemini 37% · Claude e GPT 0%*. Se uma conta não tem janela de 5 horas, use o menu do card › **Janelas visíveis** para esconder a linha.
 
 ## Se não aparecer
 

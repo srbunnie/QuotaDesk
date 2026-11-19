@@ -39,7 +39,20 @@ internal sealed class OpenRouterAgent : IAgentSource
     public Task RefreshQuotaAsync(bool _) => RefreshCoreAsync(allowAuthorization: false, CancellationToken.None);
 
     /// <summary>Starts or resumes the browser OAuth flow only after the user chooses the tray action.</summary>
-    public Task ConnectAsync() => RefreshCoreAsync(allowAuthorization: true, CancellationToken.None);
+    public async Task ConnectAsync()
+    {
+        if (Interlocked.Exchange(ref _connecting, 1) == 1) return; // one browser login at a time
+        try
+        {
+            _lastAttempt = DateTimeOffset.MinValue;
+            await RefreshCoreAsync(allowAuthorization: false, CancellationToken.None).ConfigureAwait(false);
+            if (_quota.Windows.Count > 0 && _quota.Error is null && !_quota.Stale) return; // already working: nothing to log in to
+            // A login that works but is refused for credits (workspace without admin rights) needs a new login in the right workspace.
+            await RefreshCoreAsync(allowAuthorization: true, CancellationToken.None).ConfigureAwait(false);
+        }
+        finally { Interlocked.Exchange(ref _connecting, 0); }
+    }
+    private int _connecting;
 
     /// <summary>Drops the saved login and signs in again, so the balance can come from another OpenRouter account.</summary>
     public async Task SwitchAccountAsync()
@@ -88,11 +101,18 @@ internal sealed class OpenRouterAgent : IAgentSource
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (OpenRouterAuthorizationRequiredException)
         {
-            SetUnavailableOrStale(L.T("Autorização expirada ou revogada. Escolha Conectar OpenRouter no menu da bandeja.",
+            SetUnavailableOrStale(L.T("Autorização expirada (o OpenRouter vale 7 dias) ou revogada. Escolha Conectar OpenRouter no menu da bandeja.",
                 "Authorization expired or revoked. Choose Connect OpenRouter from the tray menu."));
         }
-        catch (Exception)
+        catch (InvalidDataException ex) when (ex.Message.Contains("management keys", StringComparison.OrdinalIgnoreCase))
         {
+            // The key was authorized for an organization workspace by someone who is not an admin there.
+            SetUnavailableOrStale(L.T("OpenRouter conectado (chave com limite US$ 0, como deve ser), mas o saldo da organização só é liberado a admin ou chave de gerenciamento. Peça a um admin da organização.",
+                "OpenRouter connected (key limit US$ 0, as it should be), but the organization balance is only available to an admin or a management key. Ask an organization admin."));
+        }
+        catch (Exception ex)
+        {
+            ErrorLog.Write("openrouter-balance", ex);
             SetUnavailableOrStale(L.T("Não foi possível consultar o saldo do OpenRouter; uma nova tentativa ocorrerá após 1 hora.",
                 "Could not read the OpenRouter balance; retrying in 1 hour."));
         }

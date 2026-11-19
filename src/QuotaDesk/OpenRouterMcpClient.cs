@@ -128,6 +128,10 @@ internal static class RemoteMcpTool
         var existingTokens = await tokenCache.GetTokensAsync(cancellationToken).ConfigureAwait(false);
         if (existingTokens is null && !allowAuthorization)
             throw new OpenRouterAuthorizationRequiredException();
+        // A saved login also carries the OAuth client registered for the loopback port of that day. Reusing it on a new
+        // login fails in the browser ("redirect_uri is not registered", or the server dropped the client), so an explicit
+        // connect starts from nothing: the SDK registers a new client for this run's port, and only then overwrites the cache.
+        if (allowAuthorization) tokenCache = new FreshLoginCache(tokenCache);
 
         using var callback = new OpenRouterLoopbackCallback(provider);
         var interactiveAuthorizationBlocked = false;
@@ -172,13 +176,37 @@ internal static class RemoteMcpTool
             var result = await client.CallToolAsync(tool, new Dictionary<string, object?>(), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
             if (result.IsError == true)
-                throw new InvalidDataException($"The {provider} {tool} tool returned an error.");
+            {
+                // The tool's own error text (for example a key without access to credits) is what explains the failure.
+                var why = string.Join(" ", result.Content.OfType<TextContentBlock>().Select(b => b.Text)).Trim();
+                throw new InvalidDataException($"The {provider} {tool} tool returned an error" + (why.Length > 0 ? ": " + (why.Length > 300 ? why[..300] : why) : "."));
+            }
             return result;
         }
-        catch (Exception) when (interactiveAuthorizationBlocked)
+        catch (Exception ex) when (interactiveAuthorizationBlocked)
         {
+            LogOnce(provider, "login needed", ex);
             throw new OpenRouterAuthorizationRequiredException();
         }
+        catch (Exception ex) when (ex is not OperationCanceledException and not OpenRouterAuthorizationRequiredException)
+        {
+            LogOnce(provider, allowAuthorization ? "connect failed" : "read failed", ex);
+            throw;
+        }
+    }
+
+    private static readonly Dictionary<string, DateTime> LastLogged = [];
+
+    /// <summary>One redacted error.log entry per provider and kind every 30 minutes: the cause stays findable without spam.</summary>
+    private static void LogOnce(string provider, string kind, Exception ex)
+    {
+        var key = provider + "|" + kind;
+        lock (LastLogged)
+        {
+            if (LastLogged.TryGetValue(key, out var at) && DateTime.UtcNow - at < TimeSpan.FromMinutes(30)) return;
+            LastLogged[key] = DateTime.UtcNow;
+        }
+        ErrorLog.Write($"mcp-{provider.ToLowerInvariant()} ({kind})", ex);
     }
 
     /// <summary>
@@ -222,6 +250,13 @@ internal static class RemoteMcpTool
             throw new OpenRouterAuthorizationRequiredException();
         }
     }
+}
+
+/// <summary>Reads nothing from the saved login (so the SDK registers a fresh client) but still writes the new tokens through.</summary>
+internal sealed class FreshLoginCache(ITokenCache inner) : ITokenCache
+{
+    public ValueTask StoreTokensAsync(TokenContainer tokens, CancellationToken cancellationToken) => inner.StoreTokensAsync(tokens, cancellationToken);
+    public ValueTask<TokenContainer?> GetTokensAsync(CancellationToken cancellationToken) => new((TokenContainer?)null);
 }
 
 /// <summary>Short-lived 127.0.0.1 listener used only while the user completes a provider's OAuth in their browser.</summary>

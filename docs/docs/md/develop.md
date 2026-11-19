@@ -18,6 +18,8 @@ Tudo fica em `src/QuotaDesk` (projeto `AIUsageMonitor.csproj`, assembly `QuotaDe
 | `*Checks.cs`, `LoftReview.cs`, `MiniOfficePreview.cs` | autotestes e prévias |
 | `build.ps1`, `install-shortcuts.ps1`, `claude-statusline.ps1` | build, atalhos e integração com o Claude Code |
 
+Comandos de diagnóstico (nenhum envia dados a ninguém além do serviço da própria ferramenta): `--connect-openrouter` e `--connect-magnific` (login sem abrir o painel), `--call-mcp-tool` com `openrouter` ou `magnific` (só ferramentas de leitura de saldo, com o login salvo), `--antigravity-once <arquivo>`, `--usb-screen-test` (uma imagem de teste na tela USB) e `--usb-screen-bench` (mede o enlace USB).
+
 ## Ambientes
 
 O app instalado é o seu QuotaDesk de uso diário: `%LOCALAPPDATA%\Programs\QuotaDesk`, com dados em `%LOCALAPPDATA%\AIUsageMonitor`. Para desenvolver sem arriscar esses dados, abra o código atual num ambiente isolado, que roda ao lado dele:

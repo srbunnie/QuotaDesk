@@ -16,6 +16,8 @@ O QuotaDesk inicia `codex app-server` em segundo plano e pede só os limites da 
 
 O conteúdo das mensagens não é lido, e nada é enviado ao modelo.
 
+**Frequência:** a cada 1 minuto com o painel aberto e a cada 3 minutos com ele fechado, e uma leitura na hora em que você abre o painel. Se uma leitura falha, o QuotaDesk tenta de novo em 15, 30 e 60 segundos, mantém a última leitura marcada como antiga (com a idade) e registra o motivo em `error.log`, sem dados de conta.
+
 ## Se não aparecer
 
 | Mensagem no card | O que fazer |

@@ -323,10 +323,22 @@ internal static class ModelChoice
     public static LimitWindow? Current(AgentStatus agent) =>
         agent.Quota.Windows.OrderBy(w => w.RemainingPercent).FirstOrDefault();
 
+    /// <summary>When the user last picked a group by hand: automatic following stays quiet for a while after that.</summary>
+    public static DateTime LastManualStep { get; private set; } = DateTime.MinValue;
+
     public static void Step(int step)
     {
         if (Options.Count < 2) return;
         Selected = Options[((Index + step) % Options.Count + Options.Count) % Options.Count];
+        LastManualStep = DateTime.UtcNow;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Shows the group whose usage just went up (the one being used), unless the user chose a group recently.</summary>
+    public static void Follow(string group)
+    {
+        if (Selected == group || DateTime.UtcNow - LastManualStep < TimeSpan.FromMinutes(30)) return;
+        Selected = group;
         Changed?.Invoke();
     }
 }

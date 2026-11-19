@@ -32,7 +32,7 @@ Each card shows the 5-hour and weekly limits (or the balance, for Magnific and O
 
 ### Switch "Resets in" and "Runs out in"
 
-**Click the card**, or turn the mouse wheel over it, to switch between **Resets in X** (when the limit resets) and **Runs out in X** (when it runs out at the current pace).
+**Click a row** of the card (5 hours or weekly) to switch just that row between **Resets in X** (when the limit resets) and **Runs out in X** (when it runs out at the current pace). Clicking outside the rows, or turning the mouse wheel over the card, switches all rows at once. That way you can see only the 5-hour "runs out" when you need it.
 
 ### The card menu
 
@@ -45,6 +45,7 @@ The menu button in the corner of each card holds the actions for that tool:
 - **See pending:** lists the sessions waiting for you.
 - **Next group / model** and **Next tool:** change what the card shows.
 - **Detail level:** icon only, icon + status or full data.
+- **Visible windows:** choose which windows the card shows (5 hours, weekly, credits or per model). Useful for tools that have no 5-hour window on some plans. Only the display changes: alerts still see every window, and the last visible window cannot be hidden.
 
 ## Alerts
 
@@ -68,14 +69,20 @@ The icon near the clock has one gauge per tool, and hovering it shows what's lef
 
 - **Open panel**, **Open control center** and **Refresh now**;
 - **Connect Magnific** and **Connect OpenRouter**;
-- **Always on top**, **Edge bar**, **Mini monitor (second screen)** and the weather;
+- **Always on top**, **Edge bar**, **Minimal bar**, **Pin the bar (keep it open)**, **Mini monitor (second screen)** and the weather;
+- the first line of the menu shows the **version and build number** (and the environment, such as `dev` or `homolog`), so you know which copy is open;
 - **Start with Windows**;
 - **Idioma / Language**;
 - **Help and documentation**, which opens these docs.
 
 ## Mini monitor
 
-A 3.5" USB-C screen (Turing Smart Screen and clones) or a small monitor becomes a permanent mini panel that pages through your tools on its own. Turn it on in the tray menu › **Mini monitor (second screen)**. Screens that show up as a serial port are detected automatically.
+A 3.5" USB-C screen (Turing Smart Screen and clones) or a small monitor becomes a permanent mini panel that pages through your tools on its own. Turn it on in the tray menu › **Mini monitor (second screen)**. Screens that show up as a serial port are detected automatically. The same options are in **Settings › General**.
+
+- **Close the screen maker's software** first (for example, the one for the USB cable): only one program at a time uses the serial port. If it starts with Windows, remove it from startup.
+- **Screen on its side:** if the screen lies on its side, turn on **USB screen on its side**. QuotaDesk draws the 480×320 layout and turns the picture 90° so it shows upright.
+- **Smoothness:** the cable carries about 165 KB/s, so a whole 320×480 frame takes ~1.9 s whatever speed is set. That is why, after the first frame, only the 16×16 pixel blocks that changed are sent, and the animation is much smoother. **Settings › General › USB screen status** shows the real rate.
+- **Few tools:** with 1 or 2 active tools the cards fill the whole width; with 1, the room sits next to the card.
 
 ## Shortcuts
 

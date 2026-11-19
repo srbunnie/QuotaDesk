@@ -130,6 +130,21 @@ internal sealed class UsbSerialScreen : IDisposable
         }
     }
 
+    /// <summary>Sends only a rectangle of the frame (same RGB565 layout, rows of the rectangle one after another).</summary>
+    public void SendRegion(byte[] frame, Rectangle r)
+    {
+        lock (_gate)
+        {
+            var port = _port is { IsOpen: true } ? _port : throw new InvalidOperationException("screen not connected");
+            var command = UsbScreenProtocol.BitmapCommand(r.X, r.Y, r.Width, r.Height);
+            var pixels = new byte[r.Width * r.Height * 2];
+            for (var row = 0; row < r.Height; row++)
+                Buffer.BlockCopy(frame, ((r.Y + row) * UsbScreenProtocol.Width + r.X) * 2, pixels, row * r.Width * 2, r.Width * 2);
+            port.Write(command, 0, command.Length);
+            port.Write(pixels, 0, pixels.Length);
+        }
+    }
+
     public void Close()
     {
         lock (_gate)

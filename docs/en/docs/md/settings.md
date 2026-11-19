@@ -18,6 +18,10 @@ Open them with the settings button at the top of the panel.
 | **Minimize to tray** | Hides the panel; it stays in the tray icon. |
 | **Quit QuotaDesk** | Closes the app. |
 | **Resolution** | Desktop or 480×320 mini monitor. `F11` toggles. |
+| **Second screen (mini monitor)** | Turns on the 3.5" USB screen or the small monitor next to yours. See [Mini monitor](use.md#mini-monitor). |
+| **USB screen status** | Shows *connected on COM3*, *found* or *no screen found*, and the real rate: sends per second and KB/s. |
+| **Look for the screen again** | Searches again. Close the screen maker's software first: only one program at a time uses the port. |
+| **USB screen on its side** | For a screen lying on its side: QuotaDesk draws the 480×320 layout and turns the picture 90°. Off by default. |
 
 ## Appearance
 
@@ -25,7 +29,7 @@ Open them with the settings button at the top of the panel.
 |---|---|
 | **Panel look** | **Office** (animated), **Retro** or **Cards only**. |
 | **Edge bar** | **Rings**, **Minimal** or **Off**. The summary that's always in sight, stuck to the edge of the monitor. |
-| **Keep the bar open** | When off, the bar collapses and opens on hover. You can also turn it on by right-clicking the bar. |
+| **Pin the bar (keep it open)** | When off, the bar collapses and opens on hover. You can also turn it on by right-clicking the bar. |
 | **Scale** | 70%, 80% (default), 100% or 120%. |
 | **Border glow** | No glow, soft or normal. |
 | **Text font** | JetBrains Mono (default), Roboto, Exo 2 or the classic one (Cascadia). Applies right away. |

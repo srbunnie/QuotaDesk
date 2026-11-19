@@ -64,6 +64,20 @@ internal static class MiniOfficePreview
             }
             if (view.Move(1)) return 1;
         }
+        // One and two tools: the cards must share the whole screen.
+        foreach (var count in new[] { 1, 2 })
+        {
+            var few = sample.Take(count).ToArray();
+            var view = new OfficeViewport();
+            view.SetEnabled(few.Select(a => a.Id));
+            var visible = view.VisibleIds.Select(id => few.First(a => a.Id == id)).ToArray();
+            using var image = new Bitmap(480, 320);
+            using (var g = Graphics.FromImage(image)) MiniScreenForm.RenderOffice(g, image.Size, few, visible, scene, 11, now, view, 0.4f);
+            image.Save(Path.Combine(folder, $"mini-480x320-{count}-tool.png"), ImageFormat.Png);
+            using var portrait = new Bitmap(320, 480);
+            using (var g = Graphics.FromImage(portrait)) MiniScreenForm.RenderPortraitOffice(g, portrait.Size, few, visible, scene, 11, now, view, new AppSettings(), 0.4f);
+            portrait.Save(Path.Combine(folder, $"mini-320x480-{count}-tool.png"), ImageFormat.Png);
+        }
         File.WriteAllText(Path.Combine(folder, "checks.txt"), "PASS: native 480x320 previews, 3 providers per view, four bounded navigation positions; synthetic quota previews are explicitly marked.");
         return 0;
     }

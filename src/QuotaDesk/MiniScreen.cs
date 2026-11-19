@@ -150,7 +150,20 @@ internal sealed class MiniScreenForm : Form
         PixelFont.Draw(g, time, 474 - PixelFont.Measure(time, 2.5f, 2.5f, bold: true), 6, 2.5f, Theme.Text, 2.5f, bold: true);
 
         var source = scene.GetViewport(visible.Select(a => a.Id).ToArray(), enabled.Select(a => a.Id).ToArray());
-        var sceneRect = new RectangleF(6, 30, 468, Math.Min(98, 468 * source.Height / source.Width));
+        // With three rooms the strip is 98 px tall; fewer rooms are wider relative to their height, so they get more height
+        // (otherwise the characters' heads are cropped).
+        var maxSceneHeight = visible.Count >= 3 ? 98f : visible.Count == 2 ? 124f : 130f;
+        var sceneRect = new RectangleF(6, 30, 468, Math.Min(maxSceneHeight, 468 * source.Height / source.Width));
+        // One tool alone: the room takes a tall column on the left and the card sits beside it, on the right.
+        var solo = visible.Count == 1 && !view.HasNavigation;
+        if (solo)
+        {
+            sceneRect = new RectangleF(6, 30, 176, 320 - 30 - 6);
+            // Crop the room around its centre to the column's shape (the scene stretches whatever viewport it gets).
+            var aspect = sceneRect.Width / sceneRect.Height;
+            var cropW = source.Height * aspect;
+            if (cropW < source.Width) source = new RectangleF(source.X + (source.Width - cropW) / 2, source.Y, cropW, source.Height);
+        }
         using (var clip = Theme.Rounded(sceneRect, 6))
         {
             var state = g.Save();
@@ -165,10 +178,17 @@ internal sealed class MiniScreenForm : Form
         var now = new DateTimeOffset(clock);
         var footer = view.HasNavigation ? 18f : 0f;
         var top = sceneRect.Bottom + 6;
-        // Three pixel-art cards side by side, the same language as the desktop panel.
+        // Up to three pixel-art cards side by side, the same language as the desktop panel. With fewer tools the
+        // cards share the full width instead of leaving empty columns.
         const float gap = 6;
-        var cardW = (468 - gap * 2) / 3;
+        var columns = Math.Clamp(visible.Count, 1, 3);
+        var cardW = (468 - gap * (columns - 1)) / columns;
         var cardH = 320 - top - 4 - footer;
+        if (solo)
+        {
+            PaintPixelCard(g, visible[0], new RectangleF(sceneRect.Right + gap, 30, 474 - sceneRect.Right - gap, 320 - 30 - 6), now, frame);
+            return;
+        }
         for (var i = 0; i < visible.Count && i < 3; i++)
             PaintPixelCard(g, visible[i], new RectangleF(6 + i * (cardW + gap), top, cardW, cardH), now, frame);
 
@@ -258,20 +278,28 @@ internal sealed class MiniScreenForm : Form
             Put(g, a.Id == "figma" ? L.T("saldo no Figma", "balance in Figma") : L.T("sem leitura de cota", "no limit reading"), Theme.Font("mono", 9.5f), Theme.TextDim, body.X - 1, body.Y + 30);
             return;
         }
-        var rowH = body.Height / 2;
+        // A single tool gets the whole screen: its two rows sit side by side instead of stacked in a wide, empty card.
+        var wide = r.Width > 300;
+        var big = !wide && r.Height > 200; // the solo card beside the room: tall enough for bigger numbers and a forecast line
+        var rowH = wide ? body.Height : body.Height / 2;
+        var colW = wide ? (body.Width - 14) / 2 : body.Width;
+        RectangleF RowArea(int i) => wide ? new(body.X + i * (colW + 14), body.Y + Math.Max(0, (body.Height - 46) / 3), colW, rowH) : new(body.X, body.Y + i * rowH, body.Width, rowH);
+        void Divider(RectangleF area)
+        {
+            using var dash = new Pen(Color.FromArgb(46, 54, 78), 1.2f) { DashStyle = DashStyle.Dash };
+            if (wide) g.DrawLine(dash, area.X - 7, area.Y, area.X - 7, area.Y + 42);
+            else g.DrawLine(dash, area.X, area.Y - 3, area.Right, area.Y - 3);
+        }
         for (var i = 0; i < rows.Length; i++)
         {
-            var area = new RectangleF(body.X, body.Y + i * rowH, body.Width, rowH);
-            if (i > 0)
-                using (var dash = new Pen(Color.FromArgb(46, 54, 78), 1.2f) { DashStyle = DashStyle.Dash })
-                    g.DrawLine(dash, area.X, area.Y - 3, area.Right, area.Y - 3);
-            PaintPixelRow(g, rows[i].Window, stale, area, now);
+            var area = RowArea(i);
+            if (i > 0) Divider(area);
+            PaintPixelRow(g, rows[i].Window, stale, area, now, big);
         }
         if (rows is [{ Window.Credits: { } balance }])
         {
-            var area = new RectangleF(body.X, body.Y + rowH, body.Width, rowH);
-            using (var dash = new Pen(Color.FromArgb(46, 54, 78), 1.2f) { DashStyle = DashStyle.Dash })
-                g.DrawLine(dash, area.X, area.Y - 3, area.Right, area.Y - 3);
+            var area = RowArea(1);
+            Divider(area);
             PixelFont.Draw(g, L.T("RITMO", "PACE"), area.X, area.Y + 3, 1.25f, Theme.Label);
             var rate = balance.RateText ?? "--";
             var soon = balance.EmptyAt is { } at && at - now <= TimeSpan.FromDays(3);
@@ -285,7 +313,7 @@ internal sealed class MiniScreenForm : Form
         }
     }
 
-    private static void PaintPixelRow(Graphics g, LimitWindow w, bool stale, RectangleF r, DateTimeOffset now)
+    private static void PaintPixelRow(Graphics g, LimitWindow w, bool stale, RectangleF r, DateTimeOffset now, bool big = false)
     {
         var valid = !(w.ResetsAt is { } reset && reset <= now && !w.ResetEstimated);
         var used = w.UsedRounded;
@@ -293,11 +321,12 @@ internal sealed class MiniScreenForm : Form
         var color = !valid ? Theme.TextFaint : stale ? Theme.Mix(Theme.Consumption(used), Theme.TextFaint, 0.55f) : Theme.Consumption(used);
         var label = w.Kind == WindowKind.FiveHour ? L.T("5 HORAS", "5 HOURS") : w.Kind == WindowKind.Weekly ? L.T("SEMANAL", "WEEKLY") : (w.Group ?? w.Label).ToUpperInvariant();
         if (label.Length > 9) label = label[..9];
-        PixelFont.Draw(g, label, r.X, r.Y + 3, 1.25f, Theme.Label);
+        PixelFont.Draw(g, label, r.X, r.Y + (big ? 6 : 3), big ? 1.75f : 1.25f, Theme.Label);
         var pct = valid ? $"{used}%" : "--";
-        PixelFont.Draw(g, pct, r.Right - PixelFont.Measure(pct, 1.75f, 1.5f, bold: true), r.Y + 1, 1.75f, color, 1.5f, bold: true);
+        var pctScale = big ? 3f : 1.75f;
+        PixelFont.Draw(g, pct, r.Right - PixelFont.Measure(pct, pctScale, 1.5f, bold: true), r.Y + 1, pctScale, color, 1.5f, bold: true);
 
-        var bar = new RectangleF(r.X, r.Y + 17, r.Width, 6);
+        var bar = big ? new RectangleF(r.X, r.Y + 34, r.Width, 11) : new RectangleF(r.X, r.Y + 17, r.Width, 6);
         using (var path = Theme.Rounded(bar, 3))
         using (var back = new SolidBrush(Track))
             g.FillPath(back, path);
@@ -327,9 +356,19 @@ internal sealed class MiniScreenForm : Form
             : w.Credits is { } bal ? L.T($"{bal.Format(bal.Available)} de {bal.Format(bal.Total)}", $"{bal.Format(bal.Available)} of {bal.Format(bal.Total)}")
             : stale ? L.T($"{w.RemainingPercent}% antigo", $"{w.RemainingPercent}% old") : L.T($"{w.RemainingPercent}% resta", $"{w.RemainingPercent}% left");
         var right = !valid ? "" : w.Renewed ? L.T("renovada", "reset") : w.Countdown(now) is { } c ? L.T("em ", "in ") + (w.ResetEstimated ? "~" : "") + c : "";
-        var small = Theme.Font("mono", 9.5f);
+        var small = Theme.Font("mono", big ? 11f : 9.5f);
         Put(g, left, small, exhausted ? Theme.Exhausted : stale || !valid ? Theme.Amber : Theme.Label, r.X - 1, bar.Bottom + 3);
         if (right.Length > 0) Put(g, right, small, Theme.TextDim, r.Right - Measure(g, right, small), bar.Bottom + 3);
+        if (big && valid && !stale && !exhausted && !w.Renewed)
+        {
+            // Spare height: say when it runs out (or that it lasts) and how the pace compares with an even spread.
+            var line = w.Depletion(now) is { } dep
+                ? dep.BeforeReset ? L.T($"esgota em ~{LimitWindow.Span(dep.At - now)}", $"runs out in ~{LimitWindow.Span(dep.At - now)}") : L.T("dura até renovar", "lasts until reset")
+                : L.T("sem previsão ainda", "no forecast yet");
+            var paceText = w.PaceDelta(now) is { } d ? "  ·  " + Theme.PaceLabel(d) : "";
+            var lineColor = w.Depletion(now) is { BeforeReset: true } ? Theme.Red : Theme.TextDim;
+            Put(g, line + paceText, Theme.Font("mono", 11f, FontStyle.Bold), lineColor, r.X - 1, bar.Bottom + 22);
+        }
     }
 
     /// <summary>
@@ -471,9 +510,10 @@ internal sealed class MiniScreenForm : Form
     private static List<(string Label, LimitWindow Window)> Rows(AgentStatus a)
     {
         var rows = new List<(string, LimitWindow)>();
-        if (a.Quota.Find(WindowKind.FiveHour) is { } five) rows.Add(("5H", five));
-        if (a.Quota.Find(WindowKind.Weekly) is { } week) rows.Add((L.T("SEM", "WK"), week));
-        if (rows.Count == 0 && (a.Id == "antigravity" ? ModelChoice.Current(a) : a.Quota.Windows.FirstOrDefault()) is { } other)
+        var windows = MonitorForm.VisibleWindows(a); // honours the windows hidden on the card menu
+        if (windows.FirstOrDefault(w => w.Kind == WindowKind.FiveHour) is { } five) rows.Add(("5H", five));
+        if (windows.FirstOrDefault(w => w.Kind == WindowKind.Weekly) is { } week) rows.Add((L.T("SEM", "WK"), week));
+        if (rows.Count == 0 && (a.Id == "antigravity" ? ModelChoice.Current(a) : windows.FirstOrDefault()) is { } other)
         {
             var name = (other.Group ?? other.Label).ToUpperInvariant();
             rows.Add((name.Length > 5 ? name[..5] : name, other));
@@ -713,5 +753,13 @@ internal sealed class MiniScreenForm : Form
             }
             bmp.Save(Path.Combine(folder, $"mini-{name}.png"), System.Drawing.Imaging.ImageFormat.Png);
         }
+        // Fewer than three tools: the cards must share the whole screen (1 and 2 tools, both orientations).
+        foreach (var count in new[] { 1, 2 })
+            foreach (var (name, size) in new[] { ("landscape-480x320", new Size(480, 320)), ("portrait-320x480", new Size(320, 480)) })
+            {
+                using var bmp = new Bitmap(size.Width, size.Height);
+                using (var g = Graphics.FromImage(bmp)) Render(g, size, agents.Take(count).ToList(), clock);
+                bmp.Save(Path.Combine(folder, $"mini-{count}tool-{name}.png"), System.Drawing.Imaging.ImageFormat.Png);
+            }
     }
 }

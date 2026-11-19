@@ -81,7 +81,7 @@ The executable is not digitally signed. On first run Windows may show *Windows p
 
 <p align="center"><img src="docs/assets/screens/notch.png" alt="Edge bar bubble with the Claude Code limits and a forecast of when they run out" width="382"></p>
 
-**A dedicated panel on a small screen.** A 3.5" USB-C screen (Turing Smart Screen and clones) or a small monitor becomes a permanent mini panel that pages through your tools on its own.
+**A dedicated panel on a small screen.** A 3.5" USB-C screen (Turing Smart Screen and clones) or a small monitor becomes a permanent mini panel that pages through your tools on its own. Only the parts that change are sent over the cable, so the animation stays smooth, and the screen can lie on its side.
 
 <p align="center">
 <img src="docs/assets/screens/mini-landscape.png" alt="480x320 mini monitor with three tools" width="480">
