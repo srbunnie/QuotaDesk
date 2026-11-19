@@ -8,9 +8,12 @@ namespace AIUsageMonitor;
 /// </summary>
 internal sealed class CodexAgent : IAgentSource
 {
-    private static readonly TimeSpan PollVisible = TimeSpan.FromMinutes(2);
-    private static readonly TimeSpan PollHidden = TimeSpan.FromMinutes(5);
-    private static readonly TimeSpan MinRefreshGap = TimeSpan.FromSeconds(45);
+    // Each read starts `codex app-server` and stops it again, so keep the cadence modest: 1 min with the panel open.
+    private static readonly TimeSpan PollVisible = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan PollHidden = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan MinRefreshGap = TimeSpan.FromSeconds(30);
+    // After a failed read, try again soon (15 s, 30 s, 60 s) instead of waiting for the next poll.
+    private static readonly TimeSpan[] RetryDelays = [TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(60)];
     private static readonly TimeSpan WorkingSilence = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan WaitingTimeout = TimeSpan.FromMinutes(15);
 
@@ -25,6 +28,8 @@ internal sealed class CodexAgent : IAgentSource
     private ProviderSnapshot _quota = ProviderSnapshot.Unavailable("Codex", L.T("Consultando...", "Checking..."), "codex app-server");
     private DateTimeOffset _lastRefresh = DateTimeOffset.MinValue;
     private int _refreshing;
+    private int _failures;
+    private System.Threading.Timer? _retry;
     private bool _visible;
     public event Action? Changed;
     public string Id => "codex";
@@ -65,6 +70,8 @@ internal sealed class CodexAgent : IAgentSource
         _visible = visible;
         var period = visible ? PollVisible : PollHidden;
         try { _pollTimer.Change(period, period); } catch (ObjectDisposedException) { }
+        // Opening the panel is the moment someone looks at the number: refresh right away (still rate limited).
+        if (visible) _ = RefreshQuotaAsync(false);
     }
 
     private void MarkDirty(string path)
@@ -224,17 +231,35 @@ internal sealed class CodexAgent : IAgentSource
         {
             _lastRefresh = DateTimeOffset.Now;
             var result = await CodexClient.ReadAsync(CancellationToken.None);
-            // Keep the last good reading on a transient failure, but flag it.
-            _quota = result.Windows.Count == 0 && _quota.Windows.Count > 0
-                ? _quota with { Stale = true, Note = L.T($"{result.Error} Mostrando a última leitura.", $"{result.Error} Showing the last reading.") }
+            var failed = result.Windows.Count == 0;
+            // Keep the last good reading on a transient failure, but flag it and say how old it is.
+            _quota = failed && _quota.Windows.Count > 0
+                ? _quota with { Stale = true, Note = L.T($"{result.Error} Mostrando a última leitura{AgeOf(_quota)}.", $"{result.Error} Showing the last reading{AgeOf(_quota)}.") }
                 : result;
+            if (failed) OnReadFailed(result.Error);
+            else if (_failures > 0) { _failures = 0; _retry?.Dispose(); _retry = null; }
             Changed?.Invoke();
         }
         finally { Interlocked.Exchange(ref _refreshing, 0); }
     }
 
+    private static string AgeOf(ProviderSnapshot quota) =>
+        quota.UpdatedAt is { } at ? L.T($" de {LimitParsing.Ago(DateTimeOffset.Now - at)}", $" from {LimitParsing.Ago(DateTimeOffset.Now - at)}") : "";
+
+    /// <summary>Logs the first failure of a streak (and every 10th), then schedules a quick retry.</summary>
+    private void OnReadFailed(string? reason)
+    {
+        _failures++;
+        if (_failures == 1 || _failures % 10 == 0)
+            ErrorLog.Write("codex-quota", new InvalidOperationException($"{reason} (falha {_failures} seguida)"));
+        if (_failures > RetryDelays.Length) return; // after the quick retries the regular poll takes over
+        _retry?.Dispose();
+        _retry = new System.Threading.Timer(_ => _ = RefreshQuotaAsync(true), null, RetryDelays[_failures - 1], Timeout.InfiniteTimeSpan);
+    }
+
     public void Dispose()
     {
+        _retry?.Dispose();
         _watcher?.Dispose();
         _pollTimer.Dispose();
         _debounce.Dispose();

@@ -116,7 +116,10 @@ internal sealed partial class MonitorForm : Form
 
     // Real preferences are attached by MonitorContext (which also saves them); previews keep the defaults.
     [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
-    public AppSettings Settings { get; set; } = new();
+    public AppSettings Settings { get => _settings; set { _settings = value; ActiveSettings = value; } }
+    private AppSettings _settings = new();
+    /// <summary>The preferences of the live panel, for static helpers such as <see cref="QuotaRows"/>.</summary>
+    internal static AppSettings? ActiveSettings;
 
     /// <summary>Supplies the sky for a given local time (set by the tray context; previews pass a fixed one).</summary>
     [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]

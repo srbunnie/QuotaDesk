@@ -163,6 +163,10 @@ The *Code* tab of the Claude app and the chat don't run the statusLine. When you
 
 **If it doesn't show up:** *Connect or re-authorize OpenRouter from the tray menu.* asks you to sign in again. *Could not read the OpenRouter balance* retries after 1 hour and keeps the last reading.
 
+**The login lasts 7 days.** OpenRouter does not renew it by itself: after a week, choose **Connect OpenRouter** again. The key it creates has a US$ 0 limit on purpose: it can only read the balance.
+
+**Organization accounts:** if the key is created in an organization workspace where you are not an admin, OpenRouter refuses the balance (*only management keys or keys created by organization admins can see the organization balance*). When connecting, pick your personal workspace, or ask an admin to authorize.
+
 ---
 
 ## Figma
@@ -176,7 +180,7 @@ There's nothing to set up. QuotaDesk reads the public `status.figma.com` page on
 ## Extras
 
 - **Real weather in the window:** tray menu › **Real weather in the window (Open-Meteo)** and **Weather city**. Open-Meteo only gets latitude and longitude.
-- **Mini monitor:** tray menu › **Mini monitor (second screen)**. 3.5" USB-C screens that show up as a serial port are detected automatically.
+- **Mini monitor:** tray menu › **Mini monitor (second screen)**, or **Settings › General › Second screen**. 3.5" USB-C screens that show up as a serial port are detected automatically. Close the screen maker's software first: only one program can use the port. If the screen lies on its side, turn on **USB screen on its side**. After the first frame only the parts that change are sent, and the **USB screen status** line shows the real rate.
 - **Language:** **Settings › General › Idioma / Language** (Automatic / Português / English), also in the tray menu. QuotaDesk restarts to apply it.
 
 ## Where your data lives and how to disconnect everything

@@ -78,9 +78,10 @@ internal sealed class AntigravityAgent : IAgentSource
                 var grouped = windows.Count > 0;
                 if (!grouped) { using var data = await ReadAsync("GetUserStatus"); windows = ParseQuota(data.RootElement); }
                 if (windows.Count == 0) throw new IOException(L.T("O servidor local ainda não informou cotas.", "The local server has not reported limits yet."));
+                if (grouped) FollowActiveGroup(windows);
                 lock (_sync) _quota = new("Antigravity", windows, DateTimeOffset.Now,
                     Source: L.T("Antigravity · servidor local", "Antigravity · local server"), Note: grouped
-                        ? L.T("Cota por grupo de modelos, com limite de 5 horas e semanal; não representa o chat Gemini.", "Limit per model group, with 5-hour and weekly limits; not the Gemini chat.")
+                        ? L.T("Cota por grupo de modelos; não representa o chat Gemini. ", "Limit per model group; not the Gemini chat. ") + GroupsSummary(windows)
                         : L.T("Cota por modelo (rodinha do mouse para trocar); não representa o chat Gemini.", "Limit per model (mouse wheel to switch); not the Gemini chat."));
                 _lastQuota = DateTimeOffset.UtcNow;
                 SaveCache();
@@ -109,11 +110,38 @@ internal sealed class AntigravityAgent : IAgentSource
         finally { _gate.Release(); Changed?.Invoke(); }
     }
 
+    /// <summary>"Gemini 37% · Claude e GPT 0%": every group's usage in one line, so the hidden group is not a mystery.</summary>
+    private static string GroupsSummary(IReadOnlyList<LimitWindow> windows) =>
+        string.Join(" · ", windows.Where(w => w.Group is not null).GroupBy(w => w.Group!).Select(g => $"{g.Key} {g.Max(w => w.UsedRounded)}%"));
+
+    /// <summary>Switches the card to the group whose usage went up since the last reading (the one being used).</summary>
+    private void FollowActiveGroup(List<LimitWindow> current)
+    {
+        List<LimitWindow> before;
+        lock (_sync) before = [.. _quota.Windows];
+        var grew = current.Where(w => w.Group is not null && before.FirstOrDefault(b => b.Group == w.Group && b.Kind == w.Kind) is { } old &&
+                                      w.UsedPercent > old.UsedPercent + 0.05)
+            .OrderByDescending(w => w.UsedPercent).FirstOrDefault();
+        if (grew?.Group is { } group) ModelChoice.Follow(group);
+    }
+
     private bool Alive()
     {
         // A reused PID must still be a language server, not whatever process got the number afterwards.
-        try { using var process = Process.GetProcessById(_pid); return !process.HasExited && process.ProcessName.StartsWith("language_server", StringComparison.OrdinalIgnoreCase); }
+        try { using var process = Process.GetProcessById(_pid); return !process.HasExited && IsServerName(process.ProcessName); }
         catch (ArgumentException) { return false; }
+    }
+
+    // Older builds run language_server*.exe; the current Antigravity IDE runs the same server as agy.exe (~/.gemini/bin) with --hub.
+    private static bool IsServerName(string name) =>
+        name.StartsWith("language_server", StringComparison.OrdinalIgnoreCase) || name.Equals("agy", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsAntigravityServerPath(string path)
+    {
+        var programs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs") + Path.DirectorySeparatorChar;
+        var gemini = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gemini", "bin") + Path.DirectorySeparatorChar;
+        return (path.StartsWith(programs, StringComparison.OrdinalIgnoreCase) && path.Contains("antigravity", StringComparison.OrdinalIgnoreCase)) ||
+               path.StartsWith(gemini, StringComparison.OrdinalIgnoreCase);
     }
 
     private void SaveCache()
@@ -136,7 +164,7 @@ internal sealed class AntigravityAgent : IAgentSource
         // Antigravity closed is the common case: a cheap process-list check avoids starting PowerShell every few seconds.
         // The binary is language_server.exe in older builds and language_server_windows_x64.exe in "Antigravity IDE".
         // Windsurf/Codeium ship a language_server too: skip processes whose path is clearly not Antigravity's.
-        var running = Process.GetProcesses().Where(p => p.ProcessName.StartsWith("language_server", StringComparison.OrdinalIgnoreCase)).ToArray();
+        var running = Process.GetProcesses().Where(p => IsServerName(p.ProcessName)).ToArray();
         var candidates = new List<int>();
         foreach (var candidate in running)
         {
@@ -145,13 +173,14 @@ internal sealed class AntigravityAgent : IAgentSource
                 string? path = null;
                 try { path = candidate.MainModule?.FileName; }
                 catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { }
-                if (path is null || path.Contains("antigravity", StringComparison.OrdinalIgnoreCase)) candidates.Add(candidate.Id);
+                if (path is null || IsAntigravityServerPath(path)) candidates.Add(candidate.Id);
             }
         }
         if (candidates.Count == 0) return;
         // The same processes that yielded nothing a moment ago will not answer differently: retry every 2 minutes.
         var key = string.Join(",", candidates.Order());
-        if (key == _failedCandidates && DateTimeOffset.UtcNow - _failedAt < TimeSpan.FromMinutes(2)) return;
+        // Right after Antigravity starts its server is not listening yet: look again soon, not in two minutes.
+        if (key == _failedCandidates && DateTimeOffset.UtcNow - _failedAt < TimeSpan.FromSeconds(15)) return;
         _failedCandidates = key;
         _failedAt = DateTimeOffset.UtcNow;
         // WMI supplies the existing process's transient local session token. It is not a Google credential.
@@ -159,7 +188,7 @@ internal sealed class AntigravityAgent : IAgentSource
         var shell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
         var start = new ProcessStartInfo(shell) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         start.ArgumentList.Add("-NoProfile"); start.ArgumentList.Add("-NonInteractive"); start.ArgumentList.Add("-Command");
-        start.ArgumentList.Add("Get-CimInstance Win32_Process -Filter \"name like 'language_server%'\" | ForEach-Object { [pscustomobject]@{ ProcessId = $_.ProcessId; ExecutablePath = $_.ExecutablePath; CommandLine = $_.CommandLine; Ports = @(Get-NetTCPConnection -State Listen -OwningProcess $_.ProcessId -ErrorAction SilentlyContinue | ForEach-Object { $_.LocalPort }) } } | ConvertTo-Json -Compress");
+        start.ArgumentList.Add("Get-CimInstance Win32_Process -Filter \"name like 'language_server%' or name = 'agy.exe'\" | ForEach-Object { [pscustomobject]@{ ProcessId = $_.ProcessId; ExecutablePath = $_.ExecutablePath; CommandLine = $_.CommandLine; Ports = @(Get-NetTCPConnection -State Listen -OwningProcess $_.ProcessId -ErrorAction SilentlyContinue | ForEach-Object { $_.LocalPort }) } } | ConvertTo-Json -Compress");
         using var process = Process.Start(start) ?? throw new IOException(L.T("Servidor local indisponível.", "Local server unavailable."));
         var outputTask = process.StandardOutput.ReadToEndAsync(_stop.Token);
         var errorTask = process.StandardError.ReadToEndAsync(_stop.Token);
@@ -171,13 +200,11 @@ internal sealed class AntigravityAgent : IAgentSource
         if (string.IsNullOrWhiteSpace(output)) return;
         using var json = JsonDocument.Parse(output);
         var entries = json.RootElement.ValueKind == JsonValueKind.Array ? json.RootElement.EnumerateArray().ToArray() : [json.RootElement];
-        var programs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs") + Path.DirectorySeparatorChar;
         foreach (var entry in entries)
         {
-            // Only Antigravity's own language server, installed per user.
+            // Only Antigravity's own server, installed per user (Programs\...antigravity... or ~/.gemini/bin/agy.exe).
             if (!entry.TryGetProperty("ExecutablePath", out var exe) || exe.ValueKind != JsonValueKind.String ||
-                exe.GetString() is not { } path || !path.StartsWith(programs, StringComparison.OrdinalIgnoreCase) ||
-                !path.Contains("antigravity", StringComparison.OrdinalIgnoreCase)) continue;
+                exe.GetString() is not { } path || !IsAntigravityServerPath(path)) continue;
             var command = entry.TryGetProperty("CommandLine", out var cl) && cl.ValueKind == JsonValueKind.String ? cl.GetString() ?? "" : "";
             var token = Regex.Match(command, "--csrf_token(?:=|\\s+)\"?([^\\s\"]+)");
             if (!token.Success || !entry.TryGetProperty("Ports", out var ports)) continue;

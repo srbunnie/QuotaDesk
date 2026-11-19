@@ -16,6 +16,12 @@ internal sealed partial class MonitorForm
 
     /// <summary>Raised after any preference changed; MonitorContext saves them.</summary>
     public event Action? SettingsChanged;
+    /// <summary>Asks the tray context to look for the second screen again (USB serial or small monitor).</summary>
+    public event Action? SecondScreenRescan;
+    /// <summary>One line about the 3.5" USB screen, supplied by the tray context.</summary>
+    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+    public Func<string>? SecondScreenStatus { get; set; }
+    internal void RequestSecondScreenRescan() => SecondScreenRescan?.Invoke();
     public event Action? ShutdownRequested;
     public event Action<string>? LanguageChangeRequested;
 
@@ -186,15 +192,28 @@ internal sealed partial class MonitorForm
 
     internal void RequestShutdown() => ShutdownRequested?.Invoke();
 
+    private void SetWindowVisible(AgentStatus agent, WindowKind kind, bool visible)
+    {
+        if (!Settings.HiddenWindows.TryGetValue(agent.Id, out var hidden)) Settings.HiddenWindows[agent.Id] = hidden = [];
+        hidden.RemoveAll(k => string.Equals(k, kind.ToString(), StringComparison.OrdinalIgnoreCase));
+        if (!visible) hidden.Add(kind.ToString());
+        if (hidden.Count == 0) Settings.HiddenWindows.Remove(agent.Id);
+        ShowData(_allAgents);
+        PreferencesChanged();
+    }
+
     private void ShowCardMenu(int index, RectangleF anchor)
     {
         var agent = _agents[index];
         var menu = NewMenu();
         menu.Items.Add(L.T("Atualizar consumo", "Refresh usage"), null, (_, _) => RefreshProviderRequested?.Invoke(agent.Id));
         if (agent.Id == "claude")
-            menu.Items.Add(new ToolStripMenuItem(L.T("Abrir Claude Code no terminal", "Open Claude Code in the terminal"), null, (_, _) => ClaudeQuota.OpenTerminal(onlyIfStale: false))
+            menu.Items.Add(new ToolStripMenuItem(L.T("Abrir Claude Code no terminal (cota exata)", "Open Claude Code in the terminal (exact limit)"), null, (_, _) => ClaudeQuota.OpenTerminal(onlyIfStale: false))
             {
-                ToolTipText = L.T("A cota exata vem do Claude Code no terminal; a aba Code do app Claude não a atualiza.", "The exact limit comes from Claude Code in the terminal; the Code tab of the Claude app does not update it.")
+                ToolTipText = L.T("A cota exata só chega depois da primeira resposta do Claude Code na sessão (o QuotaDesk nunca envia mensagens por você). " +
+                                  "Sem o terminal, o app Claude registra a cota a cada ~15 min só enquanto está aberto; por isso o número pode aparecer como antigo.",
+                                  "The exact limit arrives only after Claude Code's first reply in a session (QuotaDesk never sends messages for you). " +
+                                  "Without the terminal, the Claude app records it about every 15 min and only while open, so the number may show as old.")
             });
         if (agent.Id is "magnific" or "openrouter")
         {
@@ -243,6 +262,33 @@ internal sealed partial class MonitorForm
                 ShowData(_allAgents);
             }));
         menu.Items.Add(density);
+        var kinds = agent.Quota.Windows.Select(w => w.Kind).ToList();
+        // A tool that has time windows but not both (Antigravity has no 5-hour quota) still lists the missing one,
+        // so its "not reported" placeholder can be switched off.
+        if (UsesTimeSlots(agent)) kinds.AddRange([WindowKind.FiveHour, WindowKind.Weekly]);
+        kinds = kinds.Distinct().Order().ToList();
+        if (kinds.Count > 0)
+        {
+            var windowsMenu = Sub(menu, L.T("Janelas visíveis", "Visible windows"));
+            foreach (var kind in kinds)
+            {
+                var label = kind switch
+                {
+                    WindowKind.FiveHour => L.T("5 horas", "5 hours"),
+                    WindowKind.Weekly => L.T("Semanal", "Weekly"),
+                    _ => agent.Quota.Windows.Any(w => w.Credits is not null || w.Amount is not null) ? L.T("Créditos / saldo", "Credits / balance") : L.T("Por modelo / outras", "Per model / other")
+                };
+                var present = agent.Quota.Windows.Any(w => w.Kind == kind);
+                var isShown = present ? VisibleWindows(agent).Any(w => w.Kind == kind)
+                    : !(Settings.HiddenWindows.TryGetValue(agent.Id, out var off) && off.Contains(kind.ToString(), StringComparer.OrdinalIgnoreCase));
+                if (!present) label += L.T(" (não informada)", " (not reported)");
+                var item = Check(label, isShown, () => SetWindowVisible(agent, kind, !isShown));
+                // The last visible window stays: a card with no rows would read as "no data".
+                if (present && isShown && VisibleWindows(agent).Select(w => w.Kind).Distinct().Count() <= 1) item.Enabled = false;
+                windowsMenu.DropDownItems.Add(item);
+            }
+            menu.Items.Add(windowsMenu);
+        }
         if (_enabledOfficeAgents.Count > 1)
             menu.Items.Add(L.T("Ocultar esta ferramenta", "Hide this tool"), null, (_, _) =>
             {
@@ -334,20 +380,40 @@ internal sealed partial class MonitorForm
              hit.StartsWith("pager", StringComparison.Ordinal)
     };
 
-    // Cards whose rows show "esgota em" first (toggled by a click or the mouse wheel on the card).
+    // Rows ("<card id>|<window kind>") that show "esgota em" first. A click on a row flips only that row, a click
+    // elsewhere on the card (or the mouse wheel) flips all of the card's rows together.
     private readonly HashSet<string> _depletionFirst = new(StringComparer.OrdinalIgnoreCase);
+    // Where each quota row was last painted, so a click can tell the 5-hour row from the weekly one.
+    private readonly List<(string Id, WindowKind Kind, RectangleF Area)> _rowHits = [];
 
-    /// <summary>Trades "renova em" and "esgota em" on a card's quota rows; the next call trades them back.</summary>
-    internal void ToggleResetView(int index)
+    private static string RowKey(string id, WindowKind kind) => $"{id}|{kind}";
+
+    /// <summary>
+    /// Trades "renova em" and "esgota em". With <paramref name="at"/> on a quota row only that row changes; otherwise all
+    /// of the card's rows do (back to "renova em" first if any of them was swapped).
+    /// </summary>
+    internal void ToggleResetView(int index, PointF? at = null)
     {
         if (index < 0 || index >= _agents.Count) return;
         var id = _agents[index].Id;
-        if (!_depletionFirst.Remove(id)) _depletionFirst.Add(id);
+        if (at is { } p && _rowHits.FirstOrDefault(h => h.Id == id && h.Area.Contains(p)) is { Id: not null } hit)
+        {
+            var key = RowKey(id, hit.Kind);
+            if (!_depletionFirst.Remove(key)) _depletionFirst.Add(key);
+        }
+        else
+        {
+            var kinds = QuotaRows(_agents[index]).Select(w => w.Kind).Distinct().DefaultIfEmpty(WindowKind.Other).ToList();
+            if (kinds.Any(k => _depletionFirst.Contains(RowKey(id, k)))) foreach (var k in kinds) _depletionFirst.Remove(RowKey(id, k));
+            else foreach (var k in kinds) _depletionFirst.Add(RowKey(id, k));
+        }
         _lastTip = null;
         Invalidate();
     }
 
-    internal bool ShowsDepletionFirst(string id) => _depletionFirst.Contains(id);
+    internal bool ShowsDepletionFirst(string id) => _depletionFirst.Any(k => k.StartsWith(id + "|", StringComparison.OrdinalIgnoreCase));
+
+    internal bool ShowsDepletionFirst(string id, WindowKind kind) => _depletionFirst.Contains(RowKey(id, kind));
 
     private int? Idx(string? hit, string prefix) =>
         hit is not null && hit.StartsWith(prefix, StringComparison.Ordinal) && int.TryParse(hit.AsSpan(prefix.Length), out var i) && i < _agents.Count ? i : null;
@@ -374,7 +440,7 @@ internal sealed partial class MonitorForm
             _ when Idx(hit, "menu") is not null => L.T("Opções desta ferramenta", "Options for this tool"),
             _ when Idx(hit, "pager") is { } pg => L.T($"{CardName(_agents[pg])}: trocar de ferramenta (clique à esquerda/direita ou role a roda)", $"{CardName(_agents[pg])}: switch tool (click left/right or scroll the wheel)"),
             _ when Idx(hit, "badge") is { } b => L.T($"{PendingOf(_agents[b]).Count} sessão(ões) aguardando você\nClique para ver", $"{PendingOf(_agents[b]).Count} session(s) waiting for you\nClick to see"),
-            _ when Idx(hit, "card") is { } c => Details(_agents[c]) + (Classic ? "" : L.T("\nClique para alternar entre \"renova em\" e \"esgota em\"", "\nClick to switch between \"resets in\" and \"runs out in\"")),
+            _ when Idx(hit, "card") is { } c => Details(_agents[c]) + (Classic ? "" : L.T("\nClique numa linha para alternar só ela entre \"renova em\" e \"esgota em\"; fora das linhas, alterna todas", "\nClick a row to switch just that row between \"resets in\" and \"runs out in\"; click elsewhere to switch all")),
             _ => null
         };
         if (tip == _lastTip) return;
@@ -440,7 +506,7 @@ internal sealed partial class MonitorForm
                          QuotaRows(_agents[c]).All(w => w.Kind == WindowKind.Other))
                     // Per-model quotas: left half goes back, right half goes forward (groups change with the wheel).
                     StepModel(e.X / _scale < CardRect(c).X + CardRect(c).Width / 2 ? -1 : 1);
-                else if (Idx(hit, "card") is { } t) ToggleResetView(t);
+                else if (Idx(hit, "card") is { } t) ToggleResetView(t, new PointF(e.X / _scale, e.Y / _scale));
                 break;
         }
     }
@@ -484,11 +550,27 @@ internal sealed partial class MonitorForm
     /// </summary>
     internal static List<LimitWindow> QuotaRows(AgentStatus agent)
     {
-        var windows = agent.Quota.Windows;
+        var windows = VisibleWindows(agent);
         if (windows.Count == 0) return [];
         if (windows.All(w => w.Kind == WindowKind.Other))
             return agent.Id == "antigravity" && ModelChoice.Current(agent) is { } model ? [model] : windows.Take(3).ToList();
         return windows.OrderBy(w => w.Kind switch { WindowKind.FiveHour => 0, WindowKind.Other => 1, _ => 2 }).ToList();
+    }
+
+    private static WindowKind KindOfSlot(int slot) => slot == 0 ? WindowKind.FiveHour : slot == 2 ? WindowKind.Weekly : WindowKind.Other;
+
+    /// <summary>True when the user hid the window this slot stands for on this tool's menu (so no "not reported" placeholder is drawn).</summary>
+    private static bool PlaceholderHidden(AgentStatus agent, int slot) =>
+        ActiveSettings?.HiddenWindows is { } map && map.TryGetValue(agent.Id, out var hidden) &&
+        hidden.Contains(KindOfSlot(slot).ToString(), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The tool's windows minus the ones the user hid on its card menu; never hides all of them.</summary>
+    internal static IReadOnlyList<LimitWindow> VisibleWindows(AgentStatus agent)
+    {
+        var all = agent.Quota.Windows;
+        if (ActiveSettings?.HiddenWindows is not { Count: > 0 } map || !map.TryGetValue(agent.Id, out var hidden) || hidden.Count == 0) return all;
+        var shown = all.Where(w => !hidden.Contains(w.Kind.ToString(), StringComparer.OrdinalIgnoreCase)).ToList();
+        return shown.Count == 0 ? all : shown;
     }
 
     private string PillLabel(AgentStatus agent)
@@ -627,6 +709,7 @@ internal sealed partial class MonitorForm
         PaintMenuButton(g, MenuRect(index), _hover == $"menu{index}" || _pressed == $"menu{index}");
         using (var line = new Pen(Line, 2f)) g.DrawLine(line, r.X + 18, r.Y + CardHeader - 6, r.Right - 18, r.Y + CardHeader - 6);
         PaintCategoryPager(g, agent, index);
+        _rowHits.RemoveAll(h => h.Id == agent.Id);
         if (Classic)
         {
             PaintClassicBody(g, agent, r, look, now);
@@ -653,13 +736,16 @@ internal sealed partial class MonitorForm
             return;
         }
         var slots = Slots;
+        var placed = 0; // rows this card really shows; a placeholder the user hid frees its position
         for (var i = 0; i < slots.Count || i == 0; i++)
         {
-            var area = new RectangleF(first.X, first.Y + i * RowHeight, first.Width, RowHeight);
-            if (i > 0) using (var divider = new Pen(Color.FromArgb(28, 34, 52), 2f)) g.DrawLine(divider, area.X, area.Y - 7, area.Right, area.Y - 7);
             var row = slots.Count == 0 ? null : rows.FirstOrDefault(w => SlotOf(agent, w) == slots[i]);
+            if (row is null && slots.Count > 0 && PlaceholderHidden(agent, slots[i])) continue;
+            var area = new RectangleF(first.X, first.Y + placed * RowHeight, first.Width, RowHeight);
+            if (placed > 0) using (var divider = new Pen(Color.FromArgb(28, 34, 52), 2f)) g.DrawLine(divider, area.X, area.Y - 7, area.Right, area.Y - 7);
             if (row is not null || (rows.Count == 0 && i == 0)) PaintQuotaRow(g, agent, row, area, look, now);
             else PaintSeparator(g, area, slots.Count == 0 ? 0 : slots[i], LoftCards);
+            placed++;
         }
     }
 
@@ -915,9 +1001,10 @@ internal sealed partial class MonitorForm
     /// <summary>One quota: window label, big percentage in the consumption color, bar, remaining and time to renewal.</summary>
     private void PaintQuotaRow(Graphics g, AgentStatus agent, LimitWindow? w, RectangleF area, Theme.AgentLook look, DateTimeOffset now)
     {
+        if (w is not null) _rowHits.Add((agent.Id, w.Kind, area));
         if (LoftCards)
         {
-            PaintLoftQuotaRow(g, agent, w, area, now, _depletionFirst.Contains(agent.Id));
+            PaintLoftQuotaRow(g, agent, w, area, now, w is not null && _depletionFirst.Contains(RowKey(agent.Id, w.Kind)));
             return;
         }
         var x = area.X;
@@ -982,7 +1069,7 @@ internal sealed partial class MonitorForm
 
         // A click on the card swaps the two times: "Esgota em" on the right and the renewal on the line below.
         var depletionTop = noData || expired || unknown ? null : NotchForecast.Short(w!, now, stale);
-        var swapped = _depletionFirst.Contains(agent.Id) && !noData && !expired && !unknown && w is { Renewed: false, Credits: null };
+        var swapped = w is not null && _depletionFirst.Contains(RowKey(agent.Id, w.Kind)) && !noData && !expired && !unknown && w is { Renewed: false, Credits: null };
         // Longest wording that still fits next to the left text; the short one drops "Renova".
         string rightLong, rightShort;
         if (noData) rightLong = rightShort = "";

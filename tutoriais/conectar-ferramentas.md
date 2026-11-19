@@ -163,6 +163,10 @@ A aba *Code* do app Claude e o chat não rodam o statusLine. Quando quiser a cot
 
 **Se não aparecer:** *Conecte ou reautorize OpenRouter no menu da bandeja.* pede um novo login. *Não foi possível consultar o saldo do OpenRouter* tenta de novo após 1 hora, mantendo a última leitura.
 
+**O login vale 7 dias.** A OpenRouter não renova esse login sozinha: depois de uma semana, escolha **Conectar OpenRouter** de novo. A chave criada tem limite de US$ 0, de propósito: ela só serve para ler o saldo.
+
+**Conta de organização:** se a chave for criada num workspace de organização em que você não é admin, a OpenRouter recusa o saldo (*só chaves de gerenciamento ou de admins da organização veem o saldo da organização*). Ao conectar, escolha o seu workspace pessoal, ou peça a um admin para autorizar.
+
 ---
 
 ## Figma
@@ -176,7 +180,7 @@ Não há nada a configurar. O QuotaDesk lê a página pública `status.figma.com
 ## Extras
 
 - **Clima real na janela:** menu da bandeja › **Clima real na janela (Open-Meteo)** e **Cidade do clima**. O Open-Meteo recebe só latitude e longitude.
-- **Mini monitor:** menu da bandeja › **Mini monitor (tela secundária)**. Telas USB-C de 3,5" que aparecem como porta serial são detectadas sozinhas.
+- **Mini monitor:** menu da bandeja › **Mini monitor (tela secundária)**, ou **Configurações › Geral › Segunda tela**. Telas USB-C de 3,5" que aparecem como porta serial são detectadas sozinhas. Feche antes o programa do fabricante da tela: só um programa por vez usa a porta. Se a tela fica apoiada na horizontal, ligue **Tela USB deitada**. Depois do primeiro quadro, só as partes que mudam são enviadas, e a linha **Estado da tela USB** mostra o ritmo real.
 
 ## Onde ficam os dados e como desconectar tudo
 

@@ -74,7 +74,12 @@ internal sealed class MonitorContext : ApplicationContext
             // The settings window changes the edge widget's skin independently of the panel's.
             var dock = (_settings.SideDock, UseNotch);
             if (dock != _appliedDock) ApplyDockStyle();
+            // The second screen can be switched on from the settings window as well as from the tray menu.
+            if (_settings.MiniScreen != _appliedMini) { _appliedMini = _settings.MiniScreen; ApplyMini(); }
         };
+        _appliedMini = _settings.MiniScreen;
+        _form.SecondScreenRescan += () => ApplyMini();
+        _form.SecondScreenStatus = () => _serial.Status;
         _form.NewPending += OnNewPending;
         _autoRefresh.Tick += (_, _) => _ = RefreshAllAsync(true);
         _sky = new SkyService(_settings);
@@ -96,6 +101,9 @@ internal sealed class MonitorContext : ApplicationContext
         foreach (var source in _sources) source.Changed += ScheduleUpdate;
 
         var menu = new ContextMenuStrip { Renderer = new NeonMenuRenderer(), ShowImageMargin = true, ShowCheckMargin = true };
+        // Which copy is this? Installed, dev and homolog builds look alike, so the menu says it with the build stamp.
+        menu.Items.Add(new ToolStripMenuItem($"QuotaDesk {AppPaths.VersionText}" + (AppPaths.Label is { } label ? $" · {label}" : "")) { Enabled = false });
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(L.T("Abrir central de controle", "Open control center"), null, (_, _) => ShowLauncher());
         menu.Items.Add(L.T("Reiniciar com configuração", "Restart with settings"), null, (_, _) => Restart());
         menu.Items.Add(L.T("Abrir painel", "Open panel"), null, (_, _) => Open());
@@ -130,6 +138,16 @@ internal sealed class MonitorContext : ApplicationContext
         notchItem = new ToolStripMenuItem(L.T("Barra minimalista", "Minimal bar"), null, (_, _) => SwitchDockStyle())
         { Checked = UseNotch };
         menu.Items.Add(notchItem);
+        ToolStripMenuItem? pinBarItem = null;
+        pinBarItem = new ToolStripMenuItem(L.T("Fixar a barra (mantê-la aberta)", "Pin the bar (keep it open)"), null, (_, _) =>
+        {
+            _settings.WidgetPinned = !_settings.WidgetPinned;
+            _settings.Save();
+            pinBarItem!.Checked = _settings.WidgetPinned;
+            ApplyDockPlacement(); // re-evaluates both bars with the new setting
+        }) { Checked = _settings.WidgetPinned };
+        menu.Opening += (_, _) => pinBarItem!.Checked = _settings.WidgetPinned;
+        menu.Items.Add(pinBarItem);
         var miniItem = new ToolStripMenuItem(L.T("Mini monitor (tela secundária)", "Mini monitor (second screen)"));
         miniItem.DropDown.Renderer = menu.Renderer;
         if (miniItem.DropDown is ToolStripDropDownMenu miniDrop) { miniDrop.ShowImageMargin = false; miniDrop.ShowCheckMargin = true; }
@@ -298,8 +316,11 @@ internal sealed class MonitorContext : ApplicationContext
     }
 
     /// <summary>Shows the mini-monitor skin on its display when enabled and connected; hides it otherwise.</summary>
+    private bool _appliedMini;
+
     private void ApplyMini()
     {
+        _appliedMini = _settings.MiniScreen;
         if (_exiting) return;
         var screen = _settings.MiniScreen ? MiniScreenForm.FindScreen(_settings) : null;
         if (screen is null)

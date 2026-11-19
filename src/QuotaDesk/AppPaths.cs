@@ -25,8 +25,30 @@ internal static class AppPaths
         Environment.GetEnvironmentVariable("QUOTADESK_ENV") is { } env && env.Trim() is { Length: > 0 and <= 20 } name &&
         name.All(char.IsAsciiLetterOrDigit) ? name.ToLowerInvariant() : null;
 
+    /// <summary>
+    /// Which copy is running: the named environment (dev, homolog), "teste" for an isolated test instance;
+    /// null for a regular install.
+    /// </summary>
+    public static string? Label => EnvironmentName ?? (Isolated ? "teste" : null);
+
+    /// <summary>"0.4.0 · build 81a10168": version plus the build stamp (text after '+', git hash or build number).</summary>
+    public static string VersionText
+    {
+        get
+        {
+            var info = System.Reflection.Assembly.GetExecutingAssembly()
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "";
+            var plus = info.IndexOf('+');
+            var version = plus < 0 ? info : info[..plus];
+            var build = plus < 0 ? "" : info[(plus + 1)..];
+            if (build.Length > 24) build = build[..8]; // a full git hash is too long for a menu
+            return build.Length == 0 ? version : $"{version} · build {build}";
+        }
+    }
+
     /// <summary>"QuotaDesk", or "QuotaDesk [homolog]" in a named environment.</summary>
-    public static string Title => EnvironmentName is { } env ? $"QuotaDesk [{env}]" : Isolated ? "QuotaDesk [teste]" : "QuotaDesk";
+    public static string Title => Label is { } label ? $"QuotaDesk [{label}]" : "QuotaDesk";
 
     /// <summary>
     /// Resolves the data folder once, before anything reads it. The choice goes back into the environment so the

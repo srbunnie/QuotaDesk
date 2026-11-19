@@ -38,6 +38,114 @@ internal static class Program
             Console.WriteLine(quota.Windows.Count > 0 ? "Magnific conectado: " + quota.Windows[0].ResetHint : "Magnific não conectado: " + quota.Error);
             return quota.Windows.Count > 0 ? 0 : 1;
         }
+        // Diagnostic: one Antigravity reading (waits for the first poll, then forces one) printed to a file.
+        if (args.Length == 2 && args[0] == "--antigravity-once")
+        {
+            using var agent = new AntigravityAgent();
+            Thread.Sleep(2500);
+            agent.RefreshQuotaAsync(true).GetAwaiter().GetResult();
+            var status = agent.GetStatus(DateTimeOffset.Now);
+            File.WriteAllText(args[1], $"state={status.State} stale={status.Quota.Stale} error={status.Quota.Error} updated={status.Quota.UpdatedAt}{Environment.NewLine}" +
+                string.Join(Environment.NewLine, status.Quota.Windows.Select(w => $"{w.Group} {w.Label} {w.UsedRounded}% reset={w.ResetsAt}")) + Environment.NewLine + "note=" + status.Quota.Note);
+            return 0;
+        }
+        // Diagnostic for the 3.5" USB screen: one test picture (borders, colour bars, labels) and the time the link took.
+        if (args.Length >= 1 && args[0] == "--usb-screen-test")
+        {
+            var name = UsbSerialScreen.FindPortName();
+            Console.WriteLine("porta: " + (name ?? "nenhuma"));
+            if (name is null) return 1;
+            using var screen = new UsbSerialScreen();
+            if (!screen.TryOpen(name)) { File.WriteAllText(Path.Combine(Path.GetTempPath(), "usb-test.txt"), "nao abriu " + name); return 2; }
+            using var bmp = new System.Drawing.Bitmap(UsbScreenProtocol.Width, UsbScreenProtocol.Height);
+            using (var g = System.Drawing.Graphics.FromImage(bmp))
+            {
+                g.Clear(System.Drawing.Color.Black);
+                var colors = new[] { System.Drawing.Color.Red, System.Drawing.Color.Lime, System.Drawing.Color.Blue, System.Drawing.Color.Yellow, System.Drawing.Color.Cyan, System.Drawing.Color.Magenta, System.Drawing.Color.White, System.Drawing.Color.Gray };
+                for (var i = 0; i < colors.Length; i++) using (var b = new System.Drawing.SolidBrush(colors[i])) g.FillRectangle(b, i * 40, 60, 40, 120);
+                using var pen = new System.Drawing.Pen(System.Drawing.Color.White, 3); g.DrawRectangle(pen, 1, 1, bmp.Width - 3, bmp.Height - 3);
+                using var font = new System.Drawing.Font("Segoe UI", 22, System.Drawing.FontStyle.Bold);
+                g.DrawString("TOPO 320x480", font, System.Drawing.Brushes.White, 10, 8);
+                for (var y = 200; y < bmp.Height - 20; y += 40) g.DrawString($"linha {y}", font, System.Drawing.Brushes.Orange, 10, y);
+                g.FillRectangle(System.Drawing.Brushes.Red, 0, 0, 30, 30); // top-left corner marker
+                g.DrawString("FIM", font, System.Drawing.Brushes.Lime, 220, bmp.Height - 48);
+            }
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            screen.Send(UsbScreenProtocol.ToRgb565(bmp));
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "usb-test.txt"), $"enviado em {sw.ElapsedMilliseconds} ms na {name}");
+            Thread.Sleep(1500);
+            return 0;
+        }
+        // Benchmark of the 3.5" USB link: full frames with several write sizes, then small rectangles. Results go to a file.
+        if (args.Length == 1 && args[0] == "--usb-screen-bench")
+        {
+            var report = new System.Text.StringBuilder();
+            var name = UsbSerialScreen.FindPortName();
+            if (name is null) { File.WriteAllText(Path.Combine(Path.GetTempPath(), "usb-bench.txt"), "sem porta"); return 1; }
+            byte[] Solid(int w, int h, ushort rgb) { var b = new byte[w * h * 2]; for (var i = 0; i < b.Length; i += 2) { b[i] = (byte)rgb; b[i + 1] = (byte)(rgb >> 8); } return b; }
+            foreach (var (baud, writeBuffer, chunk, handshake) in new[] { (115200, 2048, 2560, System.IO.Ports.Handshake.RequestToSend), (115200, 2048, 2560, System.IO.Ports.Handshake.None),
+                (115200, 65536, 65536, System.IO.Ports.Handshake.RequestToSend), (115200, 65536, 65536, System.IO.Ports.Handshake.None), (921600, 65536, 65536, System.IO.Ports.Handshake.None) })
+            {
+                try
+                {
+                    using var port = new System.IO.Ports.SerialPort(name, baud) { Handshake = handshake, WriteTimeout = 8000, WriteBufferSize = writeBuffer };
+                    port.Open();
+                    var hello = UsbScreenProtocol.HelloPacket(); port.Write(hello, 0, hello.Length);
+                    var frame = Solid(320, 480, 0x001F);
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    var cmd = UsbScreenProtocol.BitmapCommand(0, 0, 320, 480); port.Write(cmd, 0, cmd.Length);
+                    for (var o = 0; o < frame.Length; o += chunk) port.Write(frame, o, Math.Min(chunk, frame.Length - o));
+                    report.AppendLine($"cheio baud={baud} buffer={writeBuffer} chunk={chunk} hs={handshake}: {sw.ElapsedMilliseconds} ms");
+                }
+                catch (Exception ex) { report.AppendLine($"baud={baud} buffer={writeBuffer} chunk={chunk} hs={handshake}: ERRO {ex.GetType().Name}"); }
+                Thread.Sleep(600);
+            }
+            try
+            {
+                using var port = new System.IO.Ports.SerialPort(name, 115200) { Handshake = System.IO.Ports.Handshake.None, WriteTimeout = 8000, WriteBufferSize = 65536 };
+                port.Open();
+                var hello = UsbScreenProtocol.HelloPacket(); port.Write(hello, 0, hello.Length);
+                var bg = Solid(320, 480, 0); var c0 = UsbScreenProtocol.BitmapCommand(0, 0, 320, 480); port.Write(c0, 0, c0.Length); port.Write(bg, 0, bg.Length);
+                Thread.Sleep(2500);
+                // 40 rectangles of 100x100 at moving positions, alternating colours: the screen should show a trail of squares.
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                for (var i = 0; i < 40; i++)
+                {
+                    var x = (i * 5) % 220; var y = (i * 9) % 380;
+                    var cr = UsbScreenProtocol.BitmapCommand(x, y, 100, 100); port.Write(cr, 0, cr.Length);
+                    var px = Solid(100, 100, (ushort)(i % 2 == 0 ? 0xF800 : 0x07E0)); port.Write(px, 0, px.Length);
+                }
+                report.AppendLine($"40 retangulos 100x100: {sw.ElapsedMilliseconds} ms ({40 * 1000.0 / Math.Max(1, sw.ElapsedMilliseconds):0.0} por segundo)");
+            }
+            catch (Exception ex) { report.AppendLine("retangulos: ERRO " + ex.GetType().Name + " " + ex.Message); }
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "usb-bench.txt"), report.ToString());
+            return 0;
+        }
+        if (args.Length == 1 && args[0] == "--connect-openrouter")
+        {
+            using var openRouter = new OpenRouterAgent();
+            openRouter.ConnectAsync().GetAwaiter().GetResult();
+            var quota = openRouter.GetStatus(DateTimeOffset.Now).Quota;
+            Console.WriteLine(quota.Windows.Count > 0 ? "OpenRouter conectado." : "OpenRouter não conectado: " + quota.Error);
+            return quota.Windows.Count > 0 ? 0 : 1;
+        }
+        // Diagnostic: calls the one read-only balance tool with the saved login and prints what came back (no browser).
+        if ((args.Length is 2 or 3) && args[0] == "--call-mcp-tool" && args[1] is "openrouter" or "magnific")
+        {
+            // Only read-only tools can be named here.
+            var chosen = args.Length == 3 && args[2] is "get-credits" or "get-current-key" or "ping" or "account_balance" ? args[2] : null;
+            var (endpoint, tool, cache) = args[1] == "openrouter"
+                ? (new Uri("https://mcp.openrouter.ai/mcp"), chosen ?? "get-credits", new OpenRouterTokenCache())
+                : (new Uri("https://mcp.magnific.com"), "account_balance", new OpenRouterTokenCache("magnific-mcp-token.dat", "QuotaDesk.Magnific.MCP.v1"));
+            try
+            {
+                var result = RemoteMcpTool.CallAsync(endpoint, args[1], tool, cache, false, CancellationToken.None).GetAwaiter().GetResult();
+                Console.WriteLine("structured: " + (result.StructuredContent?.ToString() ?? "(none)"));
+                foreach (var block in result.Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>()) Console.WriteLine("text: " + block.Text);
+                return 0;
+            }
+            catch (Exception ex) { Console.WriteLine(ex.GetType().Name + ": " + ex.Message); return 1; }
+        }
         // Lists a remote MCP server's tools with the saved login (no tool is called, no browser is opened).
         if (args.Length == 2 && args[0] == "--list-mcp-tools" && args[1] is "openrouter" or "magnific")
         {

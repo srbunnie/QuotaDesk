@@ -119,6 +119,10 @@ internal sealed class AppSettings
     public int? WindowY { get; set; }
     /// <summary>Providers hidden from the panel (by id).</summary>
     public List<string> HiddenProviders { get; set; } = [];
+    /// <summary>The 3.5" USB screen stands on its side (landscape): draw the 480x320 layout and turn it 90 degrees for the panel.</summary>
+    public bool SerialLandscape { get; set; }
+    /// <summary>Quota windows hidden per provider id: "FiveHour", "Weekly" or "Other" (credits and per-model rows). Display only; alerts still see them.</summary>
+    public Dictionary<string, List<string>> HiddenWindows { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Shared order used by all provider views. Unknown and missing IDs are ignored.</summary>
     public List<string> ProviderOrder { get; set; } = [];
     /// <summary>Per-provider detail level. Missing entries retain the full-detail appearance.</summary>
@@ -163,6 +167,7 @@ internal sealed class AppSettings
             var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path));
             if (settings is null) return null;
             settings.HiddenProviders ??= [];
+            settings.HiddenWindows = new Dictionary<string, List<string>>(settings.HiddenWindows ?? [], StringComparer.OrdinalIgnoreCase);
             settings.ProviderOrder ??= [];
             settings.ProviderDensityById ??= new Dictionary<string, ProviderDensity>(StringComparer.OrdinalIgnoreCase);
             return settings;

@@ -6,6 +6,8 @@ namespace AIUsageMonitor;
 /// <summary>Reads Codex rate limits through the local `codex app-server` (account/rateLimits/read). No prompts are sent.</summary>
 internal static class CodexClient
 {
+    private static DateTime _lastLogged = DateTime.MinValue;
+
     public static string? ResolveExecutable()
     {
         var configured = Environment.GetEnvironmentVariable("AI_MONITOR_CODEX_EXE");
@@ -85,6 +87,8 @@ internal static class CodexClient
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or
             JsonException or InvalidOperationException or OperationCanceledException)
         {
+            // At most one entry every 10 minutes: a broken Codex would otherwise fill the log with identical lines.
+            if (DateTime.UtcNow - _lastLogged > TimeSpan.FromMinutes(10)) { _lastLogged = DateTime.UtcNow; ErrorLog.Write("codex-client", ex); }
             return ProviderSnapshot.Unavailable("Codex", ex switch
             {
                 System.ComponentModel.Win32Exception => L.T("Não foi possível iniciar o Codex CLI.", "Could not start the Codex CLI."),
